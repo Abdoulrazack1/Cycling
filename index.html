@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cercle Cycliste — L'Élan du Club</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=Barlow:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Mapbox GL JS -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 1 — HERO
+  ═══════════════════════════════════════ -->
+  <header class="hero" id="hero">
+    <nav class="nav">
+      <div class="nav__logo">
+        <span class="logo-mark">◈</span>
+        <div class="logo-text">
+          <span class="logo-top">CERCLE</span>
+          <span class="logo-bottom">CYCLISTE</span>
+        </div>
+      </div>
+      <ul class="nav__links">
+        <li><a href="#">ROUTES</a></li>
+        <li><a href="#">PROGRAMME</a></li>
+        <li><a href="#">NUTRITION</a></li>
+        <li><a href="#">ÉQUIPEMENT</a></li>
+        <li><a href="#">MEMBRES</a></li>
+      </ul>
+      <button class="nav__cta">S'ENGAGER</button>
+    </nav>
+
+    <div class="hero__content reveal">
+      <p class="hero__eyebrow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
+        COMPÉTITION ELITE / ILE DE FRANCE
+      </p>
+      <h1 class="hero__title">L'ÉLAN<br/>DU CLUB<br/><span class="hero__title--accent">LA FORCE<br/>DU PELOTON</span></h1>
+      <p class="hero__subtitle">Un récit de compétition construit pour l'effort long, la pression mentale et les maillots sur le peloton. Chaque sortie est soigneusement optimisée comme un dossier technique, tracée avec soin comme une page de magazine.</p>
+    </div>
+
+    <div class="hero__scroll-indicator">
+      <span>DÉFILER</span>
+      <div class="scroll-line"></div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 2 — L'ENFER ALPIN
+  ═══════════════════════════════════════ -->
+  <section class="alpine" id="alpine">
+    <div class="section-tag reveal">PROCHAINE MANCHE / 14 OCTOBRE</div>
+
+    <div class="alpine__grid">
+      <!-- LEFT: Text + Stats -->
+      <div class="alpine__left reveal">
+        <h2 class="alpine__title">L'ENFER<br/>ALPIN</h2>
+        <p class="alpine__desc">Cette manche froide et singulière présente un parcours de montagne coupant, trois cols au programme, quelque chose de remarquable : chacun des trois cols, façonné avec soin depuis le siècle dernier, propose une vitesse et un vent particulier.</p>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">DISTANCE</span>
+            <span class="stat-value">184<sup>km</sup></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">DÉNIVELÉ</span>
+            <span class="stat-value">4 200<sup>m</sup></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value highlight-blue">6.12</span>
+            <span class="stat-label">CLASSEMENT</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value highlight-orange">Hors Cat.</span>
+            <span class="stat-label">CATÉGORIE</span>
+          </div>
+        </div>
+
+        <div class="weather-card">
+          <div class="weather-item danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+            <div>
+              <span class="weather-label">TÉLÉMÉTRIE SOMMET</span>
+              <span class="weather-val">-2°C</span>
+            </div>
+          </div>
+          <div class="weather-item danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+            <div>
+              <span class="weather-label">VT. 18 40+</span>
+              <span class="weather-val">58<sub>km/h</sub></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="alpine__buttons">
+          <button class="btn btn--primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            TÉLÉCHARGER LE GPX
+          </button>
+          <button class="btn btn--ghost">VOIR LE PROFIL COMPLET</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Map + Profile -->
+      <div class="alpine__right reveal">
+        <div class="map-container">
+          <div class="map-badge">CARTE 3D TERRAIN</div>
+          <div id="map"></div>
+          <div class="map-token-notice" id="mapTokenNotice">
+            ⚠ Ajoutez votre token Mapbox dans <code>script.js</code>
+          </div>
+          <div class="map-controls">
+            <button class="map-btn" id="mapZoomIn">+</button>
+            <button class="map-btn" id="mapZoomOut">−</button>
+            <button class="map-btn" id="mapReset">⊕</button>
+          </div>
+          <div class="map-stats">
+            <div class="map-stat"><span class="map-stat-val highlight-blue">12,8%</span><span class="map-stat-lbl">PENTE MAX</span></div>
+            <div class="map-stat"><span class="map-stat-val">3</span><span class="map-stat-lbl">COLS AU TOTAL</span></div>
+            <div class="map-stat"><span class="map-stat-val">46<sub>km</sub></span><span class="map-stat-lbl">DISTANCE RESTANTE</span></div>
+          </div>
+        </div>
+
+        <div class="profile-container">
+          <div class="profile-header">
+            <span class="profile-title">PROFIL TOPOGRAPHIQUE INTÉGRAL</span>
+            <div class="profile-tabs">
+              <button class="tab active">ALTITUDE</button>
+              <button class="tab">PENTE / POIDS DE VAG</button>
+            </div>
+          </div>
+          <div class="profile-chart-wrap">
+            <canvas id="profileChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 3 — PLAN DE COURSE
+  ═══════════════════════════════════════ -->
+  <section class="race-plan" id="race-plan">
+    <div class="race-plan__grid">
+      <!-- LEFT -->
+      <div class="race-plan__left reveal">
+        <div class="section-tag">PLAN DE COURSE</div>
+        <h2 class="section-title">Plan de Course<br/>Complet</h2>
+        <p class="section-desc">Il faut commencer à s'y préparer à l'avance et dans le bon ordre. Il convient ainsi d'avoir confiance en soi et ses partenaires. Chaque sortie sur le profil est en quelque sorte équivalente à une page de bilan.</p>
+
+        <div class="phases-grid">
+          <div class="phase-card phase-1 reveal">
+            <span class="phase-num">PHASE 1</span>
+            <h3>Garder le groupe compact</h3>
+            <p>Maintenir le rythme à 240W, rester groupé dans les montées intermédiaires et économiser de l'énergie.</p>
+          </div>
+          <div class="phase-card phase-2 reveal">
+            <span class="phase-num">PHASE 2</span>
+            <h3>Monter au seuil sans cassure</h3>
+            <p>En montant progressivement jusqu'à un seuil précis : on peut envisager une vitesse de pointe et groupe réduit.</p>
+          </div>
+          <div class="phase-card phase-3 reveal">
+            <span class="phase-num">PHASE 3</span>
+            <h3>Descente propre et lucide</h3>
+            <p>La descente du col : une récupération active, rester dans le sillage, préparer les jambes pour la finale.</p>
+          </div>
+          <div class="phase-card phase-4 reveal">
+            <span class="phase-num">PHASE 4</span>
+            <h3>Attaquer sur la dernière rupture</h3>
+            <p>La finale est décisive : attaquer sur le dernier kilomètre et maintenir le sprint jusqu'à l'arrivée.</p>
+          </div>
+        </div>
+
+        <div class="tips-grid">
+          <div class="tip-item">
+            <span class="tip-label">CONTRE-LA-MONTRE</span>
+            <p>58-11 en montée progressive et groupe réduit. 3-à-3 plus autonome et groupé cible.</p>
+          </div>
+          <div class="tip-item">
+            <span class="tip-label">NUTRITION</span>
+            <p>1 ge au total, 2 barres énergie, 800ml par heure de boisson isotonique.</p>
+          </div>
+          <div class="tip-item">
+            <span class="tip-label">RÉCUPÉRATION</span>
+            <p>Descente active à 80 rpm, gel caféine au col 2, préparer les orteils pour la finale.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Timeline -->
+      <div class="race-plan__right reveal">
+        <div class="timeline-card">
+          <div class="timeline-header">
+            <span class="timeline-title">JOURNAL D'EXÉCUTION</span>
+            <span class="timeline-date">COURSE DU JOUR</span>
+          </div>
+
+          <div class="timeline-list">
+            <div class="timeline-item">
+              <span class="t-time">08:30</span>
+              <div class="t-dot t-dot--green"></div>
+              <div class="t-content">
+                <strong>Entrée du premier col</strong>
+                <p>Position de tête dans le peloton, cadence stable à 88 rpm, maintenir les roues collées.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <span class="t-time">10:15</span>
+              <div class="t-dot t-dot--blue"></div>
+              <div class="t-content">
+                <strong>Attaque sur col du Fier</strong>
+                <p>Engagement à 105% FTP sur 3 minutes, réponse aux attaques et placement en tête de groupe.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <span class="t-time">11:40</span>
+              <div class="t-dot t-dot--yellow"></div>
+              <div class="t-content">
+                <strong>Bascule froide</strong>
+                <p>Descente technique à grande vitesse, vérifier position aéro, surveiller la température des freins.</p>
+              </div>
+            </div>
+            <div class="timeline-item timeline-item--active">
+              <span class="t-time">13:20</span>
+              <div class="t-dot t-dot--red pulse"></div>
+              <div class="t-content">
+                <strong>Décision finale</strong>
+                <p>Attaque décisive sur les derniers 800m, sprint final engagé, position de dépassement activée.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="perf-row">
+            <div class="perf-item">
+              <span class="perf-val">88–92%</span>
+              <span class="perf-lbl">FTP DU SEUIL</span>
+            </div>
+            <div class="perf-sep"></div>
+            <div class="perf-item">
+              <span class="perf-val">2/h</span>
+              <span class="perf-lbl">GELS PAR HEURE</span>
+            </div>
+          </div>
+
+          <div class="tags-row">
+            <span class="race-tag tag-orange">Crêtes exposées</span>
+            <span class="race-tag tag-teal">Zones humides</span>
+            <span class="race-tag tag-default">Dernier mur</span>
+            <span class="race-tag tag-blue">Altitude 2100m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 4 — INFORMATIONS DE COURSE
+  ═══════════════════════════════════════ -->
+  <section class="race-info" id="race-info">
+    <div class="section-tag reveal">SECTION ORGANISÉE</div>
+    <h2 class="race-info__title reveal">INFORMATIONS DE COURSE<br/>MIEUX ORGANISÉES</h2>
+
+    <div class="info-banner reveal">
+      <div class="info-block">
+        <span class="info-val">06:40 — 07:05</span>
+        <span class="info-lbl">HORAIRE DE DÉPART</span>
+      </div>
+      <div class="info-block">
+        <span class="info-val">7°C au départ, 15°C max</span>
+        <span class="info-lbl">TEMPÉRATURE PRÉVUE</span>
+      </div>
+      <div class="info-block">
+        <span class="info-val">Nord-ouest 18 à 28 km/h</span>
+        <span class="info-lbl">VENT DOMINANT</span>
+      </div>
+      <div class="info-block">
+        <span class="info-val danger-text">Élevé en descente</span>
+        <span class="info-lbl">NIVEAU DE DANGER</span>
+      </div>
+    </div>
+
+    <div class="info-columns reveal">
+      <!-- Col 1: Cols -->
+      <div class="info-col">
+        <div class="info-col-header">
+          <span class="info-col-icon">△</span>
+          <span class="info-col-title">SÉQUENCE DES ASCENSIONS</span>
+        </div>
+        <ul class="col-list">
+          <li class="col-item">
+            <div>
+              <strong>Col de Sarenne</strong>
+              <span class="col-sub">1 999m · Oisans</span>
+            </div>
+            <div class="col-right">
+              <span class="col-dist">17 km</span>
+              <span class="col-pct highlight-blue">6,7%</span>
+            </div>
+          </li>
+          <li class="col-item">
+            <div>
+              <strong class="col-name-blue">Col de l'Iseran</strong>
+              <span class="col-sub">2 770m · Tarentaise</span>
+            </div>
+            <div class="col-right">
+              <span class="col-dist">13 km</span>
+              <span class="col-pct highlight-blue">5,5%</span>
+            </div>
+          </li>
+          <li class="col-item">
+            <div>
+              <strong>Rampe des Aiguilles</strong>
+              <span class="col-sub">2 114m · Belledonne</span>
+            </div>
+            <div class="col-right">
+              <span class="col-dist">9 km</span>
+              <span class="col-pct highlight-red">9,8%</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Col 2: Checklist -->
+      <div class="info-col">
+        <div class="info-col-header">
+          <span class="info-col-icon">✓</span>
+          <span class="info-col-title">CHECKLIST MATÉRIEL</span>
+        </div>
+        <ul class="check-list">
+          <li class="check-item"><span class="check-box checked"></span>Armature</li>
+          <li class="check-item"><span class="check-box checked"></span>Climatisation</li>
+          <li class="check-item"><span class="check-box checked"></span>Pneumatiques</li>
+          <li class="check-item"><span class="check-box checked"></span>Cardiofréquencemètre</li>
+          <li class="check-item"><span class="check-box checked"></span>Éclairage</li>
+          <li class="check-item"><span class="check-box"></span>Récupération</li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Ravitaillement -->
+      <div class="info-col">
+        <div class="info-col-header">
+          <span class="info-col-icon">◎</span>
+          <span class="info-col-title">DÉCOUPAGES HORAIRES</span>
+        </div>
+        <div class="supply-timeline">
+          <div class="supply-item">
+            <div class="supply-dot supply-dot--green"></div>
+            <div class="supply-content">
+              <strong>Départ modéré</strong>
+              <p>Gestion de la dépense sur les premiers kilomètres plats.</p>
+            </div>
+          </div>
+          <div class="supply-item">
+            <div class="supply-dot supply-dot--blue"></div>
+            <div class="supply-content">
+              <strong>Premier ravitaillement</strong>
+              <p>Km 62 · Eau + gel isotonique, vérifier la fréquence cardiaque.</p>
+            </div>
+          </div>
+          <div class="supply-item">
+            <div class="supply-dot supply-dot--yellow"></div>
+            <div class="supply-content">
+              <strong>Ravitaillement discret</strong>
+              <p>Col 2 · Aliment solide, barres caféinées, veste si descente &lt;5°.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 5 — DONNÉES BRUTES
+  ═══════════════════════════════════════ -->
+  <section class="raw-data" id="raw-data">
+    <div class="section-tag reveal">SECTION DONNÉES</div>
+    <h2 class="raw-data__title reveal">DONNÉES BRUTES</h2>
+
+    <div class="charts-grid">
+      <!-- Chart 1: Line -->
+      <div class="chart-card reveal">
+        <div class="chart-card-header">
+          <span class="chart-card-title">ANALYSE D'INTENSITÉ ZÈLE</span>
+          <span class="chart-badge badge-blue">↑</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="lineChart"></canvas>
+        </div>
+        <div class="chart-val">114,2</div>
+        <div class="chart-sub-row">
+          <span class="chart-sub-val highlight-green">+4%</span>
+          <span class="chart-sub-lbl">INDICE HEBDOMADAIRE</span>
+        </div>
+      </div>
+
+      <!-- Chart 2: Bar -->
+      <div class="chart-card reveal">
+        <div class="chart-card-header">
+          <span class="chart-card-title">RÉPARTITION / ZONE PUISSANCE</span>
+          <span class="chart-badge badge-yellow">⚡</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="barChart"></canvas>
+        </div>
+        <div class="chart-val">Z4 <span class="chart-val-sub">ZONE CIBLE</span></div>
+        <div class="chart-sub-row">
+          <span class="chart-sub-val">87 MIN</span>
+          <span class="chart-sub-lbl">TEMPS EN ZONE</span>
+        </div>
+      </div>
+
+      <!-- Chart 3: Doughnut -->
+      <div class="chart-card reveal">
+        <div class="chart-card-header">
+          <span class="chart-card-title">INTENSITÉ RELATIVE RATIO</span>
+          <span class="chart-badge badge-green">+</span>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="donutChart"></canvas>
+          <div class="donut-center">
+            <span class="donut-val">82</span>
+          </div>
+        </div>
+        <div class="chart-val">IF 0,94</div>
+        <div class="chart-sub-row">
+          <span class="chart-sub-val highlight-green">ÉLEVÉ</span>
+          <span class="chart-sub-lbl">NIVEAU D'INTENSITÉ</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SECTION 6 — CARTOGRAPHIE VECTORIELLE
+  ═══════════════════════════════════════ -->
+  <section class="vector-maps" id="vector-maps">
+    <div class="section-tag reveal">ANALYSE DES SEGMENTS</div>
+    <h2 class="vector-maps__title reveal">CARTOGRAPHIE<br/>VECTORIELLE</h2>
+
+    <div class="sparklines-grid reveal">
+      <div class="sparkline-card">
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 200 80" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="grad-red" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#ff4757;stop-opacity:0.4"/>
+                <stop offset="100%" style="stop-color:#ff4757;stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill spark-red-fill" d="M0,60 C20,55 30,40 50,35 C70,30 80,50 100,42 C120,34 140,20 160,25 C180,30 190,15 200,10 L200,80 L0,80 Z"/>
+            <path class="spark-line spark-red" d="M0,60 C20,55 30,40 50,35 C70,30 80,50 100,42 C120,34 140,20 160,25 C180,30 190,15 200,10"/>
+            <circle class="spark-dot" cx="200" cy="10" r="4" fill="#ff4757"/>
+          </svg>
+        </div>
+        <strong>Boucle du Géant</strong>
+        <p>Col + 2 400 m ↑ · Intensité maximale</p>
+        <span class="spark-stat spark-stat-red">9,2 km · 11,4%</span>
+      </div>
+
+      <div class="sparkline-card">
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 200 80" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="grad-green" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#2ed573;stop-opacity:0.4"/>
+                <stop offset="100%" style="stop-color:#2ed573;stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill spark-green-fill" d="M0,50 C15,48 25,60 45,55 C65,50 75,35 95,38 C115,41 130,50 150,42 C170,34 185,28 200,22 L200,80 L0,80 Z"/>
+            <path class="spark-line spark-green" d="M0,50 C15,48 25,60 45,55 C65,50 75,35 95,38 C115,41 130,50 150,42 C170,34 185,28 200,22"/>
+            <circle class="spark-dot" cx="200" cy="22" r="4" fill="#2ed573"/>
+          </svg>
+        </div>
+        <strong>La Tranchée</strong>
+        <p>Liaison vallée · Récupération active</p>
+        <span class="spark-stat spark-stat-green">14,7 km · 3,2%</span>
+      </div>
+
+      <div class="sparkline-card">
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 200 80" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="grad-blue" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#3d9fff;stop-opacity:0.4"/>
+                <stop offset="100%" style="stop-color:#3d9fff;stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill spark-blue-fill" d="M0,40 C15,42 25,30 45,28 C65,26 75,38 95,40 C115,42 130,28 150,25 C170,22 185,32 200,20 L200,80 L0,80 Z"/>
+            <path class="spark-line spark-blue-spark" d="M0,40 C15,42 25,30 45,28 C65,26 75,38 95,40 C115,42 130,28 150,25 C170,22 185,32 200,20"/>
+            <circle class="spark-dot" cx="200" cy="20" r="4" fill="#3d9fff"/>
+          </svg>
+        </div>
+        <strong>Corniche Latérale</strong>
+        <p>Crête exposée · Vent fort possible</p>
+        <span class="spark-stat spark-stat-blue">7,4 km · 6,8%</span>
+      </div>
+
+      <div class="sparkline-card">
+        <div class="sparkline-wrap">
+          <svg class="sparkline" viewBox="0 0 200 80" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="grad-yellow" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#ffa502;stop-opacity:0.4"/>
+                <stop offset="100%" style="stop-color:#ffa502;stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill spark-yellow-fill" d="M0,65 C20,60 30,70 50,55 C70,40 80,45 100,35 C120,25 140,40 160,30 C180,20 190,25 200,15 L200,80 L0,80 Z"/>
+            <path class="spark-line spark-yellow" d="M0,65 C20,60 30,70 50,55 C70,40 80,45 100,35 C120,25 140,40 160,30 C180,20 190,25 200,15"/>
+            <circle class="spark-dot" cx="200" cy="15" r="4" fill="#ffa502"/>
+          </svg>
+        </div>
+        <strong>Circuit Nocturne</strong>
+        <p>Segment final · Décision de course</p>
+        <span class="spark-stat spark-stat-yellow">5,1 km · 8,9%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <span class="logo-mark">◈</span>
+        <div class="logo-text">
+          <span class="logo-top">CERCLE</span>
+          <span class="logo-bottom">CYCLISTE</span>
+        </div>
+        <p class="footer__tagline">La compétition comme art de vivre.<br/>Chaque sortie compte.</p>
+      </div>
+
+      <div class="footer__links">
+        <div class="footer__col">
+          <span class="footer__col-title">PLATEFORME</span>
+          <a href="#">Routes</a>
+          <a href="#">Programme</a>
+          <a href="#">Analyses</a>
+          <a href="#">Communauté</a>
+        </div>
+        <div class="footer__col">
+          <span class="footer__col-title">CLUB</span>
+          <a href="#">À propos</a>
+          <a href="#">Rejoindre</a>
+          <a href="#">Événements</a>
+          <a href="#">Classements</a>
+        </div>
+        <div class="footer__col">
+          <span class="footer__col-title">LÉGAL</span>
+          <a href="#">Confidentialité</a>
+          <a href="#">Conditions</a>
+          <a href="#">Cookies</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span>© 2024 CERCLE CYCLISTE. TOUS DROITS RÉSERVÉS.</span>
+      <div class="footer__socials">
+        <a href="#" class="social-link">STR</a>
+        <a href="#" class="social-link">INS</a>
+        <a href="#" class="social-link">YT</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
