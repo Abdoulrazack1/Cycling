@@ -1,7 +1,17 @@
 /* ============================================================
-   SCRIPT.JS — Cercle Cycliste Dashboard  ·  HIGH-END FINISH
-   Modules: Map, Elevation Chart, Power Chart, Zone Chart,
-            IF Gauge, Route Sparklines, Route Selector, Interactions
+   SCRIPT.JS — Cercle Cycliste Dashboard · HIGH-IMPACT v2.0
+   Modules:
+     - Map (Mapbox 3D + fallback SVG)
+     - Elevation Chart (Chart.js + map sync)
+     - NP Power Chart
+     - Zone Chart
+     - IF Gauge
+     - Route Sparklines
+     - Topo Tabs
+     - Route Selector
+     - 3D Toggle
+     - Scroll Reveal
+     - Counter Animation
    ============================================================ */
 
 "use strict";
@@ -19,8 +29,8 @@ const ROUTES = {
     name: "Col du Tourmalet",
     dist: "19.2 km", elev: "1 404 m D+", grad: "7.4% moy.",
     distNum: 19.2, elevNum: 1404, speedNum: "6.12", cat: "Hors Cat.",
-    center: [0.1409, 42.9086], zoom: 11.5, bearing: 25, pitch: 65,
-    color: "#007AFF",
+    center: [0.1409, 42.9086], zoom: 11.5, bearing: 25, pitch: 68,
+    color: "#00C2FF",
     coords: [
       [0.2218,42.9177],[0.2065,42.9158],[0.1920,42.9143],[0.1790,42.9132],
       [0.1668,42.9120],[0.1556,42.9108],[0.1452,42.9096],[0.1355,42.9087],
@@ -33,8 +43,8 @@ const ROUTES = {
     name: "Alpe d'Huez",
     dist: "13.8 km", elev: "1 071 m D+", grad: "8.1% moy.",
     distNum: 13.8, elevNum: 1071, speedNum: "5.85", cat: "Hors Cat.",
-    center: [6.053, 45.090], zoom: 12, bearing: -15, pitch: 60,
-    color: "#F59E0B",
+    center: [6.053, 45.090], zoom: 12, bearing: -15, pitch: 62,
+    color: "#FF9F00",
     coords: [
       [6.0340,45.0563],[6.0355,45.0593],[6.0370,45.0625],[6.0385,45.0660],
       [6.0360,45.0695],[6.0325,45.0725],[6.0295,45.0758],[6.0325,45.0790],
@@ -47,8 +57,8 @@ const ROUTES = {
     name: "Parcours Complet",
     dist: "184 km", elev: "4 200 m D+", grad: "—",
     distNum: 184, elevNum: 4200, speedNum: "6.12", cat: "Hors Cat.",
-    center: [2.8, 43.5], zoom: 7.5, bearing: 5, pitch: 40,
-    color: "#10B981",
+    center: [2.8, 43.5], zoom: 7.5, bearing: 5, pitch: 42,
+    color: "#39FF14",
     coords: [
       [0.2218,42.9177],[0.5500,42.9700],[0.9000,43.0500],[1.2000,43.1800],
       [1.5000,43.3200],[1.8000,43.5000],[2.2000,43.6500],[2.7000,43.8000],
@@ -62,13 +72,13 @@ const ROUTES = {
     ]
   },
 
-  /* Route selector cards */
+  /* ── Cartes Route Selector ── */
   geant: {
     name: "Boucle du Géant",
     dist: "42.0 km", elev: "980 m D+", grad: "5.2%",
     distNum: 42, elevNum: 980, speedNum: "7.40", cat: "Cat. 1",
-    center: [6.25, 45.35], zoom: 11, bearing: 10, pitch: 55,
-    color: "#F59E0B",
+    center: [6.25, 45.35], zoom: 11, bearing: 10, pitch: 57,
+    color: "#FF9F00",
     coords: [
       [6.1000,45.2500],[6.1500,45.2800],[6.2000,45.3100],[6.2500,45.3400],
       [6.3000,45.3700],[6.3500,45.3900],[6.3200,45.4200],[6.2600,45.4400],
@@ -81,8 +91,8 @@ const ROUTES = {
     name: "La Tranchée",
     dist: "28.5 km", elev: "650 m D+", grad: "6.1%",
     distNum: 28.5, elevNum: 650, speedNum: "7.90", cat: "Cat. 2",
-    center: [5.98, 45.16], zoom: 12, bearing: -10, pitch: 52,
-    color: "#10B981",
+    center: [5.98, 45.16], zoom: 12, bearing: -10, pitch: 54,
+    color: "#39FF14",
     coords: [
       [5.9200,45.1100],[5.9500,45.1300],[5.9800,45.1500],[6.0100,45.1700],
       [6.0400,45.1900],[6.0700,45.2100],[6.0500,45.2400],[6.0100,45.2600],
@@ -94,8 +104,8 @@ const ROUTES = {
     name: "Corniche Latérale",
     dist: "19.0 km", elev: "410 m D+", grad: "4.8%",
     distNum: 19, elevNum: 410, speedNum: "8.60", cat: "Cat. 3",
-    center: [6.02, 45.05], zoom: 12.5, bearing: 30, pitch: 50,
-    color: "#007AFF",
+    center: [6.02, 45.05], zoom: 12.5, bearing: 30, pitch: 52,
+    color: "#00C2FF",
     coords: [
       [5.9800,45.0300],[6.0000,45.0400],[6.0200,45.0500],[6.0400,45.0600],
       [6.0600,45.0700],[6.0800,45.0800],[6.0700,45.0950],[6.0500,45.1050],
@@ -107,8 +117,8 @@ const ROUTES = {
     name: "Circuit Nocturne",
     dist: "35.0 km", elev: "820 m D+", grad: "7.2%",
     distNum: 35, elevNum: 820, speedNum: "6.70", cat: "Cat. 1",
-    center: [6.10, 45.20], zoom: 11, bearing: -20, pitch: 60,
-    color: "#8B5CF6",
+    center: [6.10, 45.20], zoom: 11, bearing: -20, pitch: 62,
+    color: "#9B6FFF",
     coords: [
       [6.0500,45.1500],[6.0800,45.1700],[6.1100,45.1900],[6.1400,45.2100],
       [6.1700,45.2300],[6.2000,45.2500],[6.1800,45.2800],[6.1400,45.3000],
@@ -118,7 +128,7 @@ const ROUTES = {
   }
 };
 
-/* ── State ── */
+/* ── State global ── */
 let mapInstance  = null;
 let mapMarker    = null;
 let elevChart    = null;
@@ -126,7 +136,7 @@ let currentRoute = "tourmalet";
 let is3D         = true;
 
 /* ════════════════════════════════════════════════════════════
-   NAV SCROLL EFFECT
+   NAV — Effet scroll + glassmorphism
    ════════════════════════════════════════════════════════════ */
 function initNavScroll() {
   const nav = document.querySelector(".nav");
@@ -138,7 +148,7 @@ function initNavScroll() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   MAPBOX MAP
+   MAPBOX MAP — 3D Terrain + Golden Hour Lighting
    ════════════════════════════════════════════════════════════ */
 function initMap() {
   const el = document.getElementById("map");
@@ -164,55 +174,59 @@ function initMap() {
   });
 
   mapInstance.on("load", () => {
-    /* DEM terrain — spectaculaire */
+    /* ── DEM Terrain haute résolution ── */
     mapInstance.addSource("mapbox-dem", {
       type: "raster-dem",
       url: "mapbox://mapbox.mapbox-terrain-dem-v1",
       tileSize: 512,
       maxzoom: 14
     });
-    mapInstance.setTerrain({ source: "mapbox-dem", exaggeration: 2.2 });
 
-    /* Couche de ciel dramatique */
+    /* Exagération terrain x2.0 pour impact visuel maximal */
+    mapInstance.setTerrain({ source: "mapbox-dem", exaggeration: 2.0 });
+
+    /* ── Ciel "Golden Hour" dramatique ── */
     mapInstance.addLayer({
       id: "sky",
       type: "sky",
       paint: {
         "sky-type": "atmosphere",
-        "sky-atmosphere-sun": [0, 60],
-        "sky-atmosphere-sun-intensity": 12,
-        "sky-atmosphere-color": "rgba(8,12,30,1)",
-        "sky-atmosphere-halo-color": "rgba(0,80,200,0.2)",
-        "sky-horizon-blend": 0.08
+        "sky-atmosphere-sun": [10, 55],       /* angle rasant = golden hour */
+        "sky-atmosphere-sun-intensity": 15,    /* très lumineux */
+        "sky-atmosphere-color": "rgba(10,14,32,1)",
+        "sky-atmosphere-halo-color": "rgba(0,140,220,0.25)",
+        "sky-horizon-blend": 0.07
       }
     });
 
-    /* Fog / atmosphere */
+    /* ── Brume atmosphérique premium ── */
     mapInstance.setFog({
-      color: "rgba(4,6,18,0.8)",
-      "high-color": "rgba(20,30,80,0.5)",
-      "horizon-blend": 0.08,
-      "space-color": "#000008",
-      "star-intensity": 0.12
+      color: "rgba(5,8,20,0.85)",
+      "high-color": "rgba(22,32,90,0.55)",
+      "horizon-blend": 0.07,
+      "space-color": "#00000a",
+      "star-intensity": 0.18
     });
 
     loadRouteOnMap(currentRoute, false);
   });
 
-  /* Marker premium */
+  /* ── Marker lumineux ── */
   const markerEl = document.createElement("div");
   markerEl.style.cssText = `
-    width:13px; height:13px;
-    background: #007AFF;
-    border: 2px solid #fff;
+    width:14px; height:14px;
+    background: #00C2FF;
+    border: 2.5px solid #fff;
     border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(0,122,255,0.3), 0 0 18px rgba(0,122,255,0.8);
-    transition: transform 0.1s ease;
+    box-shadow: 0 0 0 4px rgba(0,194,255,0.35), 0 0 24px rgba(0,194,255,0.9);
+    transition: transform 0.12s ease-out;
     pointer-events: none;
+    will-change: transform;
   `;
   mapMarker = new mapboxgl.Marker({ element: markerEl, anchor: "center" });
 }
 
+/* ── Chargement / mise à jour de la route sur la carte ── */
 function loadRouteOnMap(routeKey, animate = true) {
   if (!mapInstance) return;
 
@@ -226,161 +240,174 @@ function loadRouteOnMap(routeKey, animate = true) {
     }]
   };
 
-  /* Remove old layers/source */
-  ["route-outer-glow", "route-outer", "route-inner", "route-dots"].forEach(id => {
+  /* Nettoyage des layers/source précédents */
+  ["route-outer-glow", "route-outer", "route-inner"].forEach(id => {
     if (mapInstance.getLayer(id)) mapInstance.removeLayer(id);
   });
   if (mapInstance.getSource("route")) mapInstance.removeSource("route");
 
   mapInstance.addSource("route", { type: "geojson", data: geojson });
 
-  /* Wide ambient glow */
+  /* Glow large — ambiance */
   mapInstance.addLayer({
     id: "route-outer-glow",
     type: "line",
     source: "route",
     layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": r.color, "line-width": 18, "line-opacity": 0.08, "line-blur": 12 }
+    paint: { "line-color": r.color, "line-width": 22, "line-opacity": 0.09, "line-blur": 16 }
   });
 
-  /* Medium glow */
+  /* Glow moyen */
   mapInstance.addLayer({
     id: "route-outer",
     type: "line",
     source: "route",
     layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": r.color, "line-width": 7, "line-opacity": 0.22, "line-blur": 4 }
+    paint: { "line-color": r.color, "line-width": 8, "line-opacity": 0.24, "line-blur": 5 }
   });
 
-  /* Crisp inner line */
+  /* Ligne précise nette */
   mapInstance.addLayer({
     id: "route-inner",
     type: "line",
     source: "route",
     layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": r.color, "line-width": 2.5, "line-opacity": 0.96 }
+    paint: { "line-color": r.color, "line-width": 2.8, "line-opacity": 0.98 }
   });
 
-  /* Marker at start */
+  /* Marker au départ */
   if (mapMarker) {
     mapMarker.setLngLat(r.coords[0]).addTo(mapInstance);
-    /* Update marker color */
-    mapMarker.getElement().style.background = r.color;
-    mapMarker.getElement().style.boxShadow =
-      `0 0 0 3px ${hexToRgba(r.color, 0.3)}, 0 0 18px ${hexToRgba(r.color, 0.75)}`;
+    const mEl = mapMarker.getElement();
+    mEl.style.background  = r.color;
+    mEl.style.boxShadow   = `0 0 0 4px ${hexToRgba(r.color, 0.35)}, 0 0 24px ${hexToRgba(r.color, 0.85)}`;
   }
 
-  /* Cinematic FlyTo */
+  /* FlyTo cinématique ease-out */
   if (animate) {
     mapInstance.flyTo({
-      center: r.center,
-      zoom: r.zoom,
-      bearing: r.bearing,
-      pitch: r.pitch,
-      duration: 3200,
+      center:   r.center,
+      zoom:     r.zoom,
+      bearing:  r.bearing,
+      pitch:    r.pitch,
+      duration: 3400,
       essential: true,
-      curve: 1.42,
-      speed: 0.9
+      curve:    1.45,
+      speed:    0.88,
+      easing:   t => 1 - Math.pow(1 - t, 4)  /* quartic ease-out = parfait */
     });
   }
 }
 
+/* ── Carte de repli SVG (sans token Mapbox) ── */
 function renderFallbackMap(el) {
-  el.style.background = "#060810";
-  el.style.position   = "relative";
-  el.style.display    = "flex";
-  el.style.alignItems = "center";
-  el.style.justifyContent = "center";
-  el.style.overflow   = "hidden";
-
-  const r = ROUTES["tourmalet"];
+  const r     = ROUTES["tourmalet"];
   const color = r.color;
+
+  el.style.cssText = "position:relative;overflow:hidden;background:#060c14;";
 
   el.innerHTML = `
   <svg viewBox="0 0 560 300" fill="none" xmlns="http://www.w3.org/2000/svg"
        style="width:100%;height:100%;position:absolute;inset:0">
     <defs>
       <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#060810"/>
-        <stop offset="100%" stop-color="#020406"/>
+        <stop offset="0%" stop-color="#080c14"/>
+        <stop offset="100%" stop-color="#030508"/>
       </linearGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="3" result="blur"/>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
         <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
       </filter>
       <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
-        <stop offset="50%" stop-color="${color}" stop-opacity="1"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0.6"/>
+        <stop offset="0%"   stop-color="${color}" stop-opacity="0.3"/>
+        <stop offset="50%"  stop-color="${color}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.65"/>
       </linearGradient>
     </defs>
     <rect width="560" height="300" fill="url(#mg)"/>
-    <!-- Topo grid -->
-    ${[60,120,180,240].map(y => `<line x1="0" y1="${y}" x2="560" y2="${y}" stroke="rgba(0,122,255,0.03)" stroke-width="1"/>`).join("")}
-    ${[112,224,336,448].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="300" stroke="rgba(0,122,255,0.03)" stroke-width="1"/>`).join("")}
-    <!-- Topo contours -->
-    <ellipse cx="290" cy="130" rx="230" ry="115" stroke="rgba(0,122,255,0.05)" stroke-width="1" fill="none"/>
-    <ellipse cx="290" cy="130" rx="180" ry="90"  stroke="rgba(0,122,255,0.07)" stroke-width="1" fill="none"/>
-    <ellipse cx="290" cy="130" rx="130" ry="65"  stroke="rgba(0,122,255,0.09)" stroke-width="1" fill="none"/>
-    <ellipse cx="290" cy="130" rx="85"  cy="130" rx="85" ry="42" stroke="rgba(0,122,255,0.12)" stroke-width="1" fill="none"/>
-    <ellipse cx="290" cy="130" rx="42"  ry="21"  stroke="rgba(0,122,255,0.16)" stroke-width="1" fill="none"/>
-    <!-- Route glow -->
+    <!-- Grille topo -->
+    ${[55,110,165,220].map(y =>
+      `<line x1="0" y1="${y}" x2="560" y2="${y}" stroke="rgba(0,194,255,0.04)" stroke-width="1"/>`
+    ).join("")}
+    ${[112,224,336,448].map(x =>
+      `<line x1="${x}" y1="0" x2="${x}" y2="300" stroke="rgba(0,194,255,0.04)" stroke-width="1"/>`
+    ).join("")}
+    <!-- Contours topographiques -->
+    <ellipse cx="290" cy="130" rx="240" ry="120" stroke="rgba(0,194,255,0.05)" stroke-width="1" fill="none"/>
+    <ellipse cx="290" cy="130" rx="190" ry="95"  stroke="rgba(0,194,255,0.07)" stroke-width="1" fill="none"/>
+    <ellipse cx="290" cy="130" rx="140" ry="70"  stroke="rgba(0,194,255,0.09)" stroke-width="1" fill="none"/>
+    <ellipse cx="290" cy="130" rx="90"  ry="45"  stroke="rgba(0,194,255,0.12)" stroke-width="1" fill="none"/>
+    <ellipse cx="290" cy="130" rx="45"  ry="22"  stroke="rgba(0,194,255,0.17)" stroke-width="1" fill="none"/>
+    <!-- Glow route -->
     <path d="M40 258 C85 225 130 235 175 202 C215 172 248 140 284 112 C318 85 350 95 385 82 C420 68 450 84 500 58"
-          stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.07"/>
-    <!-- Route -->
+          stroke="${color}" stroke-width="16" stroke-linecap="round" fill="none" opacity="0.08"/>
+    <!-- Route principale -->
     <path d="M40 258 C85 225 130 235 175 202 C215 172 248 140 284 112 C318 85 350 95 385 82 C420 68 450 84 500 58"
-          stroke="url(#routeGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <!-- Route fill -->
-    <path d="M40 258 C85 225 130 235 175 202 C215 172 248 140 284 112 C318 85 350 95 385 82 C420 68 450 84 500 58 L500 300 L40 300 Z"
-          fill="${color}" fill-opacity="0.04"/>
-    <!-- Summit marker -->
-    <circle cx="284" cy="112" r="7" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.6"/>
-    <circle cx="284" cy="112" r="3" fill="${color}" filter="url(#glow)"/>
-    <!-- Start marker -->
-    <circle cx="40" cy="258" r="5" fill="none" stroke="#10B981" stroke-width="1.5" opacity="0.7"/>
-    <circle cx="40" cy="258" r="2" fill="#10B981"/>
-    <!-- Labels -->
-    <text x="278" y="104" fill="rgba(0,122,255,0.6)" font-size="9" font-family="monospace">2115m</text>
-    <text x="46"  y="272" fill="rgba(16,185,129,0.6)" font-size="8" font-family="monospace">711m</text>
-    <!-- KM axis -->
-    <line x1="40" y1="278" x2="500" y2="278" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
-    ${["0","5","10","15","19.2"].map((km, i) => `<text x="${40 + i * 115}" y="288" fill="rgba(255,255,255,0.1)" font-size="7" font-family="monospace">${km}km</text>`).join("")}
+          stroke="url(#routeGrad)" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+    <!-- Zone sous la courbe -->
+    <path d="M40 258 C85 225 130 235 175 202 C215 172 248 140 284 112 C318 85 350 95 385 82 C420 68 450 84 500 58 L500 290 L40 290 Z"
+          fill="${color}" fill-opacity="0.05"/>
+    <!-- Marqueur sommet -->
+    <circle cx="284" cy="112" r="8" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.65"/>
+    <circle cx="284" cy="112" r="3.5" fill="${color}" filter="url(#glow)"/>
+    <!-- Marqueur départ -->
+    <circle cx="40" cy="258" r="6" fill="none" stroke="#39FF14" stroke-width="1.5" opacity="0.75"/>
+    <circle cx="40" cy="258" r="2.5" fill="#39FF14"/>
+    <!-- Labels altitude -->
+    <text x="278" y="104" fill="rgba(0,194,255,0.7)" font-size="10" font-family="monospace">2115m</text>
+    <text x="46"  y="272" fill="rgba(57,255,20,0.65)" font-size="9" font-family="monospace">711m</text>
+    <!-- Axe KM -->
+    <line x1="40" y1="278" x2="500" y2="278" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    ${["0","5","10","15","19.2"].map((km, i) =>
+      `<text x="${40 + i * 115}" y="292" fill="rgba(255,255,255,0.15)" font-size="8" font-family="monospace">${km}km</text>`
+    ).join("")}
   </svg>`;
 
-  /* Token notice */
+  /* Notice token */
   const notice = document.createElement("div");
   notice.style.cssText = `
-    position:absolute;bottom:44px;left:50%;transform:translateX(-50%);
-    background:rgba(4,6,12,0.9);border:1px solid rgba(255,255,255,0.07);
-    border-radius:6px;padding:8px 16px;
-    font-family:'DM Mono',monospace;font-size:9px;color:#3a3a4a;
+    position:absolute;bottom:46px;left:50%;transform:translateX(-50%);
+    background:rgba(5,8,16,0.92);border:1px solid rgba(0,194,255,0.12);
+    border-radius:7px;padding:9px 18px;
+    font-family:'DM Mono',monospace;font-size:11px;color:#4a505e;
     white-space:nowrap;z-index:2;letter-spacing:0.05em;
+    backdrop-filter:blur(8px);
   `;
-  notice.innerHTML = `Mode statique · Ajoutez <code style="color:#007AFF;font-size:9px">MAPBOX_TOKEN</code> pour la carte 3D`;
+  notice.innerHTML = `Mode statique · Ajoutez <code style="color:#00C2FF;font-size:11px">MAPBOX_TOKEN</code> pour la carte 3D`;
   el.appendChild(notice);
 }
 
 /* ════════════════════════════════════════════════════════════
-   ELEVATION CHART — Gradient + map sync
+   ELEVATION CHART — Gradient luxe + sync carte
+   Survol du graphique → déplacement curseur lumineux sur la carte
    ════════════════════════════════════════════════════════════ */
 function initElevChart(routeKey = "tourmalet") {
   const canvas = document.getElementById("elevChart");
   if (!canvas) return;
 
-  const r    = ROUTES[routeKey];
-  const data = r.elevation;
-  const n    = data.length;
+  const r      = ROUTES[routeKey];
+  const data   = r.elevation;
+  const n      = data.length;
   const labels = data.map((_, i) => {
     const km = ((i / (n - 1)) * r.distNum).toFixed(1);
     return `${km} km`;
   });
 
-  if (elevChart) {
-    elevChart.destroy();
-    elevChart = null;
-  }
+  /* Destruction du graphique précédent */
+  if (elevChart) { elevChart.destroy(); elevChart = null; }
 
   const ctx = canvas.getContext("2d");
+
+  /* Gradient sous la courbe */
+  const makeGradient = (chart) => {
+    const { chartArea, ctx: c } = chart;
+    if (!chartArea) return "transparent";
+    const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    g.addColorStop(0,    hexToRgba(r.color, 0.45));
+    g.addColorStop(0.50, hexToRgba(r.color, 0.12));
+    g.addColorStop(1,    hexToRgba(r.color, 0.00));
+    return g;
+  };
 
   elevChart = new Chart(ctx, {
     type: "line",
@@ -390,22 +417,14 @@ function initElevChart(routeKey = "tourmalet") {
         label: "Altitude (m)",
         data,
         borderColor: r.color,
-        borderWidth: 2.5,
+        borderWidth: 2.8,
         pointRadius: 0,
-        pointHoverRadius: 6,
+        pointHoverRadius: 7,
         pointHoverBackgroundColor: r.color,
         pointHoverBorderColor: "#ffffff",
-        pointHoverBorderWidth: 2,
+        pointHoverBorderWidth: 2.5,
         fill: true,
-        backgroundColor(context) {
-          const { chartArea, ctx: c } = context.chart;
-          if (!chartArea) return "transparent";
-          const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          g.addColorStop(0,    hexToRgba(r.color, 0.38));
-          g.addColorStop(0.55, hexToRgba(r.color, 0.10));
-          g.addColorStop(1,    hexToRgba(r.color, 0.00));
-          return g;
-        },
+        backgroundColor(context) { return makeGradient(context.chart); },
         tension: 0.42,
         cubicInterpolationMode: "monotone"
       }]
@@ -417,26 +436,25 @@ function initElevChart(routeKey = "tourmalet") {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "rgba(6,8,16,0.97)",
-          borderColor: "rgba(255,255,255,0.08)",
+          /* Tooltip grand, sombre, lisible */
+          backgroundColor: "rgba(8,10,18,0.97)",
+          borderColor: "rgba(255,255,255,0.10)",
           borderWidth: 1,
-          padding: { x: 14, y: 10 },
-          cornerRadius: 6,
-          titleFont: { family: "'Barlow Condensed',sans-serif", size: 10, weight: "600" },
-          titleColor: "#5a5a6a",
-          bodyFont:  { family: "'DM Mono',monospace", size: 13 },
-          bodyColor: "#efefef",
+          padding: { x: 18, y: 13 },
+          cornerRadius: 8,
+          titleFont: { family: "'Barlow Condensed',sans-serif", size: 12, weight: "600" },
+          titleColor: "#4a505e",
+          bodyFont:  { family: "'DM Mono',monospace", size: 15 },
+          bodyColor: "#f0f2f5",
           displayColors: false,
           callbacks: {
-            label: item => `↑ ${item.raw} m · ${labels[item.dataIndex]}`
+            label: item => `↑ ${item.raw} m  ·  ${labels[item.dataIndex]}`
           }
         }
       },
+      /* Synchronisation carte — ease-out sur le marker */
       onHover(_, elements) {
-        if (!elements.length) {
-          hideMapCoords();
-          return;
-        }
+        if (!elements.length) { hideMapCoords(); return; }
         const idx    = elements[0].index;
         const coords = ROUTES[currentRoute].coords;
         const t      = idx / (data.length - 1);
@@ -447,39 +465,41 @@ function initElevChart(routeKey = "tourmalet") {
 
         if (mapMarker && mapInstance) {
           mapMarker.setLngLat([lng, lat]);
+          /* Micro-animation ease-out sur le marker */
+          const mEl = mapMarker.getElement();
+          mEl.style.transform = "scale(1.35)";
+          setTimeout(() => { mEl.style.transform = "scale(1)"; }, 180);
         }
         showMapCoords(lat, lng, data[idx], labels[idx]);
       },
       scales: {
         x: {
-          grid: { color: "rgba(255,255,255,0.03)", drawBorder: false },
+          grid: { color: "rgba(255,255,255,0.04)", drawBorder: false },
           ticks: {
-            color: "#2e2e38",
-            font: { family: "'DM Mono',monospace", size: 8 },
+            color: "#3a4050",
+            font: { family: "'DM Mono',monospace", size: 10 },
             maxTicksLimit: 8,
             maxRotation: 0
           },
           border: { display: false }
         },
         y: {
-          grid: { color: "rgba(255,255,255,0.03)", drawBorder: false },
+          grid: { color: "rgba(255,255,255,0.04)", drawBorder: false },
           ticks: {
-            color: "#2e2e38",
-            font: { family: "'DM Mono',monospace", size: 8 },
+            color: "#3a4050",
+            font: { family: "'DM Mono',monospace", size: 10 },
             callback: v => `${v}m`,
             maxTicksLimit: 4
           },
           border: { display: false }
         }
       },
-      animation: {
-        duration: 700,
-        easing: "easeInOutQuart"
-      }
+      animation: { duration: 720, easing: "easeInOutQuart" }
     }
   });
 }
 
+/* ── Mise à jour de l'overlay flottant ── */
 function showMapCoords(lat, lng, alt, km) {
   const f = document.getElementById("mapFooter");
   if (!f) return;
@@ -496,16 +516,15 @@ function showMapCoords(lat, lng, alt, km) {
 
 function hideMapCoords() {
   const f = document.getElementById("mapFooter");
-  if (f) f.style.opacity = "0.35";
+  if (f) f.style.opacity = "0.38";
 }
 
 /* ════════════════════════════════════════════════════════════
-   UPDATE ENFER STATS (when route changes)
+   MISE À JOUR STATS (changement de route)
    ════════════════════════════════════════════════════════════ */
 function updateEnferStats(routeKey) {
   const r = ROUTES[routeKey];
   if (!r) return;
-
   const statVals = document.querySelectorAll(".stat-blk__val");
   if (statVals.length >= 4) {
     animateValue(statVals[0], parseFloat(statVals[0].textContent) || 0, r.distNum, "km", false);
@@ -523,8 +542,7 @@ function animateValue(el, from, to, unit, hasDecimal) {
     ? el.innerHTML.slice(el.innerHTML.indexOf("<em>"))
     : `<em>${unit}</em>`;
   const start = performance.now();
-  const dur   = 900;
-
+  const dur   = 960;
   function tick(now) {
     const p    = Math.min((now - start) / dur, 1);
     const ease = 1 - Math.pow(1 - p, 3);
@@ -536,12 +554,11 @@ function animateValue(el, from, to, unit, hasDecimal) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   NP POWER CHART
+   NP POWER CHART — dégradé vert fluo
    ════════════════════════════════════════════════════════════ */
 function initNPChart() {
   const canvas = document.getElementById("npChart");
   if (!canvas) return;
-
   const ctx  = canvas.getContext("2d");
   const pts  = 32;
   const data = Array.from({ length: pts }, (_, i) => {
@@ -549,9 +566,10 @@ function initNPChart() {
     return Math.max(60, Math.round(base + (i > 12 && i < 22 ? 22 : 0)));
   });
 
-  const gradient = ctx.createLinearGradient(0, 0, 0, 80);
-  gradient.addColorStop(0, "rgba(16,185,129,0.38)");
-  gradient.addColorStop(1, "rgba(16,185,129,0.00)");
+  /* Dégradé vertical luxe */
+  const gradient = ctx.createLinearGradient(0, 0, 0, 90);
+  gradient.addColorStop(0, "rgba(57,255,20,0.42)");
+  gradient.addColorStop(1, "rgba(57,255,20,0.00)");
 
   new Chart(ctx, {
     type: "line",
@@ -559,12 +577,12 @@ function initNPChart() {
       labels: data.map((_, i) => i),
       datasets: [{
         data,
-        borderColor: "#10B981",
-        borderWidth: 1.8,
+        borderColor: "#39FF14",
+        borderWidth: 2,
         pointRadius: 0,
         fill: true,
         backgroundColor: gradient,
-        tension: 0.42,
+        tension: 0.44,
         cubicInterpolationMode: "monotone"
       }]
     },
@@ -574,9 +592,13 @@ function initNPChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "rgba(6,8,16,0.97)",
-          borderColor: "rgba(255,255,255,0.07)",
+          backgroundColor: "rgba(8,10,18,0.97)",
+          borderColor: "rgba(255,255,255,0.09)",
           borderWidth: 1,
+          cornerRadius: 7,
+          bodyFont: { family: "'DM Mono',monospace", size: 14 },
+          bodyColor: "#f0f2f5",
+          displayColors: false,
           callbacks: { label: item => `${item.raw} W` }
         }
       },
@@ -584,10 +606,10 @@ function initNPChart() {
         x: { display: false },
         y: {
           display: true,
-          grid: { color: "rgba(255,255,255,0.03)", drawBorder: false },
+          grid: { color: "rgba(255,255,255,0.04)", drawBorder: false },
           ticks: {
-            color: "#222230",
-            font: { family: "'DM Mono',monospace", size: 7 },
+            color: "#2e3540",
+            font: { family: "'DM Mono',monospace", size: 9 },
             maxTicksLimit: 3
           },
           border: { display: false }
@@ -597,15 +619,17 @@ function initNPChart() {
   });
 }
 
-/* Zone Chart */
+/* ════════════════════════════════════════════════════════════
+   ZONE CHART — barres avec dégradés zones cardiaques
+   ════════════════════════════════════════════════════════════ */
 function initZoneChart() {
   const canvas = document.getElementById("zoneChart");
   if (!canvas) return;
-
   const ctx    = canvas.getContext("2d");
-  const zones  = ["Z1", "Z2", "Z3", "Z4", "Z5"];
+  const zones  = ["Z1","Z2","Z3","Z4","Z5"];
   const values = [8, 18, 25, 57, 12];
-  const colors = ["#1e1e2e", "#252535", "#007AFF", "#F59E0B", "#EF4444"];
+  /* Couleurs zones : des plus claires aux plus vives */
+  const colors = ["#1e2535","#253045","#00C2FF","#FF9F00","#FF4D4D"];
 
   new Chart(ctx, {
     type: "bar",
@@ -614,7 +638,7 @@ function initZoneChart() {
       datasets: [{
         data: values,
         backgroundColor: colors,
-        borderRadius: 3,
+        borderRadius: 4,
         borderSkipped: false
       }]
     },
@@ -624,12 +648,14 @@ function initZoneChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "rgba(6,8,16,0.97)",
-          borderColor: "rgba(255,255,255,0.07)",
+          backgroundColor: "rgba(8,10,18,0.97)",
+          borderColor: "rgba(255,255,255,0.09)",
           borderWidth: 1,
-          cornerRadius: 6,
-          bodyFont: { family: "'DM Mono',monospace", size: 11 },
-          bodyColor: "#efefef",
+          cornerRadius: 7,
+          bodyFont: { family: "'DM Mono',monospace", size: 14 },
+          bodyColor: "#f0f2f5",
+          titleFont: { family: "'Barlow Condensed',sans-serif", size: 12 },
+          titleColor: "#4a505e",
           displayColors: false,
           callbacks: { label: item => `${item.raw} min` }
         }
@@ -638,42 +664,43 @@ function initZoneChart() {
         x: {
           grid: { display: false },
           ticks: {
-            color: "#3a3a4a",
-            font: { family: "'DM Mono',monospace", size: 8 }
+            color: "#4a505e",
+            font: { family: "'DM Mono',monospace", size: 10 }
           },
           border: { display: false }
         },
         y: { display: false }
       },
       animation: {
-        delay: (ctx) => ctx.dataIndex * 80,
-        duration: 800,
+        delay: (context) => context.dataIndex * 90,
+        duration: 850,
         easing: "easeOutQuart"
       }
     }
   });
 }
 
-/* IF Gauge (doughnut) */
+/* ════════════════════════════════════════════════════════════
+   IF GAUGE — Doughnut avec gradient bleu électrique
+   ════════════════════════════════════════════════════════════ */
 function initIFGauge() {
   const canvas = document.getElementById("ifGauge");
   if (!canvas) return;
-
   const ctx  = canvas.getContext("2d");
   const val  = 82;
   const rest = 100 - val;
 
-  /* Gradient arc */
-  const grad = ctx.createLinearGradient(0, 0, 130, 130);
+  /* Gradient arc bleu → cyan */
+  const grad = ctx.createLinearGradient(0, 0, 150, 150);
   grad.addColorStop(0, "#007AFF");
-  grad.addColorStop(1, "#3a9eff");
+  grad.addColorStop(1, "#00C2FF");
 
   new Chart(ctx, {
     type: "doughnut",
     data: {
       datasets: [{
         data: [val, rest],
-        backgroundColor: [grad, "rgba(255,255,255,0.03)"],
+        backgroundColor: [grad, "rgba(255,255,255,0.035)"],
         borderWidth: 0,
         hoverOffset: 0
       }]
@@ -688,17 +715,13 @@ function initIFGauge() {
         legend: { display: false },
         tooltip: { enabled: false }
       },
-      animation: {
-        animateRotate: true,
-        duration: 1400,
-        easing: "easeInOutQuart"
-      }
+      animation: { animateRotate: true, duration: 1500, easing: "easeInOutQuart" }
     }
   });
 }
 
 /* ════════════════════════════════════════════════════════════
-   ROUTE SPARKLINES (Cartographie Vectorielle)
+   ROUTE SPARKLINES — mini graphiques d'élévation
    ════════════════════════════════════════════════════════════ */
 function initRouteSparklines() {
   document.querySelectorAll(".rc__chart").forEach(canvas => {
@@ -706,8 +729,8 @@ function initRouteSparklines() {
     const pts   = (canvas.dataset.pts || "50").split(",").map(Number);
     const ctx   = canvas.getContext("2d");
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 62);
-    gradient.addColorStop(0, hexToRgba(color, 0.35));
+    const gradient = ctx.createLinearGradient(0, 0, 0, 68);
+    gradient.addColorStop(0, hexToRgba(color, 0.40));
     gradient.addColorStop(1, hexToRgba(color, 0.00));
 
     new Chart(ctx, {
@@ -717,11 +740,11 @@ function initRouteSparklines() {
         datasets: [{
           data: pts,
           borderColor: color,
-          borderWidth: 2,
+          borderWidth: 2.2,
           pointRadius: 0,
           fill: true,
           backgroundColor: gradient,
-          tension: 0.42,
+          tension: 0.44,
           cubicInterpolationMode: "monotone"
         }]
       },
@@ -729,7 +752,7 @@ function initRouteSparklines() {
         responsive: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: { x: { display: false }, y: { display: false } },
-        animation: { duration: 900, easing: "easeInOutQuart" }
+        animation: { duration: 950, easing: "easeInOutQuart" }
       }
     });
 
@@ -739,7 +762,7 @@ function initRouteSparklines() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   TOPO TABS — Switch elevation + map route
+   TOPO TABS — Switch élévation + route carte
    ════════════════════════════════════════════════════════════ */
 function initTopoTabs() {
   document.querySelectorAll(".topo__tab").forEach(btn => {
@@ -750,32 +773,22 @@ function initTopoTabs() {
       });
       btn.classList.add("topo__tab--active");
       btn.setAttribute("aria-selected", "true");
-
       const routeKey = btn.dataset.route;
       currentRoute   = routeKey;
       initElevChart(routeKey);
-
       if (mapInstance) loadRouteOnMap(routeKey, true);
     });
   });
 }
 
 /* ════════════════════════════════════════════════════════════
-   ROUTE SELECTOR — Full sync: map + elevation + stats
+   ROUTE SELECTOR — Sync complète : carte + élévation + stats
    ════════════════════════════════════════════════════════════ */
 function initRouteSelector() {
-  const routeMap = {
-    geant:    "geant",
-    tranchee: "tranchee",
-    corniche: "corniche",
-    nocturne: "nocturne"
-  };
-
   document.querySelectorAll(".rc").forEach(card => {
     const routeData = card.dataset.route;
 
     card.addEventListener("click", () => {
-      /* Active state */
       document.querySelectorAll(".rc").forEach(c => {
         c.classList.remove("rc--active");
         c.setAttribute("aria-pressed", "false");
@@ -783,26 +796,23 @@ function initRouteSelector() {
       card.classList.add("rc--active");
       card.setAttribute("aria-pressed", "true");
 
-      /* Map key */
-      const mapKey = routeMap[routeData] || routeData;
-      if (!ROUTES[mapKey]) return;
+      if (!ROUTES[routeData]) return;
+      currentRoute = routeData;
 
-      currentRoute = mapKey;
-
-      /* 1. Update map */
+      /* 1. Mise à jour carte */
       if (mapInstance) {
-        loadRouteOnMap(mapKey, true);
+        loadRouteOnMap(routeData, true);
       } else {
         renderFallbackMap(document.getElementById("map"));
       }
 
-      /* 2. Update elevation chart */
-      initElevChart(mapKey);
+      /* 2. Mise à jour profil d'élévation */
+      initElevChart(routeData);
 
-      /* 3. Update stats */
-      updateEnferStats(mapKey);
+      /* 3. Mise à jour stats */
+      updateEnferStats(routeData);
 
-      /* 4. Scroll to map section */
+      /* 4. Scroll doux vers la section carte */
       const mapSection = document.querySelector(".enfer");
       if (mapSection) {
         mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -810,38 +820,34 @@ function initRouteSelector() {
     });
 
     card.addEventListener("keydown", e => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        card.click();
-      }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); card.click(); }
     });
   });
 }
 
 /* ════════════════════════════════════════════════════════════
-   3D TOGGLE
+   TOGGLE 3D — Basculer entre vue plate et 3D
    ════════════════════════════════════════════════════════════ */
 function init3DToggle() {
   const btn = document.getElementById("btn3d");
   if (!btn) return;
-
   btn.addEventListener("click", () => {
     if (!mapInstance) return;
     is3D = !is3D;
     const r = ROUTES[currentRoute];
     mapInstance.easeTo({
-      pitch:    is3D ? r.pitch   : 0,
-      bearing:  is3D ? r.bearing : 0,
-      duration: 800,
-      easing:   t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t
+      pitch:   is3D ? r.pitch   : 0,
+      bearing: is3D ? r.bearing : 0,
+      duration: 900,
+      easing:   t => 1 - Math.pow(1 - t, 3)
     });
-    btn.style.color     = is3D ? "#007AFF" : "";
-    btn.style.boxShadow = is3D ? "0 0 14px rgba(0,122,255,0.3)" : "";
+    btn.style.color     = is3D ? "#00C2FF" : "";
+    btn.style.boxShadow = is3D ? "0 0 18px rgba(0,194,255,0.35)" : "";
   });
 }
 
 /* ════════════════════════════════════════════════════════════
-   SCROLL REVEAL
+   SCROLL REVEAL — Intersection Observer
    ════════════════════════════════════════════════════════════ */
 function initReveal() {
   const observer = new IntersectionObserver(entries => {
@@ -851,7 +857,7 @@ function initReveal() {
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.07, rootMargin: "0px 0px -24px 0px" });
+  }, { threshold: 0.07, rootMargin: "0px 0px -28px 0px" });
 
   document.querySelectorAll([
     ".enfer__left", ".enfer__right",
@@ -868,23 +874,20 @@ function initReveal() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   COUNTER ANIMATION
+   COUNTER ANIMATION — Compte des chiffres clés
    ════════════════════════════════════════════════════════════ */
 function animateCounters() {
   document.querySelectorAll(".stat-blk__val").forEach(el => {
     const raw   = el.textContent.trim();
     const match = raw.match(/^([\d\s,.]+)/);
     if (!match) return;
-
-    const numStr    = match[1].replace(/[\s\u00a0]/g, "");
-    const target    = parseFloat(numStr.replace(",", "."));
+    const numStr     = match[1].replace(/[\s\u00a0]/g, "");
+    const target     = parseFloat(numStr.replace(",", "."));
     if (isNaN(target)) return;
-
     const hasDecimal = numStr.includes(".") || numStr.includes(",");
     const suffix     = el.innerHTML.replace(match[0], "");
     const start      = performance.now();
-    const dur        = 1200;
-
+    const dur        = 1300;
     function tick(now) {
       const p    = Math.min((now - start) / dur, 1);
       const ease = 1 - Math.pow(1 - p, 3);
@@ -907,7 +910,7 @@ function hexToRgba(hex, alpha) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   BOOT
+   BOOT — Initialisation ordonnée au DOMContentLoaded
    ════════════════════════════════════════════════════════════ */
 document.addEventListener("DOMContentLoaded", () => {
   initNavScroll();
@@ -921,5 +924,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initRouteSelector();
   init3DToggle();
   initReveal();
-  setTimeout(animateCounters, 350);
+  /* Délai léger pour laisser le layout se stabiliser */
+  setTimeout(animateCounters, 380);
 });
