@@ -1,522 +1,907 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cercle Cycliste — L'Élan du Club</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RANDONNEUR — Dashboard cycliste ultra-luxury. Col du Galibier 2642m." />
+  <meta name="theme-color" content="#070810" />
+  <title>RANDONNEUR — Col du Galibier · 2 642 m</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="/asset/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/asset/css/style.css" />
 </head>
 <body>
 
-  <!-- ══ NAV ══ -->
-  <nav class="nav" role="navigation" aria-label="Navigation principale">
-    <div class="nav__brand">
-      <span class="nav__logo">CERCLE<br>CYCLISTE</span>
-    </div>
-    <ul class="nav__links" role="list">
-      <li><a href="#" class="nav__link nav__link--active">Routes</a></li>
-      <li><a href="#" class="nav__link">Program</a></li>
-      <li><a href="#" class="nav__link">Protection</a></li>
-      <li><a href="#" class="nav__link">Tradition</a></li>
-      <li><a href="#" class="nav__link">Course</a></li>
+<div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════
+     NAV
+══════════════════════════════════════════ -->
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo" aria-label="Accueil">
+      <span class="nav-dot" aria-hidden="true"></span>
+      <span>RANDONNEUR</span>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="#hero"        class="nl active" data-s="hero">Sortie</a></li>
+      <li><a href="#stats"       class="nl"        data-s="stats">Performance</a></li>
+      <li><a href="#elevation"   class="nl"        data-s="elevation">Profil</a></li>
+      <li><a href="#map-section" class="nl"        data-s="map-section">Carte</a></li>
+      <li><a href="#segments"    class="nl"        data-s="segments">Segments</a></li>
+      <li><a href="#events"      class="nl"        data-s="events">Événements</a></li>
+      <li><a href="#routes"      class="nl"        data-s="routes">Routes</a></li>
     </ul>
-    <a href="#" class="nav__cta">S'inscrire →</a>
-  </nav>
+    <div class="nav-right">
+      <div class="nav-live" aria-live="polite" aria-label="Statut en direct">
+        <span class="nav-live-dot" aria-hidden="true"></span>
+        <span>EN DIRECT</span>
+        <time id="live-time">--:--:--</time>
+      </div>
+      <div class="nav-profile" aria-hidden="true">
+        <span class="nav-profile-avatar">A</span>
+        <span class="nav-profile-name">Atol</span>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-nav" id="mobile-nav" aria-hidden="true" role="dialog" aria-label="Menu mobile">
+    <ul role="list">
+      <li><a href="#hero"        class="mn-link" data-s="hero">Sortie</a></li>
+      <li><a href="#stats"       class="mn-link" data-s="stats">Performance</a></li>
+      <li><a href="#elevation"   class="mn-link" data-s="elevation">Profil</a></li>
+      <li><a href="#map-section" class="mn-link" data-s="map-section">Carte</a></li>
+      <li><a href="#segments"    class="mn-link" data-s="segments">Segments</a></li>
+      <li><a href="#events"      class="mn-link" data-s="events">Événements</a></li>
+      <li><a href="#routes"      class="mn-link" data-s="routes">Routes</a></li>
+    </ul>
+  </div>
+</nav>
 
-  <!-- ══ HERO ══ -->
-  <section class="hero" aria-labelledby="hero-heading">
-    <div class="hero__media" aria-hidden="true">
-      <div class="hero__cyclists-svg">
-        <svg viewBox="0 0 1440 700" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
-          <!-- Sky gradient -->
-          <defs>
-            <radialGradient id="rg1" cx="50%" cy="30%" r="70%">
-              <stop offset="0%" stop-color="#1a2a4a" stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0a0a0a"/>
-              <stop offset="100%" stop-color="#000"/>
-            </linearGradient>
-          </defs>
-          <rect width="1440" height="700" fill="url(#ground)"/>
-          <rect width="1440" height="700" fill="url(#rg1)"/>
-          <!-- Mountain silhouettes -->
-          <path d="M0 700 L0 500 L120 400 L240 480 L360 360 L480 440 L600 300 L720 380 L840 260 L960 350 L1080 280 L1200 380 L1320 300 L1440 380 L1440 700 Z" fill="rgba(20,20,30,0.8)"/>
-          <path d="M0 700 L0 560 L180 500 L300 560 L420 480 L540 540 L660 460 L780 520 L900 440 L1020 510 L1140 450 L1260 520 L1380 480 L1440 510 L1440 700 Z" fill="rgba(10,10,18,0.9)"/>
-          <!-- Cyclists silhouettes (simplified group) -->
-          <g opacity="0.85">
-            <!-- Bike 1 -->
-            <ellipse cx="520" cy="610" rx="50" ry="8" fill="rgba(0,0,0,0.5)"/>
-            <circle cx="500" cy="590" r="18" stroke="#222" stroke-width="2" fill="none"/>
-            <circle cx="540" cy="590" r="18" stroke="#222" stroke-width="2" fill="none"/>
-            <line x1="500" y1="572" x2="520" y2="555" stroke="#333" stroke-width="3"/>
-            <line x1="520" y1="555" x2="540" y2="572" stroke="#333" stroke-width="3"/>
-            <line x1="520" y1="555" x2="520" y2="540" stroke="#333" stroke-width="2"/>
-            <ellipse cx="520" cy="537" rx="8" ry="11" fill="#1a1a1a"/>
-            <!-- Bike 2 -->
-            <ellipse cx="630" cy="614" rx="50" ry="8" fill="rgba(0,0,0,0.5)"/>
-            <circle cx="610" cy="594" r="18" stroke="#1a1a1a" stroke-width="2" fill="none"/>
-            <circle cx="650" cy="594" r="18" stroke="#1a1a1a" stroke-width="2" fill="none"/>
-            <line x1="610" y1="576" x2="630" y2="559" stroke="#222" stroke-width="3"/>
-            <line x1="630" y1="559" x2="650" y2="576" stroke="#222" stroke-width="3"/>
-            <line x1="630" y1="559" x2="630" y2="542" stroke="#222" stroke-width="2"/>
-            <ellipse cx="630" cy="539" rx="8" ry="12" fill="#111"/>
-            <!-- Bike 3 -->
-            <ellipse cx="740" cy="610" rx="50" ry="7" fill="rgba(0,0,0,0.4)"/>
-            <circle cx="720" cy="590" r="18" stroke="#111" stroke-width="2" fill="none"/>
-            <circle cx="760" cy="590" r="18" stroke="#111" stroke-width="2" fill="none"/>
-            <line x1="720" y1="572" x2="740" y2="556" stroke="#1a1a1a" stroke-width="3"/>
-            <line x1="740" y1="556" x2="760" y2="572" stroke="#1a1a1a" stroke-width="3"/>
-            <line x1="740" y1="556" x2="740" y2="540" stroke="#1a1a1a" stroke-width="2"/>
-            <ellipse cx="740" cy="537" rx="8" ry="12" fill="#0a0a0a"/>
-            <!-- Atmospheric haze -->
-            <rect x="0" y="550" width="1440" height="150" fill="url(#ground)" opacity="0.7"/>
-          </g>
+<!-- ══════════════════════════════════════════
+     01 — HERO
+══════════════════════════════════════════ -->
+<section id="hero" class="hero" aria-labelledby="h1">
+  <div class="hero-left">
+    <div class="hero-eyebrow fu" style="--d:0s">
+      <span class="eyebrow-bar" aria-hidden="true"></span>
+      Sortie No. 247 · Alpes du Nord
+    </div>
+    <h1 id="h1" class="hero-h1">
+      <span class="h1-top fu" style="--d:.10s">Col du</span>
+      <em   class="h1-mid fu" style="--d:.22s">Galibier</em>
+      <span class="h1-bot fu" style="--d:.34s">2 642<small>m</small></span>
+    </h1>
+    <p class="hero-sub fu" style="--d:.44s">
+      Circuit haute montagne — départ Col du Lautaret, versant nord.<br>
+      Conditions optimales · Vent portant 12 km/h · 14 °C au départ.
+    </p>
+
+    <!-- KPI Grid Cards -->
+    <div class="hero-kpis fu" style="--d:.54s" role="list" aria-label="Statistiques clés">
+      <div class="kpi" role="listitem">
+        <span class="kpi-l">Distance</span>
+        <span class="kpi-v">87<small>.4</small><b>km</b></span>
+      </div>
+      <div class="kpi" role="listitem">
+        <span class="kpi-l">Dénivelé +</span>
+        <span class="kpi-v">2 640<b>m</b></span>
+      </div>
+      <div class="kpi" role="listitem">
+        <span class="kpi-l">Durée</span>
+        <span class="kpi-v">4<small>h</small>22</span>
+      </div>
+      <div class="kpi" role="listitem">
+        <span class="kpi-l">TSS</span>
+        <span class="kpi-v">318<b>pts</b></span>
+      </div>
+    </div>
+
+    <div class="hero-cta fu" style="--d:.64s">
+      <button class="btn-primary" type="button" onclick="scrollToSection('elevation')">
+        Explorer la sortie
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-      </div>
-      <div class="hero__overlay"></div>
+      </button>
+      <button class="btn-ghost" type="button" onclick="exportGPX()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M7 1v9M3 7l4 4 4-4M1 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Exporter GPX
+      </button>
     </div>
-    <div class="hero__content">
-      <div class="hero__kicker">— COMPÉTITION 2025 / ÉDITION PYRÉNÉENNE</div>
-      <h1 class="hero__title" id="hero-heading">
-        L'ÉLAN DU CLUB<br>
-        LA FORCE DU<br>
-        PELOTON
-      </h1>
-      <p class="hero__desc">
-        Un récit de compétition collectif, pour l'effort long, la pression mentale et
-        les routes qui se parsèment. Chaque centimètre documenté comme une page de magazine
-        — un dossier technique, vivant comme un grand tour.
-      </p>
+    <div class="hero-date fu" style="--d:.72s">
+      <time datetime="2025-06-14">14 JUIN 2025</time>
+      <span aria-hidden="true">·</span>
+      <span>Hautes-Alpes, France</span>
     </div>
-  </section>
+  </div>
 
-  <!-- ══ L'ENFER ALPIN ══ -->
-  <section class="enfer">
-    <div class="enfer__left">
-      <div class="enfer__kicker">— PARCOURS DIFFICILE / LE DÉFI ULTIME</div>
-      <h2 class="enfer__title">L'ENFER<br>ALPIN</h2>
-      <p class="enfer__desc">
-        Une épreuve longue et singulière prévue avec un été exceptionnel, des contraintes
-        variées et une intensité rarement égalée. Dans nos 4 grimpées, descentes et bien
-        d'autres encore, nous avons réussi quelque chose de remarquable.
-      </p>
-
-      <div class="stats-row">
-        <div class="stat-blk">
-          <div class="stat-blk__lbl">DISTANCE</div>
-          <div class="stat-blk__val">184<em>km</em></div>
-        </div>
-        <div class="stat-blk">
-          <div class="stat-blk__lbl">DÉNIVELÉ +</div>
-          <div class="stat-blk__val">4 200<em>m</em></div>
-        </div>
-        <div class="stat-blk">
-          <div class="stat-blk__lbl">VITESSE MOY.</div>
-          <div class="stat-blk__val mono">6.12<em>km/h</em></div>
-        </div>
-        <div class="stat-blk stat-blk--hl">
-          <div class="stat-blk__lbl">CATÉGORIE</div>
-          <div class="stat-blk__val stat-blk__val--blue">Hors Cat.</div>
-        </div>
-      </div>
-
-      <div class="summit-row">
-        <div class="summit-row__dot"></div>
-        <div class="summit-row__label">TOURMALET SUMMIT</div>
-        <div class="summit-row__stats">
-          <span class="summit-row__val">+10.45<small>km</small></span>
-          <span class="summit-row__val summit-row__val--amber">→ NE 40<small>min</small></span>
-        </div>
-      </div>
-
-      <div class="enfer__btns">
-        <button class="btn btn--outline">TÉLÉCHARGER LE GPX</button>
-        <button class="btn btn--ghost">ROUTING COMPLET</button>
+  <div class="hero-right" aria-hidden="true">
+    <div id="mini-map"></div>
+    <div class="hero-vignette"></div>
+    <div class="hero-badge badge-weather">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" stroke="var(--lime)" stroke-width="1.5"/>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="var(--lime)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <span class="badge-main">14 °C</span>
+        <span class="badge-sub">Ensoleillé · UV 7</span>
       </div>
     </div>
+    <div class="hero-badge badge-gps">
+      <span class="badge-gps-label">SOMMET GPS</span>
+      <span class="badge-gps-coord">45° 03′ 54″ N</span>
+      <span class="badge-gps-coord">06° 24′ 22″ E</span>
+    </div>
+  </div>
 
-    <div class="enfer__right">
-      <div class="map-panel">
-        <div class="map-panel__topbar">
-          <span class="tag tag--blue">■ CARTE DE TERRAIN</span>
-          <span class="tag tag--amber">⚠ ALERTE MÉTÉO</span>
-          <div class="map-panel__actions">
-            <button class="map-icon-btn" aria-label="Zoom in">+</button>
-            <button class="map-icon-btn" aria-label="Zoom out">−</button>
-            <button class="map-icon-btn" id="btn3d" aria-label="Toggle 3D">3D</button>
-          </div>
-        </div>
-        <div id="map" class="map-canvas" role="region" aria-label="Carte topographique"></div>
-        <div class="map-panel__footer" id="mapFooter" aria-live="polite">
-          <span id="coordLat">LAT —</span>
-          <span id="coordLon">LON —</span>
-          <span id="coordAlt">ALT —</span>
-          <span id="coordKm">KM —</span>
+  <div class="scroll-cue" aria-hidden="true">
+    <div class="scroll-line"><div class="scroll-thumb"></div></div>
+    <span>Défiler</span>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true" role="presentation">
+  <div class="ticker-track">
+    <div class="ticker-inner" id="ticker-inner">
+      <span>Galibier 2 642 m</span><span class="ticker-sep">·</span>
+      <span>87.4 km</span><span class="ticker-sep">·</span>
+      <span>NP 247 W</span><span class="ticker-sep">·</span>
+      <span>4 h 22 min</span><span class="ticker-sep">·</span>
+      <span>D+ 2 640 m</span><span class="ticker-sep">·</span>
+      <span>KOM Galibier</span><span class="ticker-sep">·</span>
+      <span>TSS 318 pts</span><span class="ticker-sep">·</span>
+      <span>IF 0.80</span><span class="ticker-sep">·</span>
+      <span>FC moy. 148 bpm</span><span class="ticker-sep">·</span>
+      <span>Cadence 88 rpm</span><span class="ticker-sep">·</span>
+      <span>Galibier 2 642 m</span><span class="ticker-sep">·</span>
+      <span>87.4 km</span><span class="ticker-sep">·</span>
+      <span>NP 247 W</span><span class="ticker-sep">·</span>
+      <span>4 h 22 min</span><span class="ticker-sep">·</span>
+      <span>D+ 2 640 m</span><span class="ticker-sep">·</span>
+      <span>KOM Galibier</span><span class="ticker-sep">·</span>
+      <span>TSS 318 pts</span><span class="ticker-sep">·</span>
+      <span>IF 0.80</span><span class="ticker-sep">·</span>
+      <span>FC moy. 148 bpm</span><span class="ticker-sep">·</span>
+      <span>Cadence 88 rpm</span><span class="ticker-sep">·</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     02 — PERFORMANCE
+══════════════════════════════════════════ -->
+<div class="section-gap" aria-hidden="true"></div>
+<section id="stats" class="section" aria-labelledby="stats-h">
+
+  <header class="section-header" data-ghost="01">
+    <span class="section-num" aria-hidden="true">01 / Performance</span>
+    <div>
+      <h2 id="stats-h" class="section-title">Analyse<br><em>Puissance</em></h2>
+      <p class="section-desc">Métriques issues du capteur Quarq DZero bilatéral. Données brutes non lissées — 1 Hz.</p>
+    </div>
+  </header>
+
+  <!-- Stats grid — vraies cartes premium -->
+  <div class="stats-grid" role="list" aria-label="Métriques de performance">
+
+    <article class="scard" data-reveal data-delay="0" role="listitem"
+      style="--card-orb:rgba(200,255,74,0.07); --card-accent:var(--lime); --card-icon-bg:var(--lime-a); --card-icon-bdr:var(--bdr-lime)">
+      <div class="scard-top">
+        <span class="scard-label">Puissance moyenne</span>
+        <div class="scard-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M13 2L4.5 13.5H11L11 22L19.5 10.5H13L13 2Z" stroke="var(--lime)" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
         </div>
       </div>
+      <div class="scard-val">213<b>W</b></div>
+      <div class="scard-unit">68 % de FTP</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="68" style="--c:var(--lime)"></div></div>
+      <span class="scard-note positive">↑ +8 W vs Record personnel</span>
+    </article>
 
-      <div class="map-sidebar-stats" aria-hidden="true">
-        <div class="mss-item">
-          <div class="mss-item__val">12.8%</div>
-          <div class="mss-item__lbl">pente max</div>
+    <article class="scard" data-reveal data-delay="60" role="listitem"
+      style="--card-orb:rgba(77,122,255,0.07); --card-accent:var(--cobalt); --card-icon-bg:var(--cobalt-a); --card-icon-bdr:var(--cobalt-b)">
+      <div class="scard-top">
+        <span class="scard-label">FC moyenne / max</span>
+        <div class="scard-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="var(--cobalt)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="mss-item">
-          <div class="mss-item__val">3</div>
-          <div class="mss-item__lbl">cols classés</div>
+      </div>
+      <div class="scard-val">148<small> / 182</small><b>bpm</b></div>
+      <div class="scard-unit">Zone 4 · 84 % FCmax</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="78" style="--c:var(--cobalt)"></div></div>
+      <span class="scard-note">Effort soutenu haute intensité</span>
+    </article>
+
+    <article class="scard" data-reveal data-delay="120" role="listitem"
+      style="--card-orb:rgba(200,255,74,0.07); --card-accent:var(--lime); --card-icon-bg:var(--lime-a); --card-icon-bdr:var(--bdr-lime)">
+      <div class="scard-top">
+        <span class="scard-label">Cadence moyenne</span>
+        <div class="scard-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="var(--lime)" stroke-width="1.5"/>
+            <path d="M12 7v5l3 3" stroke="var(--lime)" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
         </div>
-        <div class="mss-item">
-          <div class="mss-item__val">46<small>km/h</small></div>
-          <div class="mss-item__lbl">vitesse max</div>
+      </div>
+      <div class="scard-val">88<b>rpm</b></div>
+      <div class="scard-unit">Plage optimale endurance</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="73" style="--c:var(--lime)"></div></div>
+      <span class="scard-note positive">↑ Plage optimale</span>
+    </article>
+
+    <article class="scard" data-reveal data-delay="180" role="listitem"
+      style="--card-orb:rgba(77,122,255,0.07); --card-accent:var(--cobalt); --card-icon-bg:var(--cobalt-a); --card-icon-bdr:var(--cobalt-b)">
+      <div class="scard-top">
+        <span class="scard-label">Énergie dépensée</span>
+        <div class="scard-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 22V12M12 12L4 8M12 12L20 8M4 8V16L12 20L20 16V8L12 4L4 8Z" stroke="var(--cobalt)" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
         </div>
+      </div>
+      <div class="scard-val">2 847<b>kJ</b></div>
+      <div class="scard-unit">≈ 3 400 kcal totales</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="91" style="--c:var(--cobalt)"></div></div>
+      <span class="scard-note">Effort de compétition soutenu</span>
+    </article>
+
+    <article class="scard" data-reveal data-delay="60" role="listitem"
+      style="--card-orb:rgba(200,255,74,0.07); --card-accent:var(--lime); --card-icon-bg:var(--lime-a); --card-icon-bdr:var(--bdr-lime)">
+      <div class="scard-top">
+        <span class="scard-label">Vitesse moy. / max</span>
+        <div class="scard-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 17l4-8 4 4 4-6 4 2" stroke="var(--lime)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="scard-val">19.9<small> / 68.4</small><b>km/h</b></div>
+      <div class="scard-unit">Max descente Télégraphe</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="55" style="--c:var(--lime)"></div></div>
+      <span class="scard-note">Max en descente</span>
+    </article>
+
+    <article class="scard" data-reveal data-delay="120" role="listitem"
+      style="--card-orb:rgba(77,122,255,0.07); --card-accent:var(--cobalt); --card-icon-bg:var(--cobalt-a); --card-icon-bdr:var(--cobalt-b)">
+      <div class="scard-top">
+        <span class="scard-label">Pente moy. / max</span>
+        <div class="scard-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M2 20h20M6 20V10l6-6 6 6v10" stroke="var(--cobalt)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="scard-val">6.8<small> / 12.4</small><b>%</b></div>
+      <div class="scard-unit">Galibier versant nord</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="62" style="--c:var(--cobalt)"></div></div>
+      <span class="scard-note">Versant nord classique</span>
+    </article>
+
+  </div>
+
+  <!-- Zones d'effort -->
+  <div class="zones-block" data-reveal style="margin-top:3px">
+    <div class="zones-top">
+      <span class="zones-title">Répartition Zones d'Effort</span>
+      <span class="zones-sub">FTP 310 W · Durée 4 h 22</span>
+    </div>
+    <div class="zones-list" role="list" aria-label="Zones d'effort">
+      <div class="z-row" role="listitem">
+        <span class="z-lbl">Z1 <em>Récupération</em></span>
+        <div class="z-track"><div class="z-fill" data-w="8"  style="--zc:#3DB878"></div></div>
+        <span class="z-pct">8 %</span>
+        <span class="z-time">21 min</span>
+      </div>
+      <div class="z-row" role="listitem">
+        <span class="z-lbl">Z2 <em>Endurance</em></span>
+        <div class="z-track"><div class="z-fill" data-w="22" style="--zc:#6EC6A0"></div></div>
+        <span class="z-pct">22 %</span>
+        <span class="z-time">58 min</span>
+      </div>
+      <div class="z-row" role="listitem">
+        <span class="z-lbl">Z3 <em>Tempo</em></span>
+        <div class="z-track"><div class="z-fill" data-w="31" style="--zc:#E8C84A"></div></div>
+        <span class="z-pct">31 %</span>
+        <span class="z-time">1 h 22</span>
+      </div>
+      <div class="z-row" role="listitem">
+        <span class="z-lbl">Z4 <em>Seuil</em></span>
+        <div class="z-track"><div class="z-fill" data-w="28" style="--zc:var(--lime)"></div></div>
+        <span class="z-pct">28 %</span>
+        <span class="z-time">1 h 14</span>
+      </div>
+      <div class="z-row" role="listitem">
+        <span class="z-lbl">Z5 <em>VO₂max</em></span>
+        <div class="z-track"><div class="z-fill" data-w="11" style="--zc:#FF3B30"></div></div>
+        <span class="z-pct">11 %</span>
+        <span class="z-time">29 min</span>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- ══ PROFIL TOPOGRAPHIQUE ══ -->
-  <section class="topo">
-    <div class="topo__header">
-      <div class="topo__kicker">PROFIL TOPOGRAPHIQUE INTÉGRAL</div>
-      <div class="topo__tabs" role="tablist">
-        <button class="topo__tab topo__tab--active" role="tab" data-route="tourmalet" aria-selected="true">TOURMALET</button>
-        <button class="topo__tab" role="tab" data-route="alpedhuez" aria-selected="false">ALPE D'HUEZ</button>
-        <button class="topo__tab" role="tab" data-route="full" aria-selected="false">COMPLET</button>
+</section>
+
+<!-- ══════════════════════════════════════════
+     03 — PROFIL D'ÉLÉVATION
+══════════════════════════════════════════ -->
+<div class="section-gap" aria-hidden="true"></div>
+<section id="elevation" class="section" aria-labelledby="elev-h">
+
+  <header class="section-header" data-ghost="02">
+    <span class="section-num" aria-hidden="true">02 / Profil</span>
+    <div>
+      <h2 id="elev-h" class="section-title">Profil<br><em>d'Élévation</em></h2>
+      <p class="section-desc">Survolez le graphique pour obtenir les données en temps réel. Le marqueur se synchronise sur la carte ci-dessous.</p>
+    </div>
+  </header>
+
+  <div class="elev-hud" id="elev-hud" role="status" aria-live="polite" aria-atomic="true">
+    <div class="hud-item">
+      <span class="hud-lbl">KM</span>
+      <span class="hud-val" id="elev-km">—</span>
+    </div>
+    <div class="hud-sep" aria-hidden="true"></div>
+    <div class="hud-item">
+      <span class="hud-lbl">ALTITUDE</span>
+      <span class="hud-val" id="elev-alt">—</span>
+    </div>
+    <div class="hud-sep" aria-hidden="true"></div>
+    <div class="hud-item">
+      <span class="hud-lbl">PENTE</span>
+      <span class="hud-val" id="elev-grade">—</span>
+    </div>
+    <div class="hud-sep" aria-hidden="true"></div>
+    <div class="hud-item">
+      <span class="hud-lbl">PUISSANCE</span>
+      <span class="hud-val" id="elev-power">—</span>
+    </div>
+    <div class="hud-sep" aria-hidden="true"></div>
+    <div class="hud-item">
+      <span class="hud-lbl">FC</span>
+      <span class="hud-val" id="elev-hr">—</span>
+    </div>
+  </div>
+
+  <div class="elev-chart-wrap" role="img" aria-label="Profil d'élévation du Col du Galibier">
+    <canvas id="elevation-chart"></canvas>
+  </div>
+
+  <!-- Cols franchis -->
+  <div class="cols-list" role="list" aria-label="Cols franchis">
+    <article class="col-card" role="listitem" data-reveal data-delay="0">
+      <div class="col-cat" style="color:var(--lime)">HC</div>
+      <div class="col-info">
+        <span class="col-name">Col du Galibier</span>
+        <span class="col-detail">17.7 km · 6.8 % moy. · 2 642 m</span>
+      </div>
+      <div class="col-right">
+        <span class="col-time">1 h 48′</span>
+        <span class="col-badge-pr">PR</span>
+      </div>
+    </article>
+    <article class="col-card" role="listitem" data-reveal data-delay="80">
+      <div class="col-cat" style="color:var(--cobalt)">Cat. 1</div>
+      <div class="col-info">
+        <span class="col-name">Col du Lautaret</span>
+        <span class="col-detail">8.2 km · 4.2 % moy. · 2 058 m</span>
+      </div>
+      <div class="col-right">
+        <span class="col-time">32′ 14″</span>
+      </div>
+    </article>
+    <article class="col-card" role="listitem" data-reveal data-delay="160">
+      <div class="col-cat" style="color:var(--cobalt)">Cat. 2</div>
+      <div class="col-info">
+        <span class="col-name">Montée Briançon</span>
+        <span class="col-detail">5.1 km · 3.1 % moy. · 1 326 m</span>
+      </div>
+      <div class="col-right">
+        <span class="col-time">18′ 40″</span>
+      </div>
+    </article>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════════
+     04 — ROUTE HERO
+══════════════════════════════════════════ -->
+<div class="section-gap" aria-hidden="true"></div>
+<section id="map-section" class="route-hero-section" aria-labelledby="map-h">
+
+  <div class="rh-bg" style="background-image:url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=85')" aria-hidden="true">
+    <div class="rh-bg-overlay"></div>
+  </div>
+
+  <div class="rh-top">
+    <span class="rh-eyebrow">03 / Parcours</span>
+    <h2 id="map-h" class="rh-title">AFTER SUNSET <em>(B300)</em></h2>
+    <p class="rh-desc">
+      Le brevet "After Sunset" n'est pas simplement une course — c'est une opportunité de tester votre résistance, de profiter de la beauté de la nature et de ressentir la liberté que donne un vélo.
+    </p>
+    <p class="rh-reg">Les inscriptions sont ouvertes jusqu'au 11 Mai</p>
+    <button class="btn-primary" type="button" style="margin-top:8px">
+      S'inscrire maintenant
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="rh-map-area" aria-label="Carte du parcours After Sunset B300">
+    <svg class="rh-svg" viewBox="0 0 900 340" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path class="rh-path-glow"
+        d="M 110,200 C 130,190 150,185 170,188 C 200,192 220,210 250,218 C 280,226 310,230 340,222 C 370,214 395,195 420,185 C 445,175 468,172 490,168 C 515,164 540,165 565,162 C 595,158 620,148 645,138 C 668,128 685,118 710,122 C 735,126 760,148 790,160"/>
+      <path class="rh-path"
+        d="M 110,200 C 130,190 150,185 170,188 C 200,192 220,210 250,218 C 280,226 310,230 340,222 C 370,214 395,195 420,185 C 445,175 468,172 490,168 C 515,164 540,165 565,162 C 595,158 620,148 645,138 C 668,128 685,118 710,122 C 735,126 760,148 790,160"/>
+      <!-- Start -->
+      <g class="rh-cp">
+        <circle cx="110" cy="200" r="6" fill="var(--lime)"/>
+        <text x="110" y="225" text-anchor="middle" fill="rgba(237,238,248,.5)" font-size="10" font-family="'JetBrains Mono'" letter-spacing="1">DÉPART</text>
+      </g>
+      <!-- CP1 -->
+      <g class="rh-cp">
+        <circle cx="250" cy="218" r="5" fill="rgba(237,238,248,.7)"/>
+        <text x="250" y="240" text-anchor="middle" fill="rgba(237,238,248,.4)" font-size="9" font-family="'JetBrains Mono'" letter-spacing=".5">CP1 · 75km</text>
+      </g>
+      <!-- CP2 -->
+      <g class="rh-cp">
+        <circle cx="490" cy="168" r="5" fill="rgba(237,238,248,.7)"/>
+        <text x="490" y="150" text-anchor="middle" fill="rgba(237,238,248,.4)" font-size="9" font-family="'JetBrains Mono'" letter-spacing=".5">CP2 · 150km</text>
+      </g>
+      <!-- Summit -->
+      <g class="rh-cp rh-dot">
+        <circle cx="645" cy="138" r="7" fill="var(--lime)" opacity=".9"/>
+        <text x="645" y="118" text-anchor="middle" fill="var(--lime)" font-size="10" font-family="'JetBrains Mono'" font-weight="500" letter-spacing=".5">SOMMET</text>
+      </g>
+      <!-- End -->
+      <g class="rh-cp">
+        <circle cx="790" cy="160" r="6" fill="rgba(237,238,248,.8)"/>
+        <text x="790" y="182" text-anchor="middle" fill="rgba(237,238,248,.5)" font-size="10" font-family="'JetBrains Mono'" letter-spacing="1">ARRIVÉE</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="rh-stats-bar">
+    <div class="rh-stat">
+      <span class="rh-stat-l">Distance</span>
+      <span class="rh-stat-v">300 <small>km</small></span>
+    </div>
+    <div class="rh-stat-sep" aria-hidden="true"></div>
+    <div class="rh-stat">
+      <span class="rh-stat-l">Départ</span>
+      <span class="rh-stat-v" style="font-size:clamp(22px,2.5vw,34px);letter-spacing:0">17 Mai 2026</span>
+    </div>
+    <div class="rh-stat-sep" aria-hidden="true"></div>
+    <div class="rh-stat">
+      <span class="rh-stat-l">Lieu</span>
+      <span class="rh-stat-v">Grodno</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     05 — SEGMENTS
+══════════════════════════════════════════ -->
+<div class="section-gap" aria-hidden="true"></div>
+<section id="segments" class="section" aria-labelledby="seg-h">
+
+  <header class="section-header" data-ghost="04">
+    <span class="section-num" aria-hidden="true">04 / Segments</span>
+    <div>
+      <h2 id="seg-h" class="section-title">Segments<br><em>&amp; Records</em></h2>
+      <p class="section-desc">Comparaison de vos temps sur les segments Strava clés. Synchronisation post-activité.</p>
+    </div>
+  </header>
+
+  <div class="seg-table" role="table" aria-label="Segments et records de la sortie">
+    <div class="seg-head" role="row">
+      <span role="columnheader">Segment</span>
+      <span role="columnheader">Dist.</span>
+      <span role="columnheader">Temps</span>
+      <span role="columnheader">W/kg</span>
+      <span role="columnheader">vs PR</span>
+      <span role="columnheader">Rang</span>
+    </div>
+
+    <div class="seg-row" role="row" data-reveal data-delay="0">
+      <div class="seg-name" role="cell">
+        <span class="seg-dot" style="background:var(--lime)"></span>
+        <span>Galibier Versant Nord</span>
+      </div>
+      <span class="seg-mono" role="cell">17.7 km</span>
+      <span class="seg-mono seg-t" role="cell">1:48:22</span>
+      <span class="seg-mono" role="cell">3.8</span>
+      <div class="seg-delta pos" role="cell">
+        <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        +1:12
+      </div>
+      <div class="seg-rank rank-gold" role="cell">
+        <span class="rn">1<sup>er</sup></span><span class="rb">KOM</span>
       </div>
     </div>
-    <div class="topo__chart-wrap">
-      <canvas id="elevChart" aria-label="Profil d'élévation interactif"></canvas>
-    </div>
-  </section>
 
-  <!-- ══ PLAN DE COURSE ══ -->
-  <section class="plan">
-    <div class="plan__left">
-      <div class="plan__kicker">— PLAN DE COURSE</div>
-      <h2 class="plan__title">Plan de Course<br>Complet</h2>
-      <p class="plan__desc">
-        L'idéal serait d'arriver à 4 ascensions et à l'arrivée sans avoir perdu notre élan
-        collectif. La dynamique de l'étape, en pouvant courir plusieurs fois à tête reposée,
-        nous a offert des moments de dépassement. Tous ensemble, au maximum.
-      </p>
-
-      <div class="strat-grid">
-        <div class="strat-card">
-          <div class="strat-card__num">01</div>
-          <div class="strat-card__title">Garder le groupe compact</div>
-          <div class="strat-card__desc">En maintenant la cohésion en première heure, nous maximisons les réserves pour les ascensions décisives.</div>
-        </div>
-        <div class="strat-card">
-          <div class="strat-card__num">02</div>
-          <div class="strat-card__title">Monter au seuil sans cassure</div>
-          <div class="strat-card__desc">Sur Tourmalet, chaque coureur monte à son rythme, en maintenant la puissance à 88-92% FC max.</div>
-        </div>
-        <div class="strat-card">
-          <div class="strat-card__num">03</div>
-          <div class="strat-card__title">Descente propre et lucide</div>
-          <div class="strat-card__desc">La ligne de corde est préparée, le timing des freins est anticipé. Groupe reformé en bas.</div>
-        </div>
-        <div class="strat-card">
-          <div class="strat-card__num">04</div>
-          <div class="strat-card__title">Attaquer sur la dernière rupture</div>
-          <div class="strat-card__desc">Le troisième kilomètre avant le sommet de l'Alpe constitue la fenêtre d'attaque idéale.</div>
-        </div>
+    <div class="seg-row" role="row" data-reveal data-delay="70">
+      <div class="seg-name" role="cell">
+        <span class="seg-dot" style="background:var(--cobalt)"></span>
+        <span>Lautaret — Sommet</span>
+      </div>
+      <span class="seg-mono" role="cell">8.2 km</span>
+      <span class="seg-mono seg-t" role="cell">0:32:14</span>
+      <span class="seg-mono" role="cell">4.1</span>
+      <div class="seg-delta pos" role="cell">
+        <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        +0:48
+      </div>
+      <div class="seg-rank rank-silver" role="cell">
+        <span class="rn">3<sup>e</sup></span><span class="rb">TOP 10</span>
       </div>
     </div>
 
-    <div class="plan__right">
-      <div class="tl-header">
-        <span class="tl-header__title">CHRONO ASCENSION</span>
-        <span class="tl-header__live">● TEMPS RÉEL</span>
+    <div class="seg-row" role="row" data-reveal data-delay="140">
+      <div class="seg-name" role="cell">
+        <span class="seg-dot" style="background:var(--cobalt)"></span>
+        <span>Descente Télégraphe</span>
       </div>
-      <ol class="tl-list" role="list">
-        <li class="tl-item">
-          <div class="tl-item__time">PK 00</div>
-          <div class="tl-item__spine">
-            <div class="tl-item__dot tl-item__dot--blue"></div>
-            <div class="tl-item__line"></div>
-          </div>
-          <div class="tl-item__body">
-            <div class="tl-item__title">Entrée du premier col</div>
-            <div class="tl-item__desc">Bascule depuis la plaine. Peloton uni, rythme modéré.</div>
-          </div>
-        </li>
-        <li class="tl-item tl-item--active">
-          <div class="tl-item__time">PK 12</div>
-          <div class="tl-item__spine">
-            <div class="tl-item__dot tl-item__dot--amber"></div>
-            <div class="tl-item__line"></div>
-          </div>
-          <div class="tl-item__body">
-            <div class="tl-item__title">Cœur de l'ascension</div>
-            <div class="tl-item__desc">Pente à 9.5%, rupture de groupe probable. Zone de sélection.</div>
-            <span class="tl-badge tl-badge--amber">CRITIQUE</span>
-          </div>
-        </li>
-        <li class="tl-item">
-          <div class="tl-item__time">PK 19</div>
-          <div class="tl-item__spine">
-            <div class="tl-item__dot tl-item__dot--blue"></div>
-            <div class="tl-item__line"></div>
-          </div>
-          <div class="tl-item__body">
-            <div class="tl-item__title">Bascule froide</div>
-            <div class="tl-item__desc">Sommet du Tourmalet. T° chute de 8°C. Gilet obligatoire.</div>
-          </div>
-        </li>
-        <li class="tl-item">
-          <div class="tl-item__time">PK 38</div>
-          <div class="tl-item__spine">
-            <div class="tl-item__dot tl-item__dot--red"></div>
-          </div>
-          <div class="tl-item__body">
-            <div class="tl-item__title">Zones décisives</div>
-            <div class="tl-item__desc">Charge accumulée. Nutrition renforcée. Dernier ravitaillement.</div>
-            <span class="tl-badge tl-badge--red">ALERTE</span>
-          </div>
-        </li>
-      </ol>
-
-      <div class="plan-conds">
-        <div class="cond-card">
-          <div class="cond-card__val">88–92<small>%</small></div>
-          <div class="cond-card__lbl">FC du seuil cible</div>
-        </div>
-        <div class="cond-card">
-          <div class="cond-card__val">2<small>/h</small></div>
-          <div class="cond-card__lbl">gels par heure</div>
-        </div>
+      <span class="seg-mono" role="cell">11.4 km</span>
+      <span class="seg-mono seg-t" role="cell">0:14:52</span>
+      <span class="seg-mono" role="cell">—</span>
+      <div class="seg-delta neg" role="cell">
+        <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10V2M2 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        −0:22
       </div>
-
-      <div class="plan-meteo">
-        <div class="meteo-row">
-          <span class="meteo-row__ico">⛰</span>
-          <div>
-            <div class="meteo-row__title">Crêtes exposées</div>
-            <div class="meteo-row__desc">Vent rafales 35 km/h au sommet</div>
-          </div>
-        </div>
-        <div class="meteo-row">
-          <span class="meteo-row__ico">💧</span>
-          <div>
-            <div class="meteo-row__title">Zones humides</div>
-            <div class="meteo-row__desc">Descente nord du Tourmalet</div>
-          </div>
-        </div>
-        <div class="meteo-row">
-          <span class="meteo-row__ico">🚩</span>
-          <div>
-            <div class="meteo-row__title">Dernier mur</div>
-            <div class="meteo-row__desc">Lacet 2 de l'Alpe — 11% sur 300m</div>
-          </div>
-        </div>
+      <div class="seg-rank rank-bronze" role="cell">
+        <span class="rn">7<sup>e</sup></span><span class="rb">TOP 25</span>
       </div>
     </div>
-  </section>
 
-  <!-- ══ INFORMATIONS DE COURSE ══ -->
-  <section class="infos">
-    <div class="infos__head">
-      <div class="infos__kicker">— FICHE PARCOURS</div>
-      <h2 class="infos__title">INFORMATIONS DE COURSE<br>MIEUX ORGANISÉES</h2>
+    <div class="seg-row" role="row" data-reveal data-delay="210">
+      <div class="seg-name" role="cell">
+        <span class="seg-dot" style="background:var(--lime)"></span>
+        <span>Sprint Valloire Village</span>
+      </div>
+      <span class="seg-mono" role="cell">0.4 km</span>
+      <span class="seg-mono seg-t" role="cell">0:00:38</span>
+      <span class="seg-mono" role="cell">6.2</span>
+      <div class="seg-delta pos" role="cell">
+        <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        +0:04
+      </div>
+      <div class="seg-rank rank-gold" role="cell">
+        <span class="rn">2<sup>e</sup></span><span class="rb">QOM</span>
+      </div>
     </div>
 
-    <div class="infos__strip">
-      <span>06:40 — 07:05</span>
-      <span class="strip-sep">·</span>
-      <span>7°C au départ, 16°C max</span>
-      <span class="strip-sep">·</span>
-      <span>Nord-ouest 18 à 28 km/h</span>
-      <span class="strip-sep">·</span>
-      <span class="strip-hl">Élevé en descente</span>
+    <div class="seg-row" role="row" data-reveal data-delay="280">
+      <div class="seg-name" role="cell">
+        <span class="seg-dot" style="background:rgba(255,255,255,.2)"></span>
+        <span>Route des Grandes Alpes</span>
+      </div>
+      <span class="seg-mono" role="cell">34.8 km</span>
+      <span class="seg-mono seg-t" role="cell">2:12:44</span>
+      <span class="seg-mono" role="cell">3.4</span>
+      <div class="seg-delta neu" role="cell">— PR</div>
+      <div class="seg-rank rank-pr" role="cell">
+        <span class="rn">PR</span><span class="rb">PERSO</span>
+      </div>
     </div>
+  </div>
 
-    <div class="infos__cols">
-      <div class="infos__col">
-        <div class="infos__col-hd">SÉQUENCE DES ASCENSIONS</div>
-        <div class="asc-item">
-          <div class="asc-item__name">Col du Sanerre</div>
-          <div class="asc-item__bar"><div style="width:65%"></div></div>
-          <div class="asc-item__km">13 km</div>
-        </div>
-        <div class="asc-item asc-item--active">
-          <div class="asc-item__name">Col du Blé <span class="hc-badge">HC</span></div>
-          <div class="asc-item__bar asc-item__bar--blue"><div style="width:100%"></div></div>
-          <div class="asc-item__km">19 km</div>
-        </div>
-        <div class="asc-item">
-          <div class="asc-item__name">Rampe des Aquifers</div>
-          <div class="asc-item__bar"><div style="width:38%"></div></div>
-          <div class="asc-item__km">7 km</div>
-        </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     06 — ÉVÉNEMENTS
+══════════════════════════════════════════ -->
+<div class="section-gap" aria-hidden="true"></div>
+<section id="events" class="section" aria-labelledby="events-h">
+
+  <header class="section-header" data-ghost="05">
+    <span class="section-num" aria-hidden="true">05 / Événements</span>
+    <div>
+      <h2 id="events-h" class="section-title">Événements<br><em>Officiels</em></h2>
+      <p class="section-desc">Inscrivez-vous aux prochaines randonnées officielles. Médailles et chronométrage certifiés.</p>
+    </div>
+  </header>
+
+  <div class="ev-feed" role="list">
+
+    <!-- Featured card -->
+    <article class="ev-row ev-row--featured" data-reveal data-delay="0" role="listitem">
+      <div class="ev-row-img" style="background-image:url('https://images.unsplash.com/photo-1527100673774-cce25eafaf7f?w=600&q=80')" aria-hidden="true">
+        <div class="ra-img-grad"></div>
       </div>
-
-      <div class="infos__col">
-        <div class="infos__col-hd">CHECKLIST MATÉRIEL</div>
-        <div class="cl-group">
-          <div class="cl-group__hd">Alimentation</div>
-          <div class="cl-item">Barres énergétiques ×6 min.</div>
-          <div class="cl-item">Gels isotoniques ×8</div>
-          <div class="cl-item">Bidons ×2 + recharge</div>
+      <div class="ev-row-body">
+        <div class="ev-tag ev-tag--challenge">À NE PAS MANQUER</div>
+        <h3 class="ev-title">FEST 200 YOLOZHNYKY</h3>
+        <div class="ev-date-loc">
+          <span>26 Avr 2026</span>
+          <span>·</span>
+          <span>Yolozhnyky</span>
+          <span>·</span>
+          <span>13 h 30 m</span>
         </div>
-        <div class="cl-group">
-          <div class="cl-group__hd">Préparation</div>
-          <div class="cl-item">Gilet coupe-vent descente</div>
-          <div class="cl-item">Manchettes thermiques</div>
-        </div>
-        <div class="cl-group">
-          <div class="cl-group__hd">Technique</div>
-          <div class="cl-item cl-item--alert">Pneus vérifiés 110 PSI</div>
-          <div class="cl-item">Câbles freins contrôlés</div>
-          <div class="cl-item">GPS chargé</div>
-          <div class="cl-item">Transmission vérifiée</div>
-        </div>
+        <p class="ev-desc">Randonnée de 200 km à travers les paysages de Yolozhny. Checkpoints toutes les 50 km. Médaille garantie pour tous les finishers.</p>
       </div>
+      <div class="ev-row-aside">
+        <div class="ev-aside-stat">
+          <span class="eas-l">Distance</span>
+          <span class="eas-v">200<span style="font-size:.5em;color:var(--t3);font-family:var(--fm)">km</span></span>
+        </div>
+        <div class="ev-aside-stat">
+          <span class="eas-l">Inscrits</span>
+          <span class="eas-v">47</span>
+        </div>
+        <div class="ev-aside-stat">
+          <span class="eas-l">Difficulté</span>
+          <span class="eas-v" style="color:var(--lime)">★★★★☆</span>
+        </div>
+        <button class="ev-join-btn" type="button">
+          S'inscrire
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M5.5 2.5L9 6l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </article>
 
-      <div class="infos__col">
-        <div class="infos__col-hd">DÉCOUPAGE HORAIRE</div>
-        <div class="h-item">
-          <div class="h-item__dot h-item__dot--green"></div>
-          <div>
-            <div class="h-item__title">Départ neutralisé</div>
-            <div class="h-item__desc">06:45 — Briefing 10 min, peloton jusqu'au KM 5</div>
+    <!-- Compact events grid -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:3px">
+
+      <article class="ev-compact" data-reveal data-delay="60" role="listitem">
+        <div class="ev-compact-icon" style="background:var(--lime-a);color:var(--lime)">🏔</div>
+        <div style="flex:1">
+          <div class="ev-compact-title">YALRUN</div>
+          <div class="ev-compact-meta">200 km · 18 Jan · Grodno</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ev-compact-val">200<span style="font-size:.5em;font-family:var(--fm);color:var(--t3)">km</span></div>
+          <div class="ev-compact-lbl">82 % complet</div>
+        </div>
+      </article>
+
+      <article class="ev-compact" data-reveal data-delay="100" role="listitem">
+        <div class="ev-compact-icon" style="background:var(--cobalt-a);color:var(--cobalt)">❄</div>
+        <div style="flex:1">
+          <div class="ev-compact-title">THE SHOWDROP</div>
+          <div class="ev-compact-meta">200 km · 21 Fév · Minsk</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ev-compact-val">200<span style="font-size:.5em;font-family:var(--fm);color:var(--t3)">km</span></div>
+          <div class="ev-compact-lbl">67 % complet</div>
+        </div>
+      </article>
+
+      <article class="ev-compact" data-reveal data-delay="140" role="listitem">
+        <div class="ev-compact-icon" style="background:rgba(245,200,66,.08);color:var(--gold)">☀</div>
+        <div style="flex:1">
+          <div class="ev-compact-title">BEST TWO FUNDO</div>
+          <div class="ev-compact-meta">200 km · 21 Mai · Brest</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ev-compact-val">200<span style="font-size:.5em;font-family:var(--fm);color:var(--t3)">km</span></div>
+          <div class="ev-compact-lbl">44 % complet</div>
+        </div>
+      </article>
+
+      <article class="ev-compact" data-reveal data-delay="180" role="listitem">
+        <div class="ev-compact-icon" style="background:var(--green-a);color:var(--green)">🌿</div>
+        <div style="flex:1">
+          <div class="ev-compact-title">SPRING ROLL IN</div>
+          <div class="ev-compact-meta">140 km · 28 Mai · Vitebsk</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ev-compact-val">140<span style="font-size:.5em;font-family:var(--fm);color:var(--t3)">km</span></div>
+          <div class="ev-compact-lbl">29 % complet</div>
+        </div>
+      </article>
+
+      <article class="ev-compact" data-reveal data-delay="220" role="listitem">
+        <div class="ev-compact-icon" style="background:var(--lime-a);color:var(--lime)">⛰</div>
+        <div style="flex:1">
+          <div class="ev-compact-title">CHULSE PATH</div>
+          <div class="ev-compact-meta">140 km · 26 Avr · Gomel</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ev-compact-val">140<span style="font-size:.5em;font-family:var(--fm);color:var(--t3)">km</span></div>
+          <div class="ev-compact-lbl">71 % complet</div>
+        </div>
+      </article>
+
+      <article class="ev-compact" data-reveal data-delay="260" role="listitem">
+        <div class="ev-compact-icon" style="background:var(--cobalt-a);color:var(--cobalt)">🛣</div>
+        <div style="flex:1">
+          <div class="ev-compact-title">MAY ROADS</div>
+          <div class="ev-compact-meta">200 km · 9 Mai · Mogilev</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ev-compact-val">200<span style="font-size:.5em;font-family:var(--fm);color:var(--t3)">km</span></div>
+          <div class="ev-compact-lbl">55 % complet</div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════════════════════════════════
+     07 — POPULAR ROUTES
+══════════════════════════════════════════ -->
+<div class="section-gap" aria-hidden="true"></div>
+<section id="routes" class="section" aria-labelledby="routes-h">
+
+  <div class="routes-header-row">
+    <div>
+      <span class="section-num" aria-hidden="true">06 / Parcours</span>
+      <h2 id="routes-h" class="routes-heading">
+        Explorez les parcours<br><em>légendaires</em>
+      </h2>
+    </div>
+    <a href="#routes" class="btn-ghost" onclick="return false">
+      Tous les parcours
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+
+  <div class="routes-asymgrid" role="list" aria-label="Parcours populaires">
+
+    <article class="ra-card ra-card--large" role="listitem" data-reveal data-delay="0">
+      <div class="ra-img" style="background-image:url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=900&q=85')" aria-hidden="true">
+        <div class="ra-img-grad"></div>
+        <div class="ra-img-badge">Classique</div>
+      </div>
+      <div class="ra-body">
+        <div class="ra-head">
+          <h3 class="ra-name">EAST CLASSIC</h3>
+          <div class="ra-dist-chip">120<small>km</small></div>
+        </div>
+        <p class="ra-desc">Route emblématique à travers les vallées de l'Est. Dénivelé modéré, paysages à couper le souffle.</p>
+        <div class="ra-stats">
+          <div class="ra-stat">
+            <span class="ra-stat-l">D+</span>
+            <span class="ra-stat-v">1 240 m</span>
+          </div>
+          <div class="ra-stat">
+            <span class="ra-stat-l">Durée est.</span>
+            <span class="ra-stat-v">6–8 h</span>
+          </div>
+          <div class="ra-stat">
+            <span class="ra-stat-l">Niveau</span>
+            <span class="ra-stat-v">Difficile</span>
           </div>
         </div>
-        <div class="h-item">
-          <div class="h-item__dot h-item__dot--blue"></div>
-          <div>
-            <div class="h-item__title">Premier Ravitaillement</div>
-            <div class="h-item__desc">KM 62 — Arrêt max 5 min. Station technique.</div>
-          </div>
+        <div class="ra-tags">
+          <span>Route</span><span>KOM</span><span>Panorama</span>
         </div>
-        <div class="h-item">
-          <div class="h-item__dot h-item__dot--amber"></div>
-          <div>
-            <div class="h-item__title">Secteur décisif</div>
-            <div class="h-item__desc">KM 120-165 — Tourmalet → Alpe sans récupération.</div>
-          </div>
-        </div>
-        <div class="h-item">
-          <div class="h-item__dot h-item__dot--red"></div>
-          <div>
-            <div class="h-item__title">Arrivée officielle</div>
-            <div class="h-item__desc">14:30 estimé — Chronométrage électronique.</div>
-          </div>
-        </div>
+        <button class="ra-btn" type="button">
+          Explorer ce parcours
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M5.5 2.5L9 6l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
       </div>
-    </div>
-  </section>
+    </article>
 
-  <!-- ══ DONNÉES BRUTES ══ -->
-  <section class="donnees">
-    <div class="donnees__head">
-      <div class="donnees__kicker">— ANALYSE PERFORMANCE</div>
-      <h2 class="donnees__title">DONNÉES BRUTES</h2>
-    </div>
-    <div class="donnees__grid">
-      <div class="dc">
-        <div class="dc__lbl">PUISSANCE NORMALISÉE (NP)</div>
-        <canvas id="npChart" class="dc__chart" aria-label="Puissance normalisée"></canvas>
-        <div class="dc__foot">
-          <span class="dc__val">114,2</span>
-          <span class="dc__unit">NP</span>
-          <span class="dc__delta dc__delta--up">+4%</span>
+    <div class="ra-stack">
+
+      <article class="ra-card ra-card--sm" role="listitem" data-reveal data-delay="80">
+        <div class="ra-img ra-img--sm" style="background-image:url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80')" aria-hidden="true">
+          <div class="ra-img-grad"></div>
+          <div class="ra-img-badge ra-img-badge--lime">Forêt</div>
         </div>
-      </div>
-      <div class="dc">
-        <div class="dc__lbl">RÉPARTITION FCM PROGRAMMÉE</div>
-        <canvas id="zoneChart" class="dc__chart" aria-label="Zones cardiaques"></canvas>
-        <div class="dc__foot">
-          <span class="dc__val">Z4</span>
-          <span class="dc__unit">dominant</span>
-          <span class="dc__delta">57 min</span>
-        </div>
-      </div>
-      <div class="dc dc--gauge">
-        <div class="dc__lbl">INTENSITÉ FACTEUR (IF)</div>
-        <div class="gauge-wrap">
-          <canvas id="ifGauge" class="gauge-canvas" aria-label="IF 0.94"></canvas>
-          <div class="gauge-center-txt">
-            <div class="gauge-big">82</div>
-            <div class="gauge-sub">score</div>
+        <div class="ra-body ra-body--sm">
+          <div class="ra-head">
+            <h3 class="ra-name ra-name--sm">TSIMYANSKY FOREST</h3>
+            <div class="ra-dist-chip ra-dist-chip--sm">48<small>km</small></div>
+          </div>
+          <div class="ra-stats ra-stats--compact">
+            <div class="ra-stat"><span class="ra-stat-l">D+</span><span class="ra-stat-v">520 m</span></div>
+            <div class="ra-stat"><span class="ra-stat-l">Niveau</span><span class="ra-stat-v">Modéré</span></div>
+          </div>
+          <div class="ra-tags">
+            <span>Gravel</span><span>Nature</span>
           </div>
         </div>
-        <div class="dc__foot">
-          <span class="dc__val">IF 0,94</span>
-          <span class="dc__delta dc__delta--up">+0.03</span>
+      </article>
+
+      <article class="ra-card ra-card--sm" role="listitem" data-reveal data-delay="160">
+        <div class="ra-img ra-img--sm" style="background-image:url('https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&q=80')" aria-hidden="true">
+          <div class="ra-img-grad"></div>
+          <div class="ra-img-badge">Coucher de soleil</div>
         </div>
-      </div>
-    </div>
-  </section>
+        <div class="ra-body ra-body--sm">
+          <div class="ra-head">
+            <h3 class="ra-name ra-name--sm">GOLDEN TRACE</h3>
+            <div class="ra-dist-chip ra-dist-chip--sm">87<small>km</small></div>
+          </div>
+          <div class="ra-stats ra-stats--compact">
+            <div class="ra-stat"><span class="ra-stat-l">D+</span><span class="ra-stat-v">880 m</span></div>
+            <div class="ra-stat"><span class="ra-stat-l">Niveau</span><span class="ra-stat-v">Modéré</span></div>
+          </div>
+          <div class="ra-tags">
+            <span>Panorama</span><span>Sunset</span>
+          </div>
+        </div>
+      </article>
 
-  <!-- ══ CARTOGRAPHIE VECTORIELLE ══ -->
-  <section class="carto">
-    <div class="carto__head">
-      <div class="carto__kicker">— SÉLECTION DE PARCOURS</div>
-      <h2 class="carto__title">CARTOGRAPHIE<br>VECTORIELLE</h2>
     </div>
-    <div class="carto__grid" role="list">
-      <div class="rc rc--active" data-route="geant" role="button" tabindex="0" aria-pressed="true">
-        <canvas class="rc__chart" data-color="#F59E0B" data-pts="30,55,40,70,45,58,80,52,62,48,74,38,88,32,78,22,58" aria-hidden="true"></canvas>
-        <div class="rc__name">Boucle du Géant</div>
-        <div class="rc__stats">42.0 km · +980m · 5.2%</div>
-      </div>
-      <div class="rc" data-route="tranchee" role="button" tabindex="0" aria-pressed="false">
-        <canvas class="rc__chart" data-color="#10B981" data-pts="20,65,35,48,50,58,60,38,74,28,84,43,78,23,62,33,48" aria-hidden="true"></canvas>
-        <div class="rc__name">La Tranchée</div>
-        <div class="rc__stats">28.5 km · +650m · 6.1%</div>
-      </div>
-      <div class="rc" data-route="corniche" role="button" tabindex="0" aria-pressed="false">
-        <canvas class="rc__chart" data-color="#007AFF" data-pts="60,50,55,63,45,58,50,43,53,33,48,38,43,28,38,33,33" aria-hidden="true"></canvas>
-        <div class="rc__name">Corniche Latérale</div>
-        <div class="rc__stats">19.0 km · +410m · 4.8%</div>
-      </div>
-      <div class="rc" data-route="nocturne" role="button" tabindex="0" aria-pressed="false">
-        <canvas class="rc__chart" data-color="#8B5CF6" data-pts="45,55,50,43,60,48,70,33,63,38,73,28,68,43,58,33,53" aria-hidden="true"></canvas>
-        <div class="rc__name">Circuit Nocturne</div>
-        <div class="rc__stats">35.0 km · +820m · 7.2%</div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ══ FOOTER ══ -->
-  <footer class="footer">
-    <div class="footer__top">
-      <div class="footer__brand">CERCLE<br>CYCLISTE</div>
-      <div class="footer__cols">
+  </div>
+
+  <!-- Medals strip -->
+  <div class="medals-strip" data-reveal aria-label="Comment recevoir votre médaille">
+    <div class="medals-strip-intro">
+      <h3 class="medals-strip-title">
+        Vous méritez une récompense<br>qui symbolise <em>la force de l'esprit</em>
+      </h3>
+    </div>
+    <div class="medals-strip-steps">
+      <div class="medals-strip-step">
+        <span class="medals-strip-n">01</span>
         <div>
-          <div class="footer__hd">Parcours</div>
-          <a href="#" class="footer__lnk">Tourmalet</a>
-          <a href="#" class="footer__lnk">Alpe d'Huez</a>
-          <a href="#" class="footer__lnk">Galibier</a>
-          <a href="#" class="footer__lnk">Ventoux</a>
+          <strong>Envoi des marques</strong>
+          <p>Photos de votre carte de contrôle et des objets à chaque CP, avec coordonnées GPS.</p>
         </div>
+      </div>
+      <div class="medals-strip-divider" aria-hidden="true"></div>
+      <div class="medals-strip-step">
+        <span class="medals-strip-n">02</span>
         <div>
-          <div class="footer__hd">Club</div>
-          <a href="#" class="footer__lnk">À propos</a>
-          <a href="#" class="footer__lnk">Membres</a>
-          <a href="#" class="footer__lnk">Calendrier</a>
-          <a href="#" class="footer__lnk">Contact</a>
+          <strong>Fichier track GPX</strong>
+          <p>Créez et uploadez votre fichier GPX avec au moins 70 % des coordonnées GPS requises.</p>
         </div>
+      </div>
+      <div class="medals-strip-divider" aria-hidden="true"></div>
+      <div class="medals-strip-step">
+        <span class="medals-strip-n">03</span>
         <div>
-          <div class="footer__hd">Données</div>
-          <a href="#" class="footer__lnk">API Publique</a>
-          <a href="#" class="footer__lnk">Export GPX</a>
-          <a href="#" class="footer__lnk">Strava Connect</a>
+          <strong>Confirmation &amp; médaille</strong>
+          <p>Un email de confirmation et votre médaille seront envoyés après validation de l'arrivée.</p>
         </div>
       </div>
     </div>
-    <div class="footer__bottom">
-      © 2025 Cercle Cycliste — Tous droits réservés.
-    </div>
-  </footer>
+  </div>
 
-  <script src="/asset/js/script.js"></script>
+</section>
+
+<!-- FOOTER -->
+<div class="section-gap" aria-hidden="true"></div>
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">RANDONNEUR</span>
+      <p class="footer-tagline">Données · Altitude · <em>Excellence.</em></p>
+    </div>
+    <dl class="footer-meta">
+      <div><dt>Appareil</dt><dd>Garmin Edge 840 Solar</dd></div>
+      <div><dt>Capteur</dt><dd>Quarq DZero Bilatéral</dd></div>
+      <div><dt>Vélo</dt><dd>Canyon Ultimate CF SLX</dd></div>
+      <div><dt>Date</dt><dd><time datetime="2025-06-14">14 Juin 2025</time></dd></div>
+    </dl>
+    <address class="footer-gps">
+      <span class="fgps-c">45° 03′ 54″ N</span>
+      <span class="fgps-c">06° 24′ 22″ E</span>
+      <span class="fgps-a">ALT. 2 642 m</span>
+    </address>
+  </div>
+  <div class="footer-bar">
+    <span>© 2025 RANDONNEUR — Dashboard Cycliste Ultra-Luxury</span>
+    <span>Chart.js 4 · Col du Galibier</span>
+  </div>
+</footer>
+
+<script src="/asset/js/script.js"></script>
 </body>
 </html>
