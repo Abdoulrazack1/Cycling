@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="C.C. SAROUEL — Parcours légendaires, parcours nordistes, secteurs pavés, gravel. Hauts-de-France." />
+  <meta name="theme-color" content="#0D0D10" />
+  <title>C.C. SAROUEL — Parcours</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="asset/css/style.css" />
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="nav-logo-mark" aria-hidden="true">S</span><span>C.C. SAROUEL</span></a>
+        <ul class="nav-links" role="list">
+      <li><a href="index.html"      class="nl">Accueil</a></li>
+      <li><a href="sorties.html"    class="nl">Sorties</a></li>
+      <li><a href="parcours.html"   class="nl">Parcours</a></li>
+      <li><a href="segments.html"   class="nl">Segments</a></li>
+      <li><a href="evenements.html" class="nl">Événements</a></li>
+      <li class="nav-dropdown">
+        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+          Club
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" role="menu">
+          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
+          <div class="nav-dd-divider"></div>
+          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
+          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
+          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
+          <div class="nav-dd-divider"></div>
+          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+        </div>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-live"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
+      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    <ul role="list">
+      <li><a href="index.html"           class="mn-link">Accueil</a></li>
+      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
+      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
+      <li><a href="segments.html"        class="mn-link">Segments</a></li>
+      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
+      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
+      <li><a href="club.html"            class="mn-link">Le club</a></li>
+      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
+      <li><a href="contact.html"         class="mn-link">Contact</a></li>
+      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content"><header class="page-header">
+  <div class="page-eyebrow fu" style="--d:0s"><span style="display:inline-block;width:24px;height:2px;background:var(--accent);flex-shrink:0;"></span>Parcours & Routes · Nord de la France</div>
+  <h1 class="page-h1 fu" style="--d:.08s">Parcours<br><em>légendaires</em></h1>
+  <p class="page-sub fu" style="--d:.16s">Pavés mythiques, bocage de l'Avesnois, plaine flamande — chaque itinéraire soigneusement sélectionné pour son dénivelé, ses paysages et sa qualité de revêtement.</p>
+  <div class="page-meta fu" style="--d:.24s">
+    <div class="page-meta-item"><span class="page-meta-label">Parcours</span><span class="page-meta-value">24</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Cols HC</span><span class="page-meta-value">8</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Km total</span><span class="page-meta-value">2 840<b>km</b></span></div>
+  </div>
+</header>
+
+<!-- Filtres -->
+<div class="section" style="padding-top:0">
+  <div id="filter-chips" class="filter-bar fu" style="--d:.3s" role="toolbar" aria-label="Filtres">
+    <span class="filter-bar-label">Type</span>
+    <button class="filter-chip active" data-group="type" type="button">Tous</button>
+    <button class="filter-chip" data-group="type" type="button">Route</button>
+    <button class="filter-chip" data-group="type" type="button">Gravel</button>
+    <button class="filter-chip" data-group="type" type="button">Col HC</button>
+    <div class="filter-sep"></div>
+    <span class="filter-bar-label">Niveau</span>
+    <button class="filter-chip active" data-group="level" type="button">Tous</button>
+    <button class="filter-chip" data-group="level" type="button">Modéré</button>
+    <button class="filter-chip" data-group="level" type="button">Difficile</button>
+    <button class="filter-chip" data-group="level" type="button">Extrême</button>
+  </div>
+</div>
+
+<!-- Grid parcours -->
+<section class="section" style="padding-top:0" aria-labelledby="parc-h">
+  <h2 id="parc-h" class="section-title" style="margin-bottom:24px">Tous les <em>parcours</em></h2>
+  <div class="routes-grid" role="list">
+    <article class="ra-card ra-card--large" role="listitem" data-reveal data-delay="0" data-type="route" data-level="extrême">
+      <div class="ra-img" style="background-image:url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=900&q=85')" aria-hidden="true"><div class="ra-img-grad"></div><span class="ra-badge">HC</span></div>
+      <div class="ra-body">
+        <div class="ra-head"><h3 class="ra-name">SECTEURS D'ARENBERG</h3><span class="ra-dist">87<small>km</small></span></div>
+        <p class="ra-desc">La route mythique de Paris-Roubaix. Depuis Wallers, 2,4 km de pavés en forêt d'Arenberg (★★★★★). Le secteur le plus redouté de l'Enfer du Nord.</p>
+        <div class="ra-stats"><div class="ra-stat"><span>D+</span><strong>820 m</strong></div></div>
+        <div class="ra-tags"><span>Route.*Pavés.*KOM.*Nord</span></div>
+        <a href="sortie.html" class="ra-btn">Voir l'analyse complète<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M5.5 2.5L9 6l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></a>
+      </div>
+    </article>
+    <div class="ra-stack">
+      <article class="ra-card" role="listitem" data-reveal data-delay="80" data-type="gravel" data-level="difficile">
+        <div class="ra-img ra-img--sm" style="background-image:url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80')" aria-hidden="true"><div class="ra-img-grad"></div><span class="ra-badge ra-badge--green">Gravel</span></div>
+        <div class="ra-body"><div class="ra-head"><h3 class="ra-name">MONTS DES FLANDRES</h3><span class="ra-dist">76<small>km</small></span></div><div class="ra-stats ra-stats--sm"><div class="ra-stat"><span>D+</span><strong>1 640 m</strong></div><div class="ra-stat"><span>Niveau</span><strong>Difficile</strong></div></div><div class="ra-tags"><span>Gravel</span><span>Nature</span></div></div>
+      </article>
+      <article class="ra-card" role="listitem" data-reveal data-delay="160" data-type="route" data-level="difficile">
+        <div class="ra-img ra-img--sm" style="background-image:url('https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&q=80')" aria-hidden="true"><div class="ra-img-grad"></div><span class="ra-badge">Panorama</span></div>
+        <div class="ra-body"><div class="ra-head"><h3 class="ra-name">TOUR DE L'AVESNOIS</h3><span class="ra-dist">112<small>km</small></span></div><div class="ra-stats ra-stats--sm"><div class="ra-stat"><span>D+</span><strong>1 980 m</strong></div><div class="ra-stat"><span>Niveau</span><strong>Difficile</strong></div></div><div class="ra-tags"><span>Route</span><span>Panorama</span></div></div>
+      </article>
+    </div>
+  </div>
+
+  <!-- Deuxième rangée -->
+  <div class="routes-grid" style="margin-top:2px" role="list">
+    <div class="ra-stack" style="flex-direction:row;gap:2px" role="listitem">
+      <article class="ra-card" data-reveal data-delay="0" style="flex:1" data-type="col hc" data-level="extrême">
+        <div class="ra-img ra-img--sm" style="background-image:url('https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=600&q=80')" aria-hidden="true"><div class="ra-img-grad"></div><span class="ra-badge">Col</span></div>
+        <div class="ra-body"><div class="ra-head"><h3 class="ra-name">CÔTE D'OPALE — BOULOGNE</h3><span class="ra-dist">104<small>km</small></span></div><div class="ra-stats ra-stats--sm"><div class="ra-stat"><span>D+</span><strong>3 120 m</strong></div><div class="ra-stat"><span>Sommet</span><strong>2 770 m</strong></div></div><div class="ra-tags"><span>HC</span><span>Savoie</span></div></div>
+      </article>
+      <article class="ra-card" data-reveal data-delay="80" style="flex:1" data-type="gravel" data-level="modéré">
+        <div class="ra-img ra-img--sm" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&q=80')" aria-hidden="true"><div class="ra-img-grad"></div><span class="ra-badge ra-badge--green">Gravel</span></div>
+        <div class="ra-body"><div class="ra-head"><h3 class="ra-name">LA SCARPE GRAVEL</h3><span class="ra-dist">68<small>km</small></span></div><div class="ra-stats ra-stats--sm"><div class="ra-stat"><span>D+</span><strong>1 240 m</strong></div><div class="ra-stat"><span>Niveau</span><strong>Modéré</strong></div></div><div class="ra-tags"><span>Gravel</span><span>Forêt</span></div></div>
+      </article>
+    </div>
+    <article class="ra-card ra-card--large" role="listitem" data-reveal data-delay="160" data-type="route" data-level="extrême">
+      <div class="ra-img" style="background-image:url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=900&q=85')" aria-hidden="true"><div class="ra-img-grad"></div><span class="ra-badge">Trilogie</span></div>
+      <div class="ra-body">
+        <div class="ra-head"><h3 class="ra-name">TRILOGIE NORDISTE</h3><span class="ra-dist">187<small>km</small></span></div>
+        <p class="ra-desc">Arenberg, Carrefour de l'Arbre, Mont Cassel en une seule journée. Le grand tour du Nord. Record personnel en Mai 2025.</p>
+        <div class="ra-stats"><div class="ra-stat"><span>D+</span><strong>4 200 m</strong></div><div class="ra-stat"><span>Durée est.</span><strong>9–11 h</strong></div><div class="ra-stat"><span>Niveau</span><strong>Extrême</strong></div></div>
+        <div class="ra-tags"><span>Route</span><span>Record</span><span>Ultra</span><span>Grenoble</span></div>
+        <button class="ra-btn" type="button">Explorer ce parcours<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M5.5 2.5L9 6l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      </div>
+    </article>
+  </div>
+
+  <!-- Medals / validation -->
+  <div class="medals-strip" data-reveal style="margin-top:2px">
+    <div class="medals-intro"><h3 class="medals-title">Validez vos parcours, obtenez votre <em>médaille officielle</em></h3></div>
+    <div class="medals-steps">
+      <div class="medals-step"><span class="medals-n">01</span><div><strong>Terminez le parcours</strong><p>Enregistrez votre sortie sur Garmin, Wahoo ou tout appareil GPS compatible.</p></div></div>
+      <div class="medals-div"></div>
+      <div class="medals-step"><span class="medals-n">02</span><div><strong>Uploadez votre GPX</strong><p>Exportez et soumettez votre fichier GPX avec les données complètes de la sortie.</p></div></div>
+      <div class="medals-div"></div>
+      <div class="medals-step"><span class="medals-n">03</span><div><strong>Médaille envoyée</strong><p>Après validation, votre médaille gravée est expédiée sous 7 jours ouvrés.</p></div></div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand"><span class="footer-logo">C.C. SAROUEL</span><p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p></div>
+    <nav class="footer-nav"><a href="index.html">Accueil</a><a href="sorties.html">Sorties</a><a href="parcours.html">Parcours</a><a href="segments.html">Segments</a><a href="evenements.html">Événements</a><a href="profil.html">Profil</a>
+      <a href="club.html">Club</a>
+      <a href="contact.html">Contact</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+    </nav>
+    <dl class="footer-meta"><div><dt>Appareil</dt><dd>Garmin Edge 840 Solar</dd></div><div><dt>Vélo</dt><dd>Canyon Ultimate CF SLX</dd></div><div><dt>Saison</dt><dd>2025</dd></div></dl>
+    <address class="footer-gps"><span>50° 35′ 12″ N</span><span>03° 04′ 48″ E</span><span class="footer-alt">Sarouel · Nord</span></address>
+  </div>
+  <div class="footer-bar"><span>© 2025 C.C. SAROUEL — Cyclisme de performance</span><span>v7.0 — clubcycliste-sarouel.fr</span></div>
+</footer>
+
+<script src="asset/js/main.js"></script>
+</body>
+</html>

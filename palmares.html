@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="C.C. Sarouel — Palmarès et résultats du club. Podiums, records personnels, finishers Paris-Roubaix, meilleurs résultats de la saison 2025." />
+  <meta name="theme-color" content="#0D0D10" />
+  <title>C.C. SAROUEL — Palmarès</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="asset/css/style.css" />
+  <style>
+    .podium-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+    .podium-card {
+      background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r4);
+      padding: 32px 28px; display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 10px; position: relative; overflow: hidden;
+      transition: border-color .3s, transform .35s var(--lux), box-shadow .35s;
+    }
+    .podium-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+    .podium-card.gold   { border-color: rgba(201,151,58,.35); }
+    .podium-card.silver { border-color: rgba(138,154,170,.25); }
+    .podium-card.bronze { border-color: rgba(160,112,72,.25); }
+    .podium-card.gold::before   { content:''; position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold); }
+    .podium-card.silver::before { content:''; position:absolute;top:0;left:0;right:0;height:3px;background:var(--silver); }
+    .podium-card.bronze::before { content:''; position:absolute;top:0;left:0;right:0;height:3px;background:var(--bronze); }
+    .podium-medal { font-size: 44px; line-height: 1; }
+    .podium-rank  { font-family: var(--fd); font-size: 56px; line-height: 1; letter-spacing: -0.02em; }
+    .podium-rank.gold   { color: var(--gold); }
+    .podium-rank.silver { color: var(--silver); }
+    .podium-rank.bronze { color: var(--bronze); }
+    .podium-name  { font-family: var(--fd); font-size: 17px; letter-spacing: .04em; text-transform: uppercase; }
+    .podium-event { font-family: var(--fm); font-size: 10px; letter-spacing: .10em; text-transform: uppercase; color: var(--t3); }
+    .podium-detail{ font-family: var(--fb); font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .podium-year  { font-family: var(--fm); font-size: 9px; letter-spacing: .14em; color: var(--t3); margin-top: 4px; }
+
+    .records-list { display: flex; flex-direction: column; gap: 2px; }
+    .record-item {
+      display: grid; grid-template-columns: 1fr 160px 160px 120px;
+      align-items: center; gap: 0 16px;
+      background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r3);
+      padding: 20px 24px; transition: background .22s, border-color .22s;
+    }
+    .record-item:hover { background: var(--bg-card-h); border-color: var(--bdr-hi); }
+    .record-head { background: var(--bg-raised); border-radius: var(--r3); font-family: var(--fm); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--t3); }
+    .record-name-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .record-name { font-family: var(--fb); font-size: 14px; font-weight: 700; }
+    .record-cat  { font-family: var(--fm); font-size: 9.5px; color: var(--t3); letter-spacing: .06em; }
+    .record-val  { font-family: var(--fd); font-size: 22px; letter-spacing: -0.01em; color: var(--t1); }
+    .record-holder { font-family: var(--fb); font-size: 13px; color: var(--t2); }
+    .record-year { font-family: var(--fm); font-size: 10px; color: var(--t3); }
+    .record-new  { font-family: var(--fm); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); background: var(--accent-a); border: 1px solid var(--bdr-a); padding: 2px 7px; border-radius: var(--rpill); margin-left: 6px; }
+
+    .finishers-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2px; }
+    .finisher-card {
+      display: flex; align-items: center; gap: 18px;
+      background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r3);
+      padding: 18px 22px; transition: border-color .22s, background .22s;
+    }
+    .finisher-card:hover { border-color: var(--bdr-hi); background: var(--bg-card-h); }
+    .finisher-num { font-family: var(--fd); font-size: 36px; letter-spacing: -0.02em; line-height: 1; color: var(--accent); min-width: 52px; text-align: center; }
+    .finisher-info { flex: 1; }
+    .finisher-name  { font-family: var(--fd); font-size: 16px; letter-spacing: .04em; text-transform: uppercase; }
+    .finisher-event { font-family: var(--fm); font-size: 9.5px; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
+    .finisher-time  { font-family: var(--fd); font-size: 20px; color: var(--t2); }
+
+    @media (max-width: 960px) {
+      .podium-grid { grid-template-columns: 1fr; }
+      .record-item { grid-template-columns: 1fr 120px 100px; }
+      .record-item > :last-child { display: none; }
+      .finishers-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo" aria-label="Accueil - C.C. Sarouel">
+      <span class="nav-logo-mark" aria-hidden="true">S</span>
+      <span>C.C. SAROUEL</span>
+    </a>
+        <ul class="nav-links" role="list">
+      <li><a href="index.html"      class="nl">Accueil</a></li>
+      <li><a href="sorties.html"    class="nl">Sorties</a></li>
+      <li><a href="parcours.html"   class="nl">Parcours</a></li>
+      <li><a href="segments.html"   class="nl">Segments</a></li>
+      <li><a href="evenements.html" class="nl">Événements</a></li>
+      <li class="nav-dropdown">
+        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+          Club
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" role="menu">
+          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
+          <div class="nav-dd-divider"></div>
+          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
+          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
+          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
+          <div class="nav-dd-divider"></div>
+          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+        </div>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-live"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
+      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    <ul role="list">
+      <li><a href="index.html"           class="mn-link">Accueil</a></li>
+      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
+      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
+      <li><a href="segments.html"        class="mn-link">Segments</a></li>
+      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
+      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
+      <li><a href="club.html"            class="mn-link">Le club</a></li>
+      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
+      <li><a href="contact.html"         class="mn-link">Contact</a></li>
+      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content"><header class="page-header">
+  <div class="page-eyebrow fu" style="--d:0s"><span style="display:inline-block;width:24px;height:2px;background:var(--accent);flex-shrink:0;"></span>Résultats · Saison 2025 · Club Cycliste de Sarouel</div>
+  <h1 class="page-h1 fu" style="--d:.08s">Palmarès<br><em>&amp; records</em></h1>
+  <p class="page-sub fu" style="--d:.16s">Les meilleurs résultats du club depuis sa fondation en 1987. Podiums en compétition, records personnels, finishers des grandes classiques nordistes.</p>
+  <div class="page-meta fu" style="--d:.24s">
+    <div class="page-meta-item"><span class="page-meta-label">Podiums 2025</span><span class="page-meta-value" style="color:var(--gold)">4</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Finishers P-R</span><span class="page-meta-value">6</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Records battus</span><span class="page-meta-value">12</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">KOM actifs</span><span class="page-meta-value" style="color:var(--gold)">3</span></div>
+  </div>
+</header>
+
+<!-- ══ PODIUMS 2025 ══ -->
+<section class="section" style="padding-top:0" aria-labelledby="podiums-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">01</span><span class="section-slash">/</span><span class="section-name">Compétition</span></div>
+    <div class="section-titles">
+      <h2 id="podiums-h" class="section-title">Podiums <em>2025</em></h2>
+      <p class="section-desc">Meilleurs résultats en compétition cette saison. Catégories Open et Vétérans.</p>
+    </div>
+  </header>
+
+  <div class="podium-grid" role="list" aria-label="Podiums 2025">
+    <div class="podium-card gold" role="listitem" data-reveal data-delay="0">
+      <span class="podium-medal" aria-hidden="true">🥇</span>
+      <span class="podium-rank gold">1<sup style="font-size:.4em">er</sup></span>
+      <span class="podium-name">Atol Sarouel</span>
+      <span class="podium-event">Segment — Trouée d'Arenberg</span>
+      <p class="podium-detail">KOM actif · Temps 8′ 14″ sur 2,4 km · Vitesse moy. 17.5 km/h sur pavés</p>
+      <span class="podium-year">Juin 2025</span>
+    </div>
+    <div class="podium-card gold" role="listitem" data-reveal data-delay="60">
+      <span class="podium-medal" aria-hidden="true">🥇</span>
+      <span class="podium-rank gold">1<sup style="font-size:.4em">er</sup></span>
+      <span class="podium-name">Rémi Watteau</span>
+      <span class="podium-event">Cyclosportive de l'Avesnois — Cat. Vét. 1</span>
+      <p class="podium-detail">1er catégorie Vétérans 1 · Temps 4h28 · 145 km · D+ 1 640 m</p>
+      <span class="podium-year">Juin 2025</span>
+    </div>
+    <div class="podium-card silver" role="listitem" data-reveal data-delay="120">
+      <span class="podium-medal" aria-hidden="true">🥈</span>
+      <span class="podium-rank silver">2<sup style="font-size:.4em">e</sup></span>
+      <span class="podium-name">Thomas Lecomte</span>
+      <span class="podium-event">La Forestière Gravel — Cat. Open</span>
+      <p class="podium-detail">2e Open · Temps 3h44 · 110 km gravel · Hauts-de-France</p>
+      <span class="podium-year">Septembre 2024</span>
+    </div>
+    <div class="podium-card silver" role="listitem" data-reveal data-delay="60">
+      <span class="podium-medal" aria-hidden="true">🥈</span>
+      <span class="podium-rank silver">2<sup style="font-size:.4em">e</sup></span>
+      <span class="podium-name">Atol Sarouel</span>
+      <span class="podium-event">Géants du Nord — Cat. Open</span>
+      <p class="podium-detail">22e scratch / 2e catégorie Open A · 5h38 · 160 km · Monts des Flandres</p>
+      <span class="podium-year">Mars 2025</span>
+    </div>
+    <div class="podium-card bronze" role="listitem" data-reveal data-delay="120">
+      <span class="podium-medal" aria-hidden="true">🥉</span>
+      <span class="podium-rank bronze">3<sup style="font-size:.4em">e</sup></span>
+      <span class="podium-name">Julien Masset</span>
+      <span class="podium-event">Gran Fondo Lille — Cat. Vét. 2</span>
+      <p class="podium-detail">3e Vétérans 2 · Temps 4h02 · 130 km · Monts des Flandres</p>
+      <span class="podium-year">Octobre 2024</span>
+    </div>
+    <div class="podium-card bronze" role="listitem" data-reveal data-delay="180">
+      <span class="podium-medal" aria-hidden="true">🥉</span>
+      <span class="podium-rank bronze">3<sup style="font-size:.4em">e</sup></span>
+      <span class="podium-name">François Carlier</span>
+      <span class="podium-event">BRM 400 — Meilleur temps club</span>
+      <p class="podium-detail">3e temps du club sur 400 km · 26h08 · Amiens → Boulogne → retour</p>
+      <span class="podium-year">Juin 2024</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FINISHERS PARIS-ROUBAIX ══ -->
+<section class="section" aria-labelledby="roubaix-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">02</span><span class="section-slash">/</span><span class="section-name">L'Enfer du Nord</span></div>
+    <div class="section-titles">
+      <h2 id="roubaix-h" class="section-title">Finishers <em>Paris-Roubaix</em></h2>
+      <p class="section-desc">Les membres du C.C. Sarouel ayant terminé la Paris-Roubaix Cyclosportive. Une fierté pour notre club nordiste.</p>
+    </div>
+  </header>
+
+  <div class="finishers-grid" role="list" aria-label="Finishers Paris-Roubaix">
+    <div class="finisher-card" role="listitem" data-reveal data-delay="0">
+      <div class="finisher-num">01</div>
+      <div class="finisher-info">
+        <div class="finisher-name">Jean-Marc Lefevre <span style="font-size:.6em;color:var(--t3);font-family:var(--fm);">† Premier finisher du club</span></div>
+        <div class="finisher-event">Paris-Roubaix Cyclosportive · 2001 · 172 km</div>
+      </div>
+      <div class="finisher-time">6h14</div>
+    </div>
+    <div class="finisher-card" role="listitem" data-reveal data-delay="40">
+      <div class="finisher-num">02</div>
+      <div class="finisher-info">
+        <div class="finisher-name">Pierre Marchand</div>
+        <div class="finisher-event">Paris-Roubaix Cyclosportive · 2008 · 172 km</div>
+      </div>
+      <div class="finisher-time">5h52</div>
+    </div>
+    <div class="finisher-card" role="listitem" data-reveal data-delay="80">
+      <div class="finisher-num">03</div>
+      <div class="finisher-info">
+        <div class="finisher-name">François Carlier</div>
+        <div class="finisher-event">Paris-Roubaix Cyclosportive · 2014 · 172 km</div>
+      </div>
+      <div class="finisher-time">5h38</div>
+    </div>
+    <div class="finisher-card" role="listitem" data-reveal data-delay="120">
+      <div class="finisher-num">04</div>
+      <div class="finisher-info">
+        <div class="finisher-name">Rémi Watteau</div>
+        <div class="finisher-event">Paris-Roubaix Cyclosportive · 2019 · 172 km</div>
+      </div>
+      <div class="finisher-time">5h44</div>
+    </div>
+    <div class="finisher-card" role="listitem" data-reveal data-delay="160">
+      <div class="finisher-num">05</div>
+      <div class="finisher-info">
+        <div class="finisher-name">Thomas Lecomte</div>
+        <div class="finisher-event">Paris-Roubaix Cyclosportive · 2022 · 172 km</div>
+      </div>
+      <div class="finisher-time">5h28</div>
+    </div>
+    <div class="finisher-card" role="listitem" data-reveal data-delay="200" style="border-color:var(--bdr-a);">
+      <div class="finisher-num" style="color:var(--t3);">06</div>
+      <div class="finisher-info">
+        <div class="finisher-name">Atol Sarouel <span style="font-family:var(--fm);font-size:8px;color:var(--accent);background:var(--accent-a);border:1px solid var(--bdr-a);padding:2px 7px;border-radius:var(--rpill);margin-left:6px;">Objectif 2025</span></div>
+        <div class="finisher-event">Paris-Roubaix Cyclosportive · 13 Avril 2025 · Inscrit</div>
+      </div>
+      <div class="finisher-time" style="color:var(--t3);">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ RECORDS DU CLUB ══ -->
+<section class="section" aria-labelledby="rec-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">03</span><span class="section-slash">/</span><span class="section-name">Records</span></div>
+    <div class="section-titles">
+      <h2 id="rec-h" class="section-title">Records <em>du club</em></h2>
+      <p class="section-desc">Les meilleures performances jamais enregistrées par un membre du C.C. Sarouel sur les épreuves du Nord.</p>
+    </div>
+  </header>
+
+  <div class="records-list" data-reveal role="table" aria-label="Records du club">
+    <div class="record-item record-head" role="row"><span>Épreuve</span><span>Temps / Perf.</span><span>Détenteur</span><span>Année</span></div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">Paris-Roubaix Cyclosportive <span class="record-new">Record</span></span><span class="record-cat">172 km · 27 secteurs pavés</span></div>
+      <div class="record-val">5h28</div>
+      <div class="record-holder">Thomas Lecomte</div>
+      <div class="record-year">2022</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">Géants du Nord</span><span class="record-cat">160 km · Monts des Flandres</span></div>
+      <div class="record-val">5h12</div>
+      <div class="record-holder">Rémi Watteau</div>
+      <div class="record-year">2023</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">BRM 300 <span class="record-new">Record 2025</span></span><span class="record-cat">300 km · Valenciennes</span></div>
+      <div class="record-val">18h44</div>
+      <div class="record-holder">François Carlier</div>
+      <div class="record-year">2024</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">Cyclosportive de l'Avesnois</span><span class="record-cat">145 km · Avesnois</span></div>
+      <div class="record-val">4h22</div>
+      <div class="record-holder">Rémi Watteau</div>
+      <div class="record-year">2025</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">Gran Fondo Lille Métropole</span><span class="record-cat">130 km · Monts des Flandres</span></div>
+      <div class="record-val">3h48</div>
+      <div class="record-holder">Atol Sarouel</div>
+      <div class="record-year">2024</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">Trouée d'Arenberg — KOM</span><span class="record-cat">Segment · 2,4 km pavés</span></div>
+      <div class="record-val">8′ 14″</div>
+      <div class="record-holder">Atol Sarouel</div>
+      <div class="record-year">2025</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">Mont Cassel — Montée Nord</span><span class="record-cat">Segment · 1,8 km à 4.2 %</span></div>
+      <div class="record-val">4′ 02″</div>
+      <div class="record-holder">Rémi Watteau</div>
+      <div class="record-year">2023</div>
+    </div>
+    <div class="record-item" role="row">
+      <div class="record-name-wrap"><span class="record-name">FTP individuel du club</span><span class="record-cat">Puissance seuil fonctionnel</span></div>
+      <div class="record-val">310 W</div>
+      <div class="record-holder">Atol Sarouel</div>
+      <div class="record-year">2025</div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">C.C. SAROUEL</span>
+      <p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p>
+    </div>
+    <nav class="footer-nav" aria-label="Navigation pied de page">
+      <a href="index.html">Accueil</a>
+      <a href="sorties.html">Sorties</a>
+      <a href="parcours.html">Parcours</a>
+      <a href="segments.html">Segments</a>
+      <a href="evenements.html">Événements</a>
+      <a href="profil.html">Profil</a>
+      <a href="club.html">Club</a>
+      <a href="contact.html">Contact</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+    </nav>
+    <dl class="footer-meta">
+      <div><dt>Podiums 2025</dt><dd>4</dd></div>
+      <div><dt>Finishers P-R</dt><dd>6 membres</dd></div>
+      <div><dt>Fondé en</dt><dd>1987</dd></div>
+    </dl>
+    <address class="footer-gps">
+      <span>50° 35′ 12″ N</span>
+      <span>03° 04′ 48″ E</span>
+      <span class="footer-alt">Sarouel · Nord</span>
+    </address>
+  </div>
+  <div class="footer-bar">
+    <span>© 2025 Club Cycliste de Sarouel — Tous droits réservés</span>
+    <span>v7.0 — clubcycliste-sarouel.fr</span>
+  </div>
+</footer>
+
+<script src="asset/js/main.js"></script>
+</body>
+</html>

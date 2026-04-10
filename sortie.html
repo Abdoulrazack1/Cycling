@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="C.C. Sarouel — Reconnaissance Paris-Roubaix 2025. 172 km, Trouée d'Arenberg ★★★★★, Carrefour de l'Arbre, analyse complète puissance." />
+  <meta name="theme-color" content="#0D0D10" />
+  <meta property="og:title" content="C.C. Sarouel — Reconnaissance Paris-Roubaix" />
+  <meta property="og:description" content="Sortie No. 247 · 172 km · 27 secteurs pavés · 5h48 · TSS 342" />
+  <title>C.C. SAROUEL — Reconnaissance Paris-Roubaix · 172 km</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="asset/css/style.css" />
+</head>
+<body data-ride="arenberg">
+<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo" aria-label="Accueil - C.C. Sarouel">
+      <span class="nav-logo-mark" aria-hidden="true">S</span>
+      <span>C.C. SAROUEL</span>
+    </a>
+        <ul class="nav-links" role="list">
+      <li><a href="index.html"      class="nl">Accueil</a></li>
+      <li><a href="sorties.html"    class="nl">Sorties</a></li>
+      <li><a href="parcours.html"   class="nl">Parcours</a></li>
+      <li><a href="segments.html"   class="nl">Segments</a></li>
+      <li><a href="evenements.html" class="nl">Événements</a></li>
+      <li class="nav-dropdown">
+        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+          Club
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" role="menu">
+          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
+          <div class="nav-dd-divider"></div>
+          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
+          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
+          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
+          <div class="nav-dd-divider"></div>
+          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+        </div>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-live" aria-live="polite"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
+      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    <ul role="list">
+      <li><a href="index.html"           class="mn-link">Accueil</a></li>
+      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
+      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
+      <li><a href="segments.html"        class="mn-link">Segments</a></li>
+      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
+      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
+      <li><a href="club.html"            class="mn-link">Le club</a></li>
+      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
+      <li><a href="contact.html"         class="mn-link">Contact</a></li>
+      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section id="main-content" class="hero" aria-labelledby="h1">
+  <div class="hero-left">
+    <div class="hero-eyebrow fu" style="--d:0s">
+      <span class="eyebrow-line" aria-hidden="true"></span>
+      Sortie No. 247 · Prépa Paris-Roubaix 2025
+    </div>
+    <h1 id="h1" class="hero-h1">
+      <span class="h1-pre fu" style="--d:.08s">Trouée d'</span>
+      <em class="h1-name fu" style="--d:.18s">Arenberg</em>
+      <span class="h1-elev fu" style="--d:.28s">★★★★★</span>
+    </h1>
+    <p class="hero-sub fu" style="--d:.38s">
+      Reconnaissance complète Paris-Roubaix — Compiègne → Roubaix, 172 km.<br>
+      27 secteurs pavés · Forêt de Wallers · Carrefour de l'Arbre · 9 °C · Vent NO 22 km/h.
+    </p>
+    <div class="hero-kpis fu" style="--d:.48s" role="list" aria-label="Statistiques clés">
+      <div class="kpi" role="listitem"><span class="kpi-l">Distance</span><span class="kpi-v">172 <b>km</b></span></div>
+      <div class="kpi" role="listitem"><span class="kpi-l">Pavés</span><span class="kpi-v">54 <b>km</b></span></div>
+      <div class="kpi" role="listitem"><span class="kpi-l">Durée</span><span class="kpi-v">5<small>h</small>48</span></div>
+      <div class="kpi" role="listitem"><span class="kpi-l">TSS</span><span class="kpi-v">342 <b>pts</b></span></div>
+    </div>
+    <div class="hero-cta fu" style="--d:.58s">
+      <button class="btn-primary" type="button" onclick="scrollToSection('elevation')">
+        Explorer la sortie
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn-ghost" type="button" onclick="exportGPX()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v9M3 7l4 4 4-4M1 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Exporter GPX
+      </button>
+    </div>
+    <div class="hero-meta fu" style="--d:.66s">
+      <time datetime="2025-04-05">5 AVRIL 2025</time>
+      <span aria-hidden="true">·</span><span>Wallers, Nord de France</span>
+      <span aria-hidden="true">·</span><span>Garmin Edge 840</span>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div id="mini-map" role="img" aria-label="Carte reconnaissance Paris-Roubaix"></div>
+    <div class="hero-badge badge-weather">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 17.58A5 5 0 0018 8h-1.26A8 8 0 104 16.25" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div><span class="badge-main">9 °C</span><span class="badge-sub">Couvert · Vent NO 22 km/h</span></div>
+    </div>
+    <div class="hero-badge badge-gps">
+      <span class="badge-gps-label">ARENBERG GPS</span>
+      <span class="badge-gps-coord">50° 26′ 06″ N</span>
+      <span class="badge-gps-coord">03° 14′ 53″ E</span>
+    </div>
+  </div>
+  <a href="#stats" class="scroll-cue" aria-label="Défiler vers Performance" onclick="scrollToSection('stats');return false;">
+    <div class="scroll-line"><div class="scroll-thumb"></div></div>
+    <span>Défiler</span>
+  </a>
+</section>
+
+<div class="ticker" aria-hidden="true" role="presentation">
+  <div class="ticker-track"><div class="ticker-inner">
+    <span>Arenberg ★★★★★ · 2,4 km</span><span class="sep">·</span>
+    <span>172 km</span><span class="sep">·</span><span>NP 228 W</span><span class="sep">·</span>
+    <span>5 h 48 min</span><span class="sep">·</span><span>54 km pavés</span><span class="sep">·</span>
+    <span>27 secteurs</span><span class="sep">·</span><span>TSS 342 pts</span><span class="sep">·</span>
+    <span>FC moy. 144 bpm</span><span class="sep">·</span><span>Cadence 84 rpm</span><span class="sep">·</span>
+    <span>Carrefour de l'Arbre ★★★★★</span><span class="sep">·</span>
+    <span>Vélodrome Roubaix</span><span class="sep">·</span>
+    <span>Arenberg ★★★★★ · 2,4 km</span><span class="sep">·</span>
+    <span>172 km</span><span class="sep">·</span><span>NP 228 W</span><span class="sep">·</span>
+  </div></div>
+</div>
+
+<section id="stats" class="section" aria-labelledby="stats-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">01</span><span class="section-slash">/</span><span class="section-name">Performance</span></div>
+    <div class="section-titles">
+      <h2 id="stats-h" class="section-title">Analyse <em>Puissance</em></h2>
+      <p class="section-desc">Capteur Quarq DZero bilatéral · 1 Hz · Données non lissées. Les pavés génèrent des pics de puissance et réduisent la cadence : la puissance normalisée (NP) est nettement supérieure à la moyenne brute.</p>
+    </div>
+  </header>
+  <div class="stats-grid" role="list" aria-label="Métriques de performance">
+    <article class="scard" data-reveal data-delay="0" role="listitem">
+      <div class="scard-top"><span class="scard-label">Puissance normalisée (NP)</span><div class="scard-icon red"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L11 22L19.5 10.5H13L13 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div>
+      <div class="scard-val">228<b>W</b></div>
+      <div class="scard-sub">74 % de FTP · Effort pavés pris en compte</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="74" style="--fc:var(--accent)"></div></div>
+      <span class="scard-note">Puissance moy. brute : 196 W — écart pavés +32 W</span>
+    </article>
+    <article class="scard" data-reveal data-delay="60" role="listitem">
+      <div class="scard-top"><span class="scard-label">FC moyenne / max</span><div class="scard-icon blue"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+      <div class="scard-val">144<small> / 178</small><b>bpm</b></div>
+      <div class="scard-sub">Zone 3–4 · 79 % FCmax estimée</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="79" style="--fc:var(--blue)"></div></div>
+      <span class="scard-note">Pics sur secteurs pavés : +12 bpm en moyenne</span>
+    </article>
+    <article class="scard" data-reveal data-delay="120" role="listitem">
+      <div class="scard-top"><span class="scard-label">Cadence moyenne</span><div class="scard-icon red"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+      <div class="scard-val">84<b>rpm</b></div>
+      <div class="scard-sub">Réduite sur pavés (68 rpm Arenberg)</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="70" style="--fc:var(--accent)"></div></div>
+      <span class="scard-note positive">Plateau : 92 rpm · Arenberg : 68 rpm</span>
+    </article>
+    <article class="scard" data-reveal data-delay="180" role="listitem">
+      <div class="scard-top"><span class="scard-label">Énergie dépensée</span><div class="scard-icon blue"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 22V12M12 12L4 8M12 12L20 8M4 8V16L12 20L20 16V8L12 4L4 8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div></div>
+      <div class="scard-val">3 124<b>kJ</b></div>
+      <div class="scard-sub">≈ 3 720 kcal — Longue distance</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="88" style="--fc:var(--blue)"></div></div>
+      <span class="scard-note">4 gels · 2 barres · 3 bidons · 1 Coca km 140</span>
+    </article>
+    <article class="scard" data-reveal data-delay="60" role="listitem">
+      <div class="scard-top"><span class="scard-label">Vitesse moy. / max</span><div class="scard-icon red"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 17l4-8 4 4 4-6 4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+      <div class="scard-val">29.6<small> / 54.2</small><b>km/h</b></div>
+      <div class="scard-sub">Pavés : ~22 km/h · Plateau : ~38 km/h</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="58" style="--fc:var(--accent)"></div></div>
+      <span class="scard-note">Max : sprint post-Arenberg sur bitume</span>
+    </article>
+    <article class="scard" data-reveal data-delay="120" role="listitem">
+      <div class="scard-top"><span class="scard-label">Indice de Force (IF)</span><div class="scard-icon blue"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 20h20M6 20V10l6-6 6 6v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+      <div class="scard-val">0.74<b></b></div>
+      <div class="scard-sub">Long effort · Typique d'une classique</div>
+      <div class="scard-bar"><div class="scard-fill" data-w="74" style="--fc:var(--blue)"></div></div>
+      <span class="scard-note">IF cible course : 0.76–0.78 · Objectif validé</span>
+    </article>
+  </div>
+  <div class="zones-block" data-reveal>
+    <div class="zones-header">
+      <span class="zones-title">Répartition des Zones d'Effort</span>
+      <span class="zones-meta">FTP 310 W · 5 h 48</span>
+    </div>
+    <div class="zones-list" role="list">
+      <div class="z-row" role="listitem"><span class="z-lbl">Z1 <em>Récupération</em></span><div class="z-track"><div class="z-fill" data-w="14" style="--zc:#3DB878"></div></div><span class="z-pct">14 %</span><span class="z-time">49 min</span></div>
+      <div class="z-row" role="listitem"><span class="z-lbl">Z2 <em>Endurance</em></span><div class="z-track"><div class="z-fill" data-w="38" style="--zc:#6EC6A0"></div></div><span class="z-pct">38 %</span><span class="z-time">2 h 12</span></div>
+      <div class="z-row" role="listitem"><span class="z-lbl">Z3 <em>Tempo</em></span><div class="z-track"><div class="z-fill" data-w="28" style="--zc:#E8C84A"></div></div><span class="z-pct">28 %</span><span class="z-time">1 h 37</span></div>
+      <div class="z-row" role="listitem"><span class="z-lbl">Z4 <em>Seuil</em></span><div class="z-track"><div class="z-fill" data-w="14" style="--zc:var(--accent)"></div></div><span class="z-pct">14 %</span><span class="z-time">49 min</span></div>
+      <div class="z-row" role="listitem"><span class="z-lbl">Z5 <em>VO₂max</em></span><div class="z-track"><div class="z-fill" data-w="6" style="--zc:#CC2200"></div></div><span class="z-pct">6 %</span><span class="z-time">21 min</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="elevation" class="section" aria-labelledby="elev-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">02</span><span class="section-slash">/</span><span class="section-name">Profil</span></div>
+    <div class="section-titles">
+      <h2 id="elev-h" class="section-title">Profil <em>d'Effort</em></h2>
+      <p class="section-desc">Terrain plat nordiste — D+ 820 m sur 172 km. Les pics de puissance correspondent aux secteurs pavés. Survolez pour le détail point par point.</p>
+    </div>
+  </header>
+  <div class="elev-hud" id="elev-hud" role="status" aria-live="polite" aria-atomic="true">
+    <div class="hud-item"><span class="hud-lbl">KM</span><span class="hud-val" id="elev-km">—</span></div>
+    <div class="hud-sep"></div>
+    <div class="hud-item"><span class="hud-lbl">ALTITUDE</span><span class="hud-val" id="elev-alt">—</span></div>
+    <div class="hud-sep"></div>
+    <div class="hud-item"><span class="hud-lbl">PENTE</span><span class="hud-val" id="elev-grade">—</span></div>
+    <div class="hud-sep"></div>
+    <div class="hud-item"><span class="hud-lbl">PUISSANCE</span><span class="hud-val" id="elev-power">—</span></div>
+    <div class="hud-sep"></div>
+    <div class="hud-item"><span class="hud-lbl">FC</span><span class="hud-val" id="elev-hr">—</span></div>
+  </div>
+  <div class="elev-chart-wrap" role="img" aria-label="Profil d'effort — Reconnaissance Paris-Roubaix">
+    <canvas id="elevation-chart"></canvas>
+  </div>
+  <div class="cols-list" role="list" aria-label="Secteurs clés">
+    <article class="col-card" role="listitem" data-reveal data-delay="0">
+      <div class="col-cat accent">★★★★★</div>
+      <div class="col-info"><span class="col-name">Trouée d'Arenberg</span><span class="col-detail">2,4 km · Forêt de Wallers · km 98 · Secteur 16</span></div>
+      <div class="col-right"><span class="col-time">8′ 14″</span><span class="col-pr">KOM</span></div>
+    </article>
+    <article class="col-card" role="listitem" data-reveal data-delay="80">
+      <div class="col-cat accent">★★★★★</div>
+      <div class="col-info"><span class="col-name">Carrefour de l'Arbre</span><span class="col-detail">1,6 km · Camphin-en-Pévèle · km 157 · Secteur 4</span></div>
+      <div class="col-right"><span class="col-time">5′ 42″</span><span class="col-pr">PR</span></div>
+    </article>
+    <article class="col-card" role="listitem" data-reveal data-delay="160">
+      <div class="col-cat blue">★★★★☆</div>
+      <div class="col-info"><span class="col-name">Mons-en-Pévèle</span><span class="col-detail">3,0 km · km 143 · Secteur 5</span></div>
+      <div class="col-right"><span class="col-time">10′ 58″</span></div>
+    </article>
+  </div>
+</section>
+
+<section id="map-section" class="section map-section" aria-labelledby="map-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">03</span><span class="section-slash">/</span><span class="section-name">Carte</span></div>
+    <div class="section-titles">
+      <h2 id="map-h" class="section-title">Tracé <em>Interactif</em></h2>
+      <p class="section-desc">Compiègne → Roubaix, 172 km. Cliquez sur les points d'intérêt pour les détails. Changez de fond de carte (Topo recommandé pour voir les routes pavées).</p>
+    </div>
+  </header>
+  <div class="map-event-banner" data-reveal>
+    <div class="meb-left">
+      <span class="meb-eyebrow">03 / Tracé officiel · Paris-Roubaix Cyclosportive</span>
+      <h3 class="meb-title">PARIS-ROUBAIX <em>Cyclosportive</em></h3>
+      <p class="meb-desc">Reconnaissance J−8 — tracé identique à l'épreuve du 13 Avril 2025. Compiègne → Wallers-Arenberg → Carrefour de l'Arbre → Vélodrome de Roubaix. Balisage et ravitaillements identiques à la course.</p>
+      <div class="meb-stats">
+        <div class="meb-stat"><span>Distance</span><strong>172 km</strong></div>
+        <div class="meb-stat"><span>Secteurs</span><strong>27</strong></div>
+        <div class="meb-stat"><span>Date course</span><strong>13 Avr 2025</strong></div>
+      </div>
+      <a href="evenements.html" class="btn-primary">Voir la préparation complète
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <div class="meb-right" aria-hidden="true">
+      <svg class="meb-svg" viewBox="0 0 800 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="meb-path-bg" d="M 40,210 C 100,205 160,198 230,190 C 300,180 360,172 430,162 C 490,153 540,148 590,142 C 640,136 690,128 740,124 C 765,122 782,124 800,128"/>
+        <path class="meb-path-glow" d="M 40,210 C 100,205 160,198 230,190 C 300,180 360,172 430,162 C 490,153 540,148 590,142 C 640,136 690,128 740,124 C 765,122 782,124 800,128"/>
+        <path class="meb-path" d="M 40,210 C 100,205 160,198 230,190 C 300,180 360,172 430,162 C 490,153 540,148 590,142 C 640,136 690,128 740,124 C 765,122 782,124 800,128"/>
+        <g class="meb-wp" style="--wp-delay:0.6s"><circle cx="40" cy="210" r="8" fill="var(--accent)"/><text x="40" y="235" text-anchor="middle" fill="rgba(255,255,255,.5)" font-size="8" font-family="'IBM Plex Mono'">COMPIÈGNE</text></g>
+        <g class="meb-wp meb-summit" style="--wp-delay:1.4s"><circle cx="430" cy="162" r="9" fill="var(--accent)"/><text x="430" y="145" text-anchor="middle" fill="var(--accent)" font-size="8" font-family="'IBM Plex Mono'" font-weight="500">ARENBERG ★★★★★</text></g>
+        <g class="meb-wp meb-summit" style="--wp-delay:2.0s"><circle cx="690" cy="128" r="8" fill="var(--accent)"/><text x="690" y="112" text-anchor="middle" fill="var(--accent)" font-size="8" font-family="'IBM Plex Mono'">CARREFOUR ★★★★★</text></g>
+        <g class="meb-wp" style="--wp-delay:2.6s"><circle cx="800" cy="128" r="7" fill="rgba(255,255,255,.8)"/><text x="800" y="150" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8" font-family="'IBM Plex Mono'">ROUBAIX</text></g>
+      </svg>
+    </div>
+  </div>
+  <div class="map-container" data-reveal>
+    <div class="map-toolbar" role="toolbar" aria-label="Contrôles de la carte">
+      <button class="map-btn active" id="btn-route" onclick="toggleRouteLayer()" aria-pressed="true"><svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 12C2 12 4 8 7 7s5-1 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Tracé</button>
+      <button class="map-btn" id="btn-markers" onclick="toggleMarkersLayer()" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M7 9v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Secteurs</button>
+      <div class="map-toolbar-sep"></div>
+      <button class="map-btn" id="btn-topo" onclick="setTileLayer('topo')" aria-pressed="false">Topo</button>
+      <button class="map-btn active" id="btn-osm" onclick="setTileLayer('osm')" aria-pressed="true">Standard</button>
+      <button class="map-btn" id="btn-satellite" onclick="setTileLayer('satellite')" aria-pressed="false">Satellite</button>
+      <div class="map-toolbar-sep"></div>
+      <button class="map-btn" onclick="resetMapView()"><svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 7a5 5 0 1 1 1.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2 10.5V7h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Reset</button>
+    </div>
+    <div id="main-map" role="application" aria-label="Carte Compiègne → Arenberg → Roubaix"></div>
+    <div class="map-legend">
+      <div class="map-leg-item"><div class="map-leg-line accent"></div>Tracé Paris-Roubaix</div>
+      <div class="map-leg-item"><div class="map-leg-dot green"></div>Compiègne · Départ</div>
+      <div class="map-leg-item"><div class="map-leg-dot accent"></div>Secteurs ★★★★★</div>
+    </div>
+  </div>
+</section>
+
+<section id="segments" class="section" aria-labelledby="seg-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">04</span><span class="section-slash">/</span><span class="section-name">Segments</span></div>
+    <div class="section-titles">
+      <h2 id="seg-h" class="section-title">Secteurs <em>pavés</em></h2>
+      <p class="section-desc">Temps sur les principaux secteurs reconnus. ↑ amélioration par rapport à la reconnaissance d'octobre 2024.</p>
+    </div>
+  </header>
+  <div class="seg-table" role="table" aria-label="Secteurs pavés">
+    <div class="seg-head" role="row"><span>Secteur</span><span>Longueur</span><span>Temps</span><span>Δ Préc.</span><span>Classement</span><span>Vitesse</span></div>
+    <div class="seg-row" role="row" data-reveal data-delay="0">
+      <div class="seg-name"><div class="seg-dot accent"></div><span>Trouée d'Arenberg ★★★★★</span></div>
+      <div class="seg-mono">2.4 km</div><div class="seg-mono seg-t">8′ 14″</div>
+      <div class="seg-delta neg">↑ −0′ 38″</div>
+      <div class="seg-rank rank-gold"><span class="rn">1<sup>er</sup></span><span class="rb">KOM</span></div>
+      <div class="seg-mono">17.5 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-reveal data-delay="60">
+      <div class="seg-name"><div class="seg-dot accent"></div><span>Carrefour de l'Arbre ★★★★★</span></div>
+      <div class="seg-mono">1.6 km</div><div class="seg-mono seg-t">5′ 42″</div>
+      <div class="seg-delta neg">↑ −0′ 24″</div>
+      <div class="seg-rank rank-pr"><span class="rn">3<sup>e</sup></span><span class="rb">PR</span></div>
+      <div class="seg-mono">16.8 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-reveal data-delay="120">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Mons-en-Pévèle ★★★★☆</span></div>
+      <div class="seg-mono">3.0 km</div><div class="seg-mono seg-t">10′ 58″</div>
+      <div class="seg-delta pos">↓ +0′ 48″</div>
+      <div class="seg-rank rank-silver"><span class="rn">5<sup>e</sup></span><span class="rb">TOP 10</span></div>
+      <div class="seg-mono">16.4 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-reveal data-delay="180">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Hornaing à Wandignies ★★★☆☆</span></div>
+      <div class="seg-mono">3.7 km</div><div class="seg-mono seg-t">12′ 44″</div>
+      <div class="seg-delta neu">= PR</div>
+      <div class="seg-rank rank-silver"><span class="rn">2<sup>e</sup></span><span class="rb">TOP 10</span></div>
+      <div class="seg-mono">17.4 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-reveal data-delay="240">
+      <div class="seg-name"><div class="seg-dot grey"></div><span>Haveluy à Wallers ★★★★☆</span></div>
+      <div class="seg-mono">2.5 km</div><div class="seg-mono seg-t">9′ 02″</div>
+      <div class="seg-delta neg">↑ −0′ 12″</div>
+      <div class="seg-rank rank-pr"><span class="rn">4<sup>e</sup></span><span class="rb">PR</span></div>
+      <div class="seg-mono">16.6 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-reveal data-delay="300">
+      <div class="seg-name"><div class="seg-dot accent"></div><span>Sprint Camphin-en-Pévèle</span></div>
+      <div class="seg-mono">0.8 km</div><div class="seg-mono seg-t">1′ 28″</div>
+      <div class="seg-delta neg">↑ −0′ 04″</div>
+      <div class="seg-rank rank-gold"><span class="rn">1<sup>er</sup></span><span class="rb">KOM</span></div>
+      <div class="seg-mono">32.7 km/h</div>
+    </div>
+  </div>
+</section>
+
+<section id="bilan" class="section" aria-labelledby="bilan-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">05</span><span class="section-slash">/</span><span class="section-name">Bilan J−8</span></div>
+    <div class="section-titles">
+      <h2 id="bilan-h" class="section-title">Prêt pour <em>Paris-Roubaix</em>&nbsp;?</h2>
+      <p class="section-desc">Check-list de préparation à 8 jours de la course. Chaque point validé lors de cette reconnaissance.</p>
+    </div>
+  </header>
+  <div class="zones-block" data-reveal style="border-left:3px solid var(--accent)">
+    <div class="zones-header">
+      <span class="zones-title">Check-list finale</span>
+      <span class="zones-meta">Paris-Roubaix Cyclosportive · 13 Avr 2025</span>
+    </div>
+    <div class="zones-list">
+      <div class="z-row"><span class="z-lbl">Secteurs clés reconnus <em>Arenberg · Carrefour · Mons</em></span><div class="z-track"><div class="z-fill" data-w="100" style="--zc:#2E7D4F"></div></div><span class="z-pct">✓</span><span class="z-time">3 / 3</span></div>
+      <div class="z-row"><span class="z-lbl">Forme physique <em>CTL 80 · TSB −2 · Légère fatigue</em></span><div class="z-track"><div class="z-fill" data-w="85" style="--zc:var(--blue)"></div></div><span class="z-pct">85 %</span><span class="z-time">OK</span></div>
+      <div class="z-row"><span class="z-lbl">Pneus pavés <em>30 mm · Tubeless · 2.8 bar</em></span><div class="z-track"><div class="z-fill" data-w="100" style="--zc:#2E7D4F"></div></div><span class="z-pct">✓</span><span class="z-time">Validé</span></div>
+      <div class="z-row"><span class="z-lbl">Nutrition longue distance <em>4 gels · barres · Coca testés</em></span><div class="z-track"><div class="z-fill" data-w="100" style="--zc:#2E7D4F"></div></div><span class="z-pct">✓</span><span class="z-time">Validé</span></div>
+      <div class="z-row"><span class="z-lbl">Objectif temps <em>Top 20 cat. Open A · ~5h30</em></span><div class="z-track"><div class="z-fill" data-w="75" style="--zc:#E8C84A"></div></div><span class="z-pct">75 %</span><span class="z-time">En cours</span></div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="evenements.html" class="btn-primary" style="font-size:10px;padding:11px 22px;">Voir la préparation complète</a>
+      <button class="btn-ghost" type="button" onclick="exportGPX()" style="font-size:10px;padding:11px 20px;">Exporter le tracé GPX</button>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">C.C. SAROUEL</span>
+      <p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p>
+    </div>
+    <nav class="footer-nav" aria-label="Navigation pied de page">
+      <a href="index.html">Accueil</a>
+      <a href="sorties.html">Sorties</a>
+      <a href="parcours.html">Parcours</a>
+      <a href="segments.html">Segments</a>
+      <a href="evenements.html">Événements</a>
+      <a href="profil.html">Profil</a>
+      <a href="club.html">Club</a>
+      <a href="palmares.html">Palmarès</a>
+      <a href="contact.html">Contact</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+    </nav>
+    <dl class="footer-meta">
+      <div><dt>Appareil</dt><dd>Garmin Edge 840 Solar</dd></div>
+      <div><dt>Capteur</dt><dd>Quarq DZero Bilatéral</dd></div>
+      <div><dt>Vélo</dt><dd>Canyon Ultimate CF SLX</dd></div>
+      <div><dt>Date</dt><dd><time datetime="2025-04-05">5 Avril 2025</time></dd></div>
+    </dl>
+    <address class="footer-gps">
+      <span>50° 26′ 06″ N</span>
+      <span>03° 14′ 53″ E</span>
+      <span class="footer-alt">Arenberg · Wallers</span>
+    </address>
+  </div>
+  <div class="footer-bar">
+    <span>© 2025 Club Cycliste de Sarouel — Tous droits réservés</span>
+    <span>Leaflet · Chart.js 4 · v7.0</span>
+  </div>
+</footer>
+
+<script src="asset/js/main.js"></script>
+</body>
+</html>

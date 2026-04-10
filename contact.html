@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Contacter le Club Cycliste de Sarouel — Adresse, téléphone, formulaire de contact, localisation. Nord, Hauts-de-France." />
+  <meta name="theme-color" content="#0D0D10" />
+  <title>C.C. SAROUEL — Contact</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="asset/css/style.css" />
+  <style>
+    /* Contact page styles */
+    .contact-layout { display: grid; grid-template-columns: 420px 1fr; gap: 2px; }
+
+    /* Info column */
+    .contact-info { display: flex; flex-direction: column; gap: 2px; }
+    .contact-block {
+      background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r3);
+      padding: 28px 30px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .contact-block-label {
+      font-family: var(--fm); font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--t3); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+    }
+    .contact-block-label::before { content:''; display:inline-block; width:16px; height:1px; background:var(--accent); }
+    .contact-block-title { font-family: var(--fd); font-size: 18px; letter-spacing: .04em; text-transform: uppercase; color: var(--t1); margin-bottom: 4px; }
+    .contact-block-val { font-family: var(--fb); font-size: 14px; color: var(--t2); line-height: 1.7; }
+    .contact-block-val a { color: var(--accent); transition: opacity .2s; }
+    .contact-block-val a:hover { opacity: .75; }
+    .contact-block-mono { font-family: var(--fm); font-size: 13px; color: var(--t1); }
+
+    /* Hours table */
+    .hours-table { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .hours-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .hours-day  { font-family: var(--fm); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--t3); }
+    .hours-time { font-family: var(--fd); font-size: 14px; color: var(--t1); }
+    .hours-time.closed { color: var(--t3); font-family: var(--fm); font-size: 10px; }
+
+    /* Form */
+    .contact-form { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r4); padding: 44px 48px; }
+    .form-title { font-family: var(--fd); font-size: 26px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 8px; }
+    .form-sub   { font-family: var(--fb); font-size: 13px; color: var(--t2); margin-bottom: 32px; line-height: 1.72; }
+    .form-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-family: var(--fm); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--t3); }
+    .form-input, .form-select, .form-textarea {
+      background: var(--bg-raised); border: 1px solid var(--bdr);
+      border-radius: var(--r2); padding: 13px 16px;
+      font-family: var(--fm); font-size: 12px; color: var(--t1);
+      transition: border-color .22s, box-shadow .22s;
+      outline: none; width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-a);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--t3); }
+    .form-select { appearance: none; cursor: pointer; }
+    .form-textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+    .form-submit { margin-top: 8px; }
+    .form-notice { font-family: var(--fm); font-size: 9.5px; color: var(--t3); letter-spacing: .04em; margin-top: 12px; line-height: 1.6; }
+
+    /* Map */
+    #contact-map { width: 100%; height: 340px; border-radius: var(--r3); border: 1px solid var(--bdr); overflow: hidden; }
+
+    /* Social links */
+    .social-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .social-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 16px; background: var(--bg-raised);
+      border: 1px solid var(--bdr); border-radius: var(--rpill);
+      font-family: var(--fm); font-size: 10px; letter-spacing: .10em; text-transform: uppercase; color: var(--t2);
+      transition: border-color .22s, color .22s, background .22s;
+      text-decoration: none;
+    }
+    .social-link:hover { border-color: var(--bdr-a); color: var(--accent); background: var(--accent-a); }
+
+    @media (max-width: 1100px) {
+      .contact-layout { grid-template-columns: 360px 1fr; }
+    }
+    @media (max-width: 900px) {
+      .contact-layout { grid-template-columns: 1fr; }
+      .contact-form { padding: 28px 24px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo" aria-label="Accueil - C.C. Sarouel">
+      <span class="nav-logo-mark" aria-hidden="true">S</span>
+      <span>C.C. SAROUEL</span>
+    </a>
+        <ul class="nav-links" role="list">
+      <li><a href="index.html"      class="nl">Accueil</a></li>
+      <li><a href="sorties.html"    class="nl">Sorties</a></li>
+      <li><a href="parcours.html"   class="nl">Parcours</a></li>
+      <li><a href="segments.html"   class="nl">Segments</a></li>
+      <li><a href="evenements.html" class="nl">Événements</a></li>
+      <li class="nav-dropdown">
+        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+          Club
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" role="menu">
+          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
+          <div class="nav-dd-divider"></div>
+          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
+          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
+          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
+          <div class="nav-dd-divider"></div>
+          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+        </div>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-live"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
+      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    <ul role="list">
+      <li><a href="index.html"           class="mn-link">Accueil</a></li>
+      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
+      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
+      <li><a href="segments.html"        class="mn-link">Segments</a></li>
+      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
+      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
+      <li><a href="club.html"            class="mn-link">Le club</a></li>
+      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
+      <li><a href="contact.html"         class="mn-link">Contact</a></li>
+      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content"><header class="page-header">
+  <div class="page-eyebrow fu" style="--d:0s"><span style="display:inline-block;width:24px;height:2px;background:var(--accent);flex-shrink:0;"></span>Club Cycliste de Sarouel · Nord (59)</div>
+  <h1 class="page-h1 fu" style="--d:.08s">Nous<br><em>contacter</em></h1>
+  <p class="page-sub fu" style="--d:.16s">Une question sur l'adhésion, une sortie à organiser, ou simplement envie de rouler avec nous ? On vous répond rapidement.</p>
+</header>
+
+<section class="section" style="padding-top:0" aria-labelledby="contact-h">
+  <h2 id="contact-h" class="sr-only">Formulaire et informations de contact</h2>
+
+  <div class="contact-layout" data-reveal>
+
+    <!-- Colonne infos -->
+    <div class="contact-info">
+
+      <div class="contact-block" style="border-left: 3px solid var(--accent);">
+        <div class="contact-block-label">Adresse</div>
+        <div class="contact-block-title">Siège social</div>
+        <div class="contact-block-val">
+          Club Cycliste de Sarouel<br>
+          Salle des Sports<br>
+          Rue du Général de Gaulle<br>
+          59280 Sarouel (Nord)
+        </div>
+      </div>
+
+      <div class="contact-block">
+        <div class="contact-block-label">Téléphone</div>
+        <div class="contact-block-title">Secrétariat</div>
+        <div class="contact-block-mono"><a href="tel:+33320000000" style="color:var(--accent)">03 20 00 00 00</a></div>
+        <div class="contact-block-val" style="font-size:12px;margin-top:4px;">Disponible le mardi de 18h à 20h<br>et le dimanche de 7h30 à 9h30.</div>
+      </div>
+
+      <div class="contact-block">
+        <div class="contact-block-label">Email</div>
+        <div class="contact-block-title">Contact général</div>
+        <div class="contact-block-mono"><a href="/cdn-cgi/l/email-protection#1e7d71706a7f7d6a5e7d726b7c7d677d72776d6a7b336d7f6c716b7b7230786c"><span class="__cf_email__" data-cfemail="264549485247455266454a5344455f454a4f5552430b5547544953434a084054">[email&#160;protected]</span></a></div>
+        <div class="contact-block-val" style="font-size:12px;margin-top:4px;">Réponse sous 48h ouvrées.<br>Pour les urgences : appelez directement.</div>
+      </div>
+
+      <div class="contact-block">
+        <div class="contact-block-label">Sorties club</div>
+        <div class="contact-block-title">Rendez-vous hebdomadaires</div>
+        <div class="hours-table">
+          <div class="hours-row"><span class="hours-day">Mardi</span><span class="hours-time">18h30 — Endurance</span></div>
+          <div class="hours-row"><span class="hours-day">Mercredi</span><span class="hours-time closed">Repos</span></div>
+          <div class="hours-row"><span class="hours-day">Jeudi</span><span class="hours-time">18h30 — Tempo</span></div>
+          <div class="hours-row"><span class="hours-day">Vendredi</span><span class="hours-time closed">Repos</span></div>
+          <div class="hours-row"><span class="hours-day">Samedi</span><span class="hours-time closed">Selon programme</span></div>
+          <div class="hours-row"><span class="hours-day">Dimanche</span><span class="hours-time">8h00 — Sortie club</span></div>
+        </div>
+        <div style="margin-top:14px;font-family:var(--fm);font-size:9.5px;color:var(--t3);">Point de départ : Parking Salle des Sports, Sarouel</div>
+      </div>
+
+      <div class="contact-block">
+        <div class="contact-block-label">Réseaux sociaux</div>
+        <div class="contact-block-title">Suivez le club</div>
+        <div class="social-links">
+          <a href="#" class="social-link" aria-label="Strava du club">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Strava
+          </a>
+          <a href="#" class="social-link" aria-label="Facebook du club">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Facebook
+          </a>
+          <a href="#" class="social-link" aria-label="Instagram du club">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            Instagram
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Formulaire -->
+    <div class="contact-form">
+      <h2 class="form-title">Envoyer un message</h2>
+      <p class="form-sub">Remplissez ce formulaire pour nous contacter. Nous répondons sous 48h ouvrées. Pour les demandes d'adhésion, précisez votre niveau et vos objectifs.</p>
+
+      <form id="contact-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="prenom">Prénom *</label>
+            <input class="form-input" type="text" id="prenom" name="prenom" autocomplete="given-name" placeholder="Jean" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="nom">Nom *</label>
+            <input class="form-input" type="text" id="nom" name="nom" autocomplete="family-name" placeholder="Dupont" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Email *</label>
+            <input class="form-input" type="email" id="email" name="email" autocomplete="email" placeholder="jean.dupont@email.fr" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="tel">Téléphone</label>
+            <input class="form-input" type="tel" id="tel" name="tel" autocomplete="tel" placeholder="06 00 00 00 00" />
+          </div>
+          <div class="form-group full">
+            <label class="form-label" for="sujet">Sujet *</label>
+            <select class="form-select" id="sujet" name="sujet" required>
+              <option value="" disabled selected>Choisissez un sujet…</option>
+              <option value="adhesion">Adhésion au club</option>
+              <option value="sortie-essai">Participation à une sortie d'essai</option>
+              <option value="evenement">Renseignement sur un événement</option>
+              <option value="partenariat">Partenariat / Sponsoring</option>
+              <option value="autre">Autre demande</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label" for="message">Message *</label>
+            <textarea class="form-textarea" id="message" name="message" placeholder="Décrivez votre demande…" required></textarea>
+          </div>
+          <div class="form-group full form-submit">
+            <button type="submit" class="btn-primary" style="align-self:flex-start;" onclick="handleFormSubmit(event)">
+              Envoyer le message
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <p class="form-notice">* Champs obligatoires. Vos données sont utilisées uniquement pour répondre à votre demande et ne sont pas transmises à des tiers. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données.</p>
+          </div>
+        </div>
+      </form>
+
+      <div id="form-success" style="display:none;margin-top:24px;padding:20px 24px;background:var(--green-a);border:1px solid rgba(46,125,79,.25);border-radius:var(--r3);">
+        <p style="font-family:var(--fd);font-size:16px;letter-spacing:.04em;text-transform:uppercase;color:#2E7D4F;margin-bottom:4px;">Message envoyé ✓</p>
+        <p style="font-family:var(--fb);font-size:13px;color:var(--t2);">Merci pour votre message. Nous vous répondrons sous 48h ouvrées.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Carte localisation -->
+  <h2 class="section-title" style="margin-bottom:16px;margin-top:64px">Nous <em>trouver</em></h2>
+  <div data-reveal>
+    <div id="contact-map" role="img" aria-label="Carte de localisation du Club Cycliste de Sarouel"></div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:14px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--bdr);border-bottom-left-radius:var(--r3);border-bottom-right-radius:var(--r3);border-top:none;">
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:.08em;display:flex;align-items:center;gap:8px;">
+        <span style="width:10px;height:10px;background:var(--accent);border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+        Salle des Sports — Point de départ des sorties
+      </div>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:.08em;">
+        Parking gratuit sur place · Vestiaires disponibles dimanche
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">C.C. SAROUEL</span>
+      <p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p>
+    </div>
+    <nav class="footer-nav" aria-label="Navigation pied de page">
+      <a href="index.html">Accueil</a>
+      <a href="sorties.html">Sorties</a>
+      <a href="club.html">Club</a>
+      <a href="evenements.html">Événements</a>
+      <a href="contact.html">Contact</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+    </nav>
+    <dl class="footer-meta">
+      <div><dt>Adresse</dt><dd>Sarouel, Nord (59)</dd></div>
+      <div><dt>Tél</dt><dd>03 20 00 00 00</dd></div>
+      <div><dt>Email</dt><dd><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="30535f5e4451534470535c45525349535c594344551d4351425f45555c1e5642">[email&#160;protected]</a></dd></div>
+    </dl>
+    <address class="footer-gps">
+      <span>50° 35′ 12″ N</span>
+      <span>03° 04′ 48″ E</span>
+      <span class="footer-alt">Sarouel · Nord</span>
+    </address>
+  </div>
+  <div class="footer-bar">
+    <span>© 2025 Club Cycliste de Sarouel — Tous droits réservés</span>
+    <span>v7.0 — clubcycliste-sarouel.fr</span>
+  </div>
+</footer>
+
+<style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}</style>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="asset/js/main.js"></script>
+<script>
+"use strict";
+// Contact map — Sarouel, Nord
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof L === "undefined") return;
+  const lat = 50.587, lng = 3.080; // Sarouel approximation
+  const map = L.map("contact-map", {
+    center: [lat, lng], zoom: 14,
+    scrollWheelZoom: false, attributionControl: false
+  });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+  const icon = L.divIcon({
+    html: `<div style="width:14px;height:14px;background:#D4291A;border-radius:50%;border:3px solid rgba(240,237,230,.9);box-shadow:0 0 0 4px rgba(212,41,26,.25),0 4px 12px rgba(0,0,0,.4);"></div>`,
+    className: "", iconSize: [14,14], iconAnchor: [7,7]
+  });
+  L.marker([lat, lng], { icon })
+    .addTo(map)
+    .bindPopup(`<div style="padding:10px 12px;font-family:'IBM Plex Mono',monospace;"><strong style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:#F0EDE6;letter-spacing:.04em;">C.C. SAROUEL</strong><br><span style="font-size:10px;color:rgba(240,237,230,.5);">Salle des Sports · Sarouel, Nord</span></div>`, { closeButton: false })
+    .openPopup();
+});
+
+window.handleFormSubmit = function(e) {
+  e.preventDefault();
+  const form = document.getElementById("contact-form");
+  const required = form.querySelectorAll("[required]");
+  let valid = true;
+  required.forEach(field => {
+    if (!field.value.trim()) {
+      valid = false;

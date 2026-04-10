@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="C.C. SAROUEL — Segments KOM et records personnels. Classements, temps, progression." />
+  <meta name="theme-color" content="#0D0D10" />
+  <title>C.C. SAROUEL — Segments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="asset/css/style.css" />
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span class="nav-logo-mark" aria-hidden="true">S</span><span>C.C. SAROUEL</span></a>
+        <ul class="nav-links" role="list">
+      <li><a href="index.html"      class="nl">Accueil</a></li>
+      <li><a href="sorties.html"    class="nl">Sorties</a></li>
+      <li><a href="parcours.html"   class="nl">Parcours</a></li>
+      <li><a href="segments.html"   class="nl">Segments</a></li>
+      <li><a href="evenements.html" class="nl">Événements</a></li>
+      <li class="nav-dropdown">
+        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+          Club
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" role="menu">
+          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
+          <div class="nav-dd-divider"></div>
+          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
+          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
+          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
+          <div class="nav-dd-divider"></div>
+          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+        </div>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-live"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
+      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    <ul role="list">
+      <li><a href="index.html"           class="mn-link">Accueil</a></li>
+      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
+      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
+      <li><a href="segments.html"        class="mn-link">Segments</a></li>
+      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
+      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
+      <li><a href="club.html"            class="mn-link">Le club</a></li>
+      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
+      <li><a href="contact.html"         class="mn-link">Contact</a></li>
+      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content"><header class="page-header">
+  <div class="page-eyebrow fu" style="--d:0s"><span style="display:inline-block;width:24px;height:2px;background:var(--accent);flex-shrink:0;"></span>KOM · PR · Classements</div>
+  <h1 class="page-h1 fu" style="--d:.08s">Segments<br><em>&amp; records</em></h1>
+  <p class="page-sub fu" style="--d:.16s">Vos meilleurs temps sur chaque segment enregistré. 3 KOM actifs, 14 records personnels sur 62 segments.</p>
+  <div class="page-meta fu" style="--d:.24s">
+    <div class="page-meta-item"><span class="page-meta-label">KOM actifs</span><span class="page-meta-value" style="color:var(--gold)">3</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Records PR</span><span class="page-meta-value">14</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Segments</span><span class="page-meta-value">62</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Top 10</span><span class="page-meta-value">28</span></div>
+  </div>
+</header>
+
+<section class="section" style="padding-top:0" aria-labelledby="seg-full-h">
+  <h2 id="seg-full-h" class="section-title" style="margin-bottom:20px">Tous les <em>segments</em></h2>
+
+  <div id="filter-chips" class="filter-bar fu" style="--d:.28s" role="toolbar">
+    <span class="filter-bar-label">Filtre</span>
+    <button class="filter-chip active" data-group="seg" type="button">Tous</button>
+    <button class="filter-chip" data-group="seg" type="button">KOM 🥇</button>
+    <button class="filter-chip" data-group="seg" type="button">Records PR</button>
+    <button class="filter-chip" data-group="seg" type="button">Top 10</button>
+    <div class="filter-sep"></div>
+    <span class="filter-bar-label">Zone</span>
+    <button class="filter-chip active" data-group="zone" type="button">Toutes</button>
+    <button class="filter-chip" data-group="zone" type="button">Arenberg</button>
+    <button class="filter-chip" data-group="zone" type="button">Flandres</button>
+    <button class="filter-chip" data-group="zone" type="button">Avesnois</button>
+  </div>
+
+  <div class="seg-table" role="table" aria-label="Tableau des segments" data-reveal>
+    <div class="seg-head" role="row"><span>Segment</span><span>Distance</span><span>Meilleur temps</span><span>Δ PR</span><span>Classement</span><span>Vitesse moy.</span></div>
+
+    <div class="seg-row" role="row" data-seg="kom" data-zone="arenberg">
+      <div class="seg-name"><div class="seg-dot accent"></div><span>Trouée d'Arenberg — Secteur complet</span></div>
+      <div class="seg-mono">17.7 km</div>
+      <div class="seg-mono seg-t">1h 48′ 14″</div>
+      <div class="seg-delta neg">↑ −4′ 22″</div>
+      <div class="seg-rank rank-gold"><span class="rn">1<sup>er</sup></span><span class="rb">KOM 🥇</span></div>
+      <div class="seg-mono">9.8 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="kom" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot accent"></div><span>Sprint Carrefour de l'Arbre</span></div>
+      <div class="seg-mono">0.4 km</div>
+      <div class="seg-mono seg-t">0′ 52″</div>
+      <div class="seg-delta neg">↑ −0′ 04″</div>
+      <div class="seg-rank rank-gold"><span class="rn">1<sup>er</sup></span><span class="rb">KOM 🥇</span></div>
+      <div class="seg-mono">27.7 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="kom" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot accent"></div><span>Côte de Douvrin — Mont Bernenchon</span></div>
+      <div class="seg-mono">13.8 km</div>
+      <div class="seg-mono seg-t">48′ 02″</div>
+      <div class="seg-delta neg">↑ −2′ 18″</div>
+      <div class="seg-rank rank-gold"><span class="rn">1<sup>er</sup></span><span class="rb">KOM 🥇</span></div>
+      <div class="seg-mono">17.2 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="pr" data-zone="arenberg">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Secteurs Wallers-Arenberg</span></div>
+      <div class="seg-mono">8.2 km</div>
+      <div class="seg-mono seg-t">32′ 14″</div>
+      <div class="seg-delta neg">↑ −1′ 08″</div>
+      <div class="seg-rank rank-pr"><span class="rn">4<sup>e</sup></span><span class="rb">PR</span></div>
+      <div class="seg-mono">15.4 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="top10" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Plaine Flamande — Comines Sprint</span></div>
+      <div class="seg-mono">12.4 km</div>
+      <div class="seg-mono seg-t">18′ 40″</div>
+      <div class="seg-delta neu">= PR</div>
+      <div class="seg-rank rank-silver"><span class="rn">2<sup>e</sup></span><span class="rb">TOP 10</span></div>
+      <div class="seg-mono">39.9 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="pr" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Mont Cassel — Montée Nord</span></div>
+      <div class="seg-mono">9.6 km</div>
+      <div class="seg-mono seg-t">28′ 44″</div>
+      <div class="seg-delta neg">↑ −0′ 52″</div>
+      <div class="seg-rank rank-pr"><span class="rn">3<sup>e</sup></span><span class="rb">PR</span></div>
+      <div class="seg-mono">20.0 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="top10" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot grey"></div><span>Tour de Roubaix — Boucle Mons</span></div>
+      <div class="seg-mono">5.1 km</div>
+      <div class="seg-mono seg-t">18′ 40″</div>
+      <div class="seg-delta pos">↓ +2′ 12″</div>
+      <div class="seg-rank rank-bronze"><span class="rn">8<sup>e</sup></span><span class="rb">TOP 10</span></div>
+      <div class="seg-mono">16.4 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="top10" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot grey"></div><span>Côte de Tourcoing — Sprint</span></div>
+      <div class="seg-mono">11.2 km</div>
+      <div class="seg-mono seg-t">36′ 22″</div>
+      <div class="seg-delta pos">↓ +3′ 40″</div>
+      <div class="seg-rank rank-silver"><span class="rn">6<sup>e</sup></span><span class="rb">TOP 10</span></div>
+      <div class="seg-mono">18.5 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="pr" data-zone="avesnois">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Avesnois — Côte de Sars-Poteries</span></div>
+      <div class="seg-mono">22.0 km</div>
+      <div class="seg-mono seg-t">1h 12′ 08″</div>
+      <div class="seg-delta neg">↑ −1′ 54″</div>
+      <div class="seg-rank rank-pr"><span class="rn">5<sup>e</sup></span><span class="rb">PR</span></div>
+      <div class="seg-mono">18.3 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="top10" data-zone="avesnois">
+      <div class="seg-name"><div class="seg-dot grey"></div><span>Sprint Douai — Zone Industrielle</span></div>
+      <div class="seg-mono">2.8 km</div>
+      <div class="seg-mono seg-t">3′ 44″</div>
+      <div class="seg-delta neu">= PR</div>
+      <div class="seg-rank rank-bronze"><span class="rn">12<sup>e</sup></span><span class="rb">TOP 20</span></div>
+      <div class="seg-mono">44.9 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="pr" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot blue"></div><span>Secteur Mons-en-Pévèle</span></div>
+      <div class="seg-mono">7.4 km</div>
+      <div class="seg-mono seg-t">24′ 18″</div>
+      <div class="seg-delta neg">↑ −0′ 28″</div>
+      <div class="seg-rank rank-pr"><span class="rn">7<sup>e</sup></span><span class="rb">PR</span></div>
+      <div class="seg-mono">18.3 km/h</div>
+    </div>
+    <div class="seg-row" role="row" data-seg="top10" data-zone="flandres">
+      <div class="seg-name"><div class="seg-dot grey"></div><span>Dunkerque — Digue Maritime</span></div>
+      <div class="seg-mono">11.6 km</div>
+      <div class="seg-mono seg-t">40′ 52″</div>
+      <div class="seg-delta pos">↓ +1′ 22″</div>
+      <div class="seg-rank"><span class="rn" style="color:var(--t2)">18<sup>e</sup></span><span class="rb">—</span></div>
+      <div class="seg-mono">17.0 km/h</div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand"><span class="footer-logo">C.C. SAROUEL</span><p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p></div>
+    <nav class="footer-nav"><a href="index.html">Accueil</a><a href="sorties.html">Sorties</a><a href="parcours.html">Parcours</a><a href="segments.html">Segments</a><a href="evenements.html">Événements</a><a href="profil.html">Profil</a>
+      <a href="club.html">Club</a>
+      <a href="contact.html">Contact</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+    </nav>
+    <dl class="footer-meta"><div><dt>KOM actifs</dt><dd>3</dd></div><div><dt>Records PR</dt><dd>14</dd></div><div><dt>Segments</dt><dd>62</dd></div></dl>
+    <address class="footer-gps"><span>50° 35′ 12″ N</span><span>03° 04′ 48″ E</span><span class="footer-alt">Sarouel · Nord</span></address>
+  </div>
+  <div class="footer-bar"><span>© 2025 C.C. SAROUEL — Cyclisme de performance</span><span>v7.0 — clubcycliste-sarouel.fr</span></div>
+</footer>
+
+<script src="asset/js/main.js"></script>
+</body>
+</html>

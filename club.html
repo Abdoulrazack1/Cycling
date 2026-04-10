@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Club Cycliste de Sarouel — Présentation du club, membres, histoire, comment nous rejoindre. Club de cyclisme du Nord, Hauts-de-France." />
+  <meta name="theme-color" content="#0D0D10" />
+  <meta property="og:title" content="C.C. Sarouel — Le Club" />
+  <meta property="og:description" content="Club Cycliste de Sarouel · Hauts-de-France · Fondé en 1987 · 48 membres actifs" />
+  <meta property="og:type" content="website" />
+  <title>C.C. SAROUEL — Le Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="asset/css/style.css" />
+  <style>
+    /* ── Club-specific styles ── */
+    .club-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 2px; }
+    .club-block { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r4); padding: 40px 44px; }
+    .club-block-title { font-family: var(--fd); font-size: 22px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 16px; }
+    .club-block-title em { font-family: var(--fb); font-style: italic; color: var(--accent); text-transform: none; font-size: .82em; }
+    .club-block p { font-family: var(--fb); font-size: 14px; color: var(--t2); line-height: 1.82; margin-bottom: 14px; }
+    .club-block p:last-child { margin-bottom: 0; }
+
+    .members-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+    .member-card {
+      background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r3);
+      padding: 24px 18px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px;
+      transition: border-color .28s, transform .32s var(--lux), box-shadow .32s;
+    }
+    .member-card:hover { border-color: var(--bdr-hi); transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+    .member-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--bg-raised); border: 2px solid var(--bdr-hi);
+      font-family: var(--fd); font-size: 24px; color: var(--t2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .member-avatar.bureau { background: var(--accent-a); border-color: var(--bdr-a); color: var(--accent); }
+    .member-name   { font-family: var(--fd); font-size: 15px; letter-spacing: .04em; text-transform: uppercase; line-height: 1; }
+    .member-role   { font-family: var(--fm); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--t3); }
+    .member-stats  { font-family: var(--fm); font-size: 9.5px; color: var(--t3); margin-top: 4px; }
+    .member-badge  { font-family: var(--fm); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; padding: 2px 9px; border-radius: var(--rpill); }
+    .member-badge.bureau-tag  { background: var(--accent-a); color: var(--accent); border: 1px solid var(--bdr-a); }
+    .member-badge.licencie-tag{ background: var(--blue-a); color: var(--blue); border: 1px solid rgba(43,95,191,.25); }
+
+    .join-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .join-step {
+      background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r3);
+      padding: 32px 28px; display: flex; flex-direction: column; gap: 12px;
+      transition: border-color .28s;
+    }
+    .join-step:hover { border-color: var(--bdr-a); }
+    .join-step-num { font-family: var(--fd); font-size: 48px; color: var(--accent); line-height: 1; opacity: .2; }
+    .join-step-title { font-family: var(--fd); font-size: 16px; letter-spacing: .06em; text-transform: uppercase; }
+    .join-step-desc  { font-family: var(--fb); font-size: 13px; color: var(--t2); line-height: 1.72; }
+
+    .tarif-table { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: var(--r4); overflow: hidden; }
+    .tarif-row { display: grid; grid-template-columns: 1fr 120px 200px; align-items: center; padding: 18px 28px; border-bottom: 1px solid var(--bdr); transition: background .2s; }
+    .tarif-row:last-child { border-bottom: none; }
+    .tarif-row:hover { background: var(--bg-card-h); }
+    .tarif-head { background: var(--bg-raised); font-family: var(--fm); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--t3); }
+    .tarif-cat  { font-family: var(--fb); font-size: 14px; color: var(--t1); }
+    .tarif-cat small { display: block; font-family: var(--fm); font-size: 10px; color: var(--t3); margin-top: 2px; }
+    .tarif-prix { font-family: var(--fd); font-size: 24px; letter-spacing: -0.01em; color: var(--accent); }
+    .tarif-prix small { font-family: var(--fm); font-size: .4em; color: var(--t3); }
+    .tarif-inc { font-family: var(--fm); font-size: 10px; color: var(--t3); letter-spacing: .04em; }
+
+    .history-timeline { display: flex; flex-direction: column; gap: 0; }
+    .ht-item { display: grid; grid-template-columns: 80px 1px 1fr; gap: 0 24px; padding-bottom: 28px; }
+    .ht-item:last-child { padding-bottom: 0; }
+    .ht-year { font-family: var(--fd); font-size: 22px; color: var(--accent); line-height: 1; padding-top: 2px; }
+    .ht-line { background: var(--bdr); position: relative; }
+    .ht-line::before { content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg-card); }
+    .ht-content { padding-top: 0; }
+    .ht-event { font-family: var(--fd); font-size: 14px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px; }
+    .ht-desc { font-family: var(--fb); font-size: 13px; color: var(--t2); line-height: 1.7; }
+
+    @media (max-width: 960px) {
+      .club-grid { grid-template-columns: 1fr; }
+      .members-grid { grid-template-columns: repeat(2, 1fr); }
+      .join-steps { grid-template-columns: 1fr; }
+      .tarif-row { grid-template-columns: 1fr 100px; }
+      .tarif-row > :last-child { display: none; }
+    }
+    @media (max-width: 640px) {
+      .members-grid { grid-template-columns: repeat(2, 1fr); }
+      .club-block { padding: 28px 24px; }
+    }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+
+<nav id="main-nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo" aria-label="Accueil - C.C. Sarouel">
+      <span class="nav-logo-mark" aria-hidden="true">S</span>
+      <span>C.C. SAROUEL</span>
+    </a>
+        <ul class="nav-links" role="list">
+      <li><a href="index.html"      class="nl">Accueil</a></li>
+      <li><a href="sorties.html"    class="nl">Sorties</a></li>
+      <li><a href="parcours.html"   class="nl">Parcours</a></li>
+      <li><a href="segments.html"   class="nl">Segments</a></li>
+      <li><a href="evenements.html" class="nl">Événements</a></li>
+      <li class="nav-dropdown">
+        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
+          Club
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" role="menu">
+          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
+          <div class="nav-dd-divider"></div>
+          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
+          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
+          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
+          <div class="nav-dd-divider"></div>
+          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+        </div>
+      </li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-live"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
+      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    <ul role="list">
+      <li><a href="index.html"           class="mn-link">Accueil</a></li>
+      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
+      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
+      <li><a href="segments.html"        class="mn-link">Segments</a></li>
+      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
+      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
+      <li><a href="club.html"            class="mn-link">Le club</a></li>
+      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
+      <li><a href="contact.html"         class="mn-link">Contact</a></li>
+      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<main id="main-content"><header class="page-header">
+  <div class="page-eyebrow fu" style="--d:0s"><span style="display:inline-block;width:24px;height:2px;background:var(--accent);flex-shrink:0;"></span>Fondé en 1987 · Sarouel, Nord</div>
+  <h1 class="page-h1 fu" style="--d:.08s">Club Cycliste<br><em>de Sarouel</em></h1>
+  <p class="page-sub fu" style="--d:.16s">Un club du Nord, ancré dans les terres du pavé. 48 membres licenciés, des sorties hebdomadaires, des courses locales — et la passion du vélo comme seul dénominateur commun.</p>
+  <div class="page-meta fu" style="--d:.24s">
+    <div class="page-meta-item"><span class="page-meta-label">Fondé en</span><span class="page-meta-value">1987</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Membres</span><span class="page-meta-value">48</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Licences FFC</span><span class="page-meta-value">31</span></div>
+    <div class="page-meta-sep"></div>
+    <div class="page-meta-item"><span class="page-meta-label">Sorties / semaine</span><span class="page-meta-value">3</span></div>
+  </div>
+</header>
+
+<!-- ══ PRÉSENTATION ══ -->
+<section class="section" style="padding-top:0" aria-labelledby="pres-h">
+  <div class="club-grid" data-reveal>
+    <div class="club-block" style="border-left: 3px solid var(--accent);">
+      <h2 id="pres-h" class="club-block-title">Notre <em>histoire</em></h2>
+      <p>Le Club Cycliste de Sarouel a été fondé en 1987 par une poignée de passionnés du village, avec pour seule ambition de pédaler ensemble sur les routes du Nord. Presque quarante ans plus tard, le club compte 48 membres et participe chaque année aux grandes épreuves régionales.</p>
+      <p>Ancré dans la tradition cycliste nordiste — pavés, plaine flamande, vent de face — le C.C. Sarouel forme aussi bien des débutants que des compétiteurs confirmés. Plusieurs de nos membres ont disputé Paris-Roubaix en amateurs, et deux d'entre eux y ont terminé.</p>
+      <p>Le club est affilié à la Fédération Française de Cyclisme (FFC) et à la Ligue Hauts-de-France.</p>
+    </div>
+    <div class="club-block">
+      <h2 class="club-block-title">Nos <em>sorties</em></h2>
+      <p><strong style="font-family:var(--fd);font-size:13px;letter-spacing:.06em;text-transform:uppercase;">Mardi soir — 18h30</strong><br>Sortie endurance Z2 · 60–80 km · Départ parking salle des sports de Sarouel. Niveau : tous publics après 6 mois de pratique.</p>
+      <p><strong style="font-family:var(--fd);font-size:13px;letter-spacing:.06em;text-transform:uppercase;">Jeudi soir — 18h30</strong><br>Sortie tempo / intervalles · 50–70 km · Groupes de niveau. Niveau : intermédiaire à confirmé.</p>
+      <p><strong style="font-family:var(--fd);font-size:13px;letter-spacing:.06em;text-transform:uppercase;">Dimanche matin — 8h00</strong><br>Grande sortie de club · 80–130 km · Itinéraire variable chaque semaine. Niveau : mixte selon le parcours annoncé.</p>
+    </div>
+  </div>
+
+  <!-- Timeline historique -->
+  <h2 class="section-title" style="margin-bottom:24px;margin-top:64px">Chronologie <em>du club</em></h2>
+  <div style="background:var(--bg-card);border:1px solid var(--bdr);border-radius:var(--r4);padding:44px 52px;" data-reveal>
+    <div class="history-timeline" role="list">
+      <div class="ht-item" role="listitem"><span class="ht-year">1987</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">Fondation du club</div><div class="ht-desc">Création par 8 cyclistes du village. Premier président : Marcel Dupont. Premiers entraînements le dimanche matin.</div></div></div>
+      <div class="ht-item" role="listitem"><span class="ht-year">1993</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">Première affiliation FFC</div><div class="ht-desc">Obtention de la licence fédérale. Premier départ officiel à la Cyclosportive de l'Avesnois.</div></div></div>
+      <div class="ht-item" role="listitem"><span class="ht-year">2001</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">30 membres — Premier Paris-Roubaix amateur</div><div class="ht-desc">Jean-Marc Lefevre devient le premier membre du club à terminer la Paris-Roubaix Cyclosportive. Temps : 6h14.</div></div></div>
+      <div class="ht-item" role="listitem"><span class="ht-year">2009</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">Nouveau local · Local Technique</div><div class="ht-desc">La mairie de Sarouel met à disposition un local pour stocker le matériel et tenir les réunions de club.</div></div></div>
+      <div class="ht-item" role="listitem"><span class="ht-year">2018</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">Section gravel &amp; VTT créée</div><div class="ht-desc">Face à la montée du gravel, le club ouvre une section dédiée. La Forestière du Nord devient une sortie annuelle.</div></div></div>
+      <div class="ht-item" role="listitem"><span class="ht-year">2022</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">48 membres · Record du club</div><div class="ht-desc">Le club atteint son effectif maximum avec 48 licenciés. Création du site en ligne et des outils de suivi numérique.</div></div></div>
+      <div class="ht-item" role="listitem"><span class="ht-year">2025</span><div class="ht-line"></div><div class="ht-content"><div class="ht-event">Objectif A — Paris-Roubaix Cyclosportive</div><div class="ht-desc">5 membres du club inscrits. Atol Sarouel visé pour un top 20 catégorie.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ BUREAU ══ -->
+<section class="section" aria-labelledby="bureau-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">01</span><span class="section-slash">/</span><span class="section-name">Gouvernance</span></div>
+    <div class="section-titles">
+      <h2 id="bureau-h" class="section-title">Le <em>bureau</em></h2>
+      <p class="section-desc">Composition du bureau élu lors de l'Assemblée Générale de novembre 2024. Mandats valables jusqu'à l'AG 2026.</p>
+    </div>
+  </header>
+  <div class="members-grid" role="list" aria-label="Bureau du club">
+
+    <div class="member-card" role="listitem" data-reveal data-delay="0">
+      <div class="member-avatar bureau">P</div>
+      <span class="member-name">Pierre Marchand</span>
+      <span class="member-role">Président</span>
+      <span class="member-badge bureau-tag">Bureau</span>
+      <span class="member-stats">Membre depuis 2003 · 8 200 km/an</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="60">
+      <div class="member-avatar bureau">M</div>
+      <span class="member-name">Marie Fontaine</span>
+      <span class="member-role">Vice-Présidente</span>
+      <span class="member-badge bureau-tag">Bureau</span>
+      <span class="member-stats">Membre depuis 2011 · 6 800 km/an</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="120">
+      <div class="member-avatar bureau">L</div>
+      <span class="member-name">Luc Delhaye</span>
+      <span class="member-role">Trésorier</span>
+      <span class="member-badge bureau-tag">Bureau</span>
+      <span class="member-stats">Membre depuis 1998 · 5 400 km/an</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="180">
+      <div class="member-avatar bureau">S</div>
+      <span class="member-name">Sophie Renard</span>
+      <span class="member-role">Secrétaire</span>
+      <span class="member-badge bureau-tag">Bureau</span>
+      <span class="member-stats">Membre depuis 2016 · 7 100 km/an</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ MEMBRES ACTIFS ══ -->
+<section class="section" aria-labelledby="membres-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">02</span><span class="section-slash">/</span><span class="section-name">Membres</span></div>
+    <div class="section-titles">
+      <h2 id="membres-h" class="section-title">Membres <em>actifs</em></h2>
+      <p class="section-desc">48 licenciés actifs en 2025. Extrait des membres les plus actifs en compétition cette saison.</p>
+    </div>
+  </header>
+  <div class="members-grid" role="list" aria-label="Membres actifs du club">
+    <div class="member-card" role="listitem" data-reveal data-delay="0">
+      <div class="member-avatar">A</div>
+      <span class="member-name">Atol Sarouel</span>
+      <span class="member-role">Compétiteur · Route</span>
+      <span class="member-badge licencie-tag">Licencié FFC</span>
+      <span class="member-stats">FTP 310 W · 3 KOM · 12 480 km</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="50">
+      <div class="member-avatar">T</div>
+      <span class="member-name">Thomas Lecomte</span>
+      <span class="member-role">Compétiteur · Gravel</span>
+      <span class="member-badge licencie-tag">Licencié FFC</span>
+      <span class="member-stats">FTP 278 W · 9 640 km/an</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="100">
+      <div class="member-avatar">C</div>
+      <span class="member-name">Camille Houard</span>
+      <span class="member-role">Loisir · Route</span>
+      <span class="member-badge licencie-tag">Licenciée FFC</span>
+      <span class="member-stats">6 200 km/an · BRM 200 ✓</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="150">
+      <div class="member-avatar">R</div>
+      <span class="member-name">Rémi Watteau</span>
+      <span class="member-role">Compétiteur · Route</span>
+      <span class="member-badge licencie-tag">Licencié FFC</span>
+      <span class="member-stats">FTP 294 W · 11 200 km/an</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="200">
+      <div class="member-avatar">N</div>
+      <span class="member-name">Nathalie Bossut</span>
+      <span class="member-role">Loisir · Gravel</span>
+      <span class="member-badge licencie-tag">Licenciée FFC</span>
+      <span class="member-stats">4 800 km/an · La Forestière ✓</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="250">
+      <div class="member-avatar">F</div>
+      <span class="member-name">François Carlier</span>
+      <span class="member-role">Randonneur · BRM</span>
+      <span class="member-badge licencie-tag">Licencié FFC</span>
+      <span class="member-stats">BRM 400 ✓ · 14 600 km/an</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="300">
+      <div class="member-avatar">J</div>
+      <span class="member-name">Julien Masset</span>
+      <span class="member-role">Compétiteur · Route</span>
+      <span class="member-badge licencie-tag">Licencié FFC</span>
+      <span class="member-stats">FTP 268 W · Géants du Nord ✓</span>
+    </div>
+    <div class="member-card" role="listitem" data-reveal data-delay="350">
+      <div class="member-avatar">I</div>
+      <span class="member-name">Isabelle Prévot</span>
+      <span class="member-role">Loisir · Route</span>
+      <span class="member-badge licencie-tag">Licenciée FFC</span>
+      <span class="member-stats">3 200 km/an · Cyclosportive Avesnois ✓</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ NOUS REJOINDRE ══ -->
+<section class="section" aria-labelledby="join-h">
+  <header class="section-header">
+    <div class="section-label"><span class="section-num">03</span><span class="section-slash">/</span><span class="section-name">Adhésion</span></div>
+    <div class="section-titles">
+      <h2 id="join-h" class="section-title">Nous <em>rejoindre</em></h2>
+      <p class="section-desc">Rejoindre le C.C. Sarouel est simple. Que vous soyez débutant ou confirmé, il y a une place pour vous.</p>
+    </div>
+  </header>
+
+  <div class="join-steps" role="list" aria-label="Étapes pour adhérer">
+    <div class="join-step" role="listitem" data-reveal data-delay="0">
+      <span class="join-step-num">01</span>
+      <span class="join-step-title">Venez rouler</span>
+      <p class="join-step-desc">Participez à une sortie d'essai gratuite sans engagement. Rendez-vous le dimanche à 8h00 devant la salle des sports de Sarouel. Prévenez-nous par email ou téléphone la veille.</p>
+    </div>
+    <div class="join-step" role="listitem" data-reveal data-delay="80">
+      <span class="join-step-num">02</span>
+      <span class="join-step-title">Prendre une licence</span>
+      <p class="join-step-desc">Remplissez le formulaire d'adhésion FFC disponible sur notre site ou au local du club. Fournissez un certificat médical de non contre-indication à la pratique du cyclisme en compétition (ou loisir).</p>
+    </div>
+    <div class="join-step" role="listitem" data-reveal data-delay="160">
+      <span class="join-step-num">03</span>
+      <span class="join-step-title">Réglez la cotisation</span>
+      <p class="join-step-desc">Payez la cotisation annuelle par chèque, virement ou espèces au trésorier. La licence FFC est incluse dans la cotisation. Valable du 1er novembre au 31 octobre de l'année suivante.</p>
+    </div>
+  </div>
+
+  <!-- Tarifs -->
+  <h2 class="section-title" style="margin-bottom:16px;margin-top:48px">Tarifs <em>2025–2026</em></h2>
+  <div class="tarif-table" data-reveal role="table" aria-label="Tarifs d'adhésion">
+    <div class="tarif-row tarif-head" role="row"><span>Catégorie</span><span>Cotisation</span><span>Inclus</span></div>
+    <div class="tarif-row" role="row">
+      <div class="tarif-cat">Adulte compétition<small>18 ans et plus · Licence compétition FFC</small></div>
+      <div class="tarif-prix">145 <small>€/an</small></div>
+      <div class="tarif-inc">Licence FFC · assurance compétition · maillot club · accès toutes sorties</div>
+    </div>
+    <div class="tarif-row" role="row">
+      <div class="tarif-cat">Adulte loisir<small>18 ans et plus · Licence loisir FFC</small></div>
+      <div class="tarif-prix">95 <small>€/an</small></div>
+      <div class="tarif-inc">Licence FFC loisir · assurance · maillot club · sorties dimanche</div>
+    </div>
+    <div class="tarif-row" role="row">
+      <div class="tarif-cat">Junior<small>15–17 ans · Licence compétition</small></div>
+      <div class="tarif-prix">75 <small>€/an</small></div>
+      <div class="tarif-inc">Licence FFC · assurance · maillot club · encadrement spécifique</div>
+    </div>
+    <div class="tarif-row" role="row">
+      <div class="tarif-cat">Couple<small>Deux adultes au même domicile</small></div>
+      <div class="tarif-prix">220 <small>€/an</small></div>
+      <div class="tarif-inc">2 licences FFC loisir · 2 assurances · 2 maillots club</div>
+    </div>
+    <div class="tarif-row" role="row">
+      <div class="tarif-cat">Étudiant<small>Moins de 25 ans · justificatif</small></div>
+      <div class="tarif-prix">65 <small>€/an</small></div>
+      <div class="tarif-inc">Licence FFC loisir · assurance · accès sorties</div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;" data-reveal>
+    <a href="contact.html" class="btn-primary">
+      Nous contacter pour adhérer
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7.5 2.5L12 7l-4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <a href="evenements.html" class="btn-ghost">Voir nos prochains événements</a>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">C.C. SAROUEL</span>
+      <p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p>
+    </div>
+    <nav class="footer-nav" aria-label="Navigation pied de page">
+      <a href="index.html">Accueil</a>
+      <a href="sorties.html">Sorties</a>
+      <a href="parcours.html">Parcours</a>
+      <a href="segments.html">Segments</a>
+      <a href="evenements.html">Événements</a>
+      <a href="profil.html">Profil</a>
+      <a href="club.html">Club</a>
+      <a href="contact.html">Contact</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+    </nav>
+    <dl class="footer-meta">
+      <div><dt>Fondé en</dt><dd>1987</dd></div>
+      <div><dt>Membres</dt><dd>48 licenciés</dd></div>
+      <div><dt>Affiliation</dt><dd>FFC · Ligue Hauts-de-France</dd></div>
+      <div><dt>Siège</dt><dd>Sarouel, Nord (59)</dd></div>
+    </dl>
+    <address class="footer-gps">
+      <span>50° 35′ 12″ N</span>
+      <span>03° 04′ 48″ E</span>
+      <span class="footer-alt">Sarouel · Nord</span>
+    </address>
+  </div>
+  <div class="footer-bar">
+    <span>© 2025 Club Cycliste de Sarouel — Tous droits réservés</span>
+    <span>v7.0 — clubcycliste-sarouel.fr</span>
+  </div>
+</footer>
+
+<script src="asset/js/main.js"></script>
+</body>
+</html>
