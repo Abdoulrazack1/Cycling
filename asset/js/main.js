@@ -1,71 +1,285 @@
 /* ═══════════════════════════════════════════════════════════
-   C.C. SAROUEL  v8.0 — Corrections complètes
+   C.C. SAROUEL  v9.0 — Tracés GPS réels via OSRM
    ═══════════════════════════════════════════════════════════ */
 "use strict";
 
 /* ──────────────────────────────────────────────────────────
-   DONNÉES DES SORTIES — tracés GPX réalistes par sortie
+   ROUTING — OSRM public API (appelé depuis le navigateur)
+   Pas de clé API requise. Fallback sur coordonnées de repli.
+─────────────────────────────────────────────────────────── */
+
+const OSRM_SERVERS = [
+  "https://router.project-osrm.org",
+  "https://routing.openstreetmap.de"
+];
+
+/**
+ * Appelle OSRM pour obtenir un tracé vélo réel entre des waypoints.
+ * Retourne un tableau [[lat,lng], ...] ou null si échec.
+ */
+async function fetchOSRMRoute(waypoints, profile = "cycling") {
+  const coords = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(";");
+
+  for (const server of OSRM_SERVERS) {
+    const url = `${server}/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=false`;
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 9000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.code !== "Ok" || !data.routes?.[0]) continue;
+      // GeoJSON: [lng, lat] → on inverse en [lat, lng]
+      return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+    } catch (e) {
+      console.warn(`[OSRM] ${server} echec:`, e.message);
+    }
+  }
+  return null;
+}
+
+function cacheKey(rideKey) { return `ccs_route_v2_${rideKey}`; }
+
+/**
+ * Charge un tracé : cache localStorage → OSRM → fallback intégré.
+ */
+async function loadRoute(rideKey) {
+  const ride = RIDES[rideKey];
+  if (!ride) return null;
+
+  // 1. Cache localStorage (expire 30 jours)
+  try {
+    const cached = localStorage.getItem(cacheKey(rideKey));
+    if (cached) {
+      const { route, ts } = JSON.parse(cached);
+      if (Date.now() - ts < 30 * 24 * 3600 * 1000 && route?.length > 5) {
+        console.log(`[OSRM] Cache: ${rideKey} (${route.length} pts)`);
+        return route;
+      }
+    }
+  } catch (e) {}
+
+  // 2. OSRM temps réel
+  console.log(`[OSRM] Fetch: ${rideKey}…`);
+  showMapLoader(true);
+  const osrmRoute = await fetchOSRMRoute(ride.waypoints, ride.profile || "cycling");
+  showMapLoader(false);
+
+  if (osrmRoute && osrmRoute.length > 5) {
+    console.log(`[OSRM] OK ${rideKey}: ${osrmRoute.length} pts`);
+    try {
+      localStorage.setItem(cacheKey(rideKey), JSON.stringify({ route: osrmRoute, ts: Date.now() }));
+    } catch (e) {}
+    return osrmRoute;
+  }
+
+  // 3. Fallback intégré
+  console.warn(`[OSRM] Fallback: ${rideKey}`);
+  return ride.route;
+}
+
+function showMapLoader(visible) {
+  document.querySelectorAll(".map-loader").forEach(el => {
+    el.style.display = visible ? "flex" : "none";
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
+   DONNÉES DES SORTIES
 ─────────────────────────────────────────────────────────── */
 const RIDES = {
   "arenberg": {
     title: "Secteurs d'Arenberg",
-    center: [50.435, 3.248], zoom: 11, finish_label: "Roubaix",
-    route: [[49.415,2.830],[49.682,2.940],[49.980,3.040],[50.105,3.120],[50.220,3.180],[50.300,3.200],[50.355,3.210],[50.395,3.228],[50.415,3.238],[50.428,3.245],[50.435,3.248],[50.448,3.258],[50.465,3.272],[50.490,3.295],[50.512,3.310],[50.535,3.295],[50.558,3.270],[50.578,3.255],[50.598,3.230],[50.615,3.205],[50.630,3.180],[50.648,3.158],[50.658,3.140],[50.668,3.118],[50.675,3.095],[50.685,3.072],[50.692,3.048],[50.694,3.018]],
-    pois: [{lat:49.415,lng:2.830,label:"DÉPART",type:"start",detail:"Compiègne · km 0"},{lat:50.435,lng:3.248,label:"Trouée d'Arenberg",type:"summit",detail:"★★★★★ · 2,4 km · km 98"},{lat:50.675,lng:3.095,label:"Carrefour de l'Arbre",type:"sprint",detail:"★★★★★ · 1,6 km · km 157"},{lat:50.694,lng:3.018,label:"VÉLODROME",type:"finish",detail:"Roubaix · km 172"}]
+    center: [50.435, 3.248], zoom: 10, finish_label: "Roubaix", profile: "cycling",
+    waypoints: [
+      [49.4153, 2.8225],
+      [49.9302, 3.0000],
+      [50.1748, 3.2347],
+      [50.3584, 3.3205],
+      [50.4352, 3.2489],
+      [50.4388, 3.2510],
+      [50.5362, 3.2088],
+      [50.6742, 3.0952],
+      [50.6942, 3.0182]
+    ],
+    route: [[49.415,2.822],[49.682,2.940],[49.980,3.040],[50.175,3.234],[50.358,3.320],[50.435,3.248],[50.536,3.209],[50.674,3.095],[50.694,3.018]],
+    pois: [
+      {lat:49.4153,lng:2.8225,label:"DÉPART",type:"start",detail:"Compiègne · km 0"},
+      {lat:50.4352,lng:3.2489,label:"Trouée d'Arenberg",type:"summit",detail:"★★★★★ · 2,4 km · km 98"},
+      {lat:50.6742,lng:3.0952,label:"Carrefour de l'Arbre",type:"sprint",detail:"★★★★★ · 1,6 km · km 157"},
+      {lat:50.6942,lng:3.0182,label:"VÉLODROME",type:"finish",detail:"Roubaix · km 172"}
+    ]
   },
   "flandres": {
     title: "Tour des Monts des Flandres",
-    center: [50.750, 2.900], zoom: 11, finish_label: "Roubaix",
-    route: [[50.640,3.050],[50.660,2.990],[50.692,2.942],[50.720,2.902],[50.748,2.870],[50.768,2.845],[50.788,2.830],[50.812,2.812],[50.835,2.800],[50.848,2.823],[50.825,2.858],[50.800,2.890],[50.775,2.910],[50.750,2.940],[50.720,2.968],[50.695,2.995],[50.672,3.018],[50.655,3.035],[50.640,3.050]],
-    pois: [{lat:50.640,lng:3.050,label:"ROUBAIX",type:"start",detail:"Départ · km 0"},{lat:50.788,lng:2.830,label:"Mont Kemmel",type:"summit",detail:"156 m · km 45"},{lat:50.848,lng:2.823,label:"Mont Cassel",type:"summit",detail:"176 m · km 72"},{lat:50.640,lng:3.050,label:"ARRIVÉE",type:"finish",detail:"Roubaix · km 112"}]
+    center: [50.750, 2.900], zoom: 11, finish_label: "Roubaix", profile: "cycling",
+    waypoints: [
+      [50.6942, 3.0182],
+      [50.7482, 2.9288],
+      [50.7882, 2.8498],
+      [50.8478, 2.8228],
+      [50.8208, 2.8580],
+      [50.7802, 2.9040],
+      [50.7402, 2.9620],
+      [50.6942, 3.0182]
+    ],
+    route: [[50.694,3.018],[50.748,2.929],[50.788,2.850],[50.848,2.822],[50.820,2.858],[50.780,2.904],[50.740,2.962],[50.694,3.018]],
+    pois: [
+      {lat:50.6942,lng:3.0182,label:"ROUBAIX",type:"start",detail:"Départ · km 0"},
+      {lat:50.7882,lng:2.8498,label:"Mont Kemmel",type:"summit",detail:"156 m · km 45"},
+      {lat:50.8478,lng:2.8228,label:"Mont Cassel",type:"summit",detail:"176 m · km 72"},
+      {lat:50.6942,lng:3.0182,label:"ARRIVÉE",type:"finish",detail:"Roubaix · km 112"}
+    ]
   },
   "avesnois": {
     title: "Cyclo de l'Avesnois",
-    center: [50.200, 3.920], zoom: 12, finish_label: "Avesnes",
-    route: [[50.120,3.850],[50.142,3.870],[50.162,3.895],[50.178,3.920],[50.195,3.942],[50.215,3.960],[50.232,3.975],[50.248,3.988],[50.262,3.998],[50.278,3.985],[50.260,3.968],[50.242,3.950],[50.228,3.932],[50.208,3.912],[50.188,3.892],[50.168,3.875],[50.148,3.860],[50.120,3.850]],
-    pois: [{lat:50.120,lng:3.850,label:"AVESNES",type:"start",detail:"Départ · km 0"},{lat:50.262,lng:3.998,label:"Sars-Poteries",type:"summit",detail:"200 m · km 38"},{lat:50.120,lng:3.850,label:"ARRIVÉE",type:"finish",detail:"Avesnes · km 68"}]
+    center: [50.200, 3.920], zoom: 12, finish_label: "Avesnes", profile: "cycling",
+    waypoints: [
+      [50.1228, 3.8302],
+      [50.2018, 3.9180],
+      [50.2618, 3.9978],
+      [50.2018, 3.9380],
+      [50.1622, 3.8952],
+      [50.1228, 3.8302]
+    ],
+    route: [[50.122,3.830],[50.202,3.918],[50.262,3.998],[50.202,3.938],[50.162,3.895],[50.122,3.830]],
+    pois: [
+      {lat:50.1228,lng:3.8302,label:"AVESNES",type:"start",detail:"Départ · km 0"},
+      {lat:50.2618,lng:3.9978,label:"Sars-Poteries",type:"summit",detail:"200 m · km 38"},
+      {lat:50.1228,lng:3.8302,label:"ARRIVÉE",type:"finish",detail:"Avesnes · km 68"}
+    ]
   },
   "valenciennes": {
     title: "Valenciennes — Amiens — Boulogne",
-    center: [50.200, 2.800], zoom: 9, finish_label: "Boulogne",
-    route: [[50.358,3.523],[50.310,3.380],[50.260,3.220],[50.210,3.050],[50.150,2.880],[50.090,2.720],[49.980,2.580],[49.920,2.480],[50.020,2.280],[50.130,1.980],[50.320,1.840],[50.425,1.610],[50.728,1.618]],
-    pois: [{lat:50.358,lng:3.523,label:"VALENCIENNES",type:"start",detail:"Départ · km 0"},{lat:49.895,lng:2.302,label:"Amiens",type:"col",detail:"Passage · km 62"},{lat:50.728,lng:1.618,label:"BOULOGNE",type:"finish",detail:"Arrivée · km 104"}]
+    center: [50.200, 2.800], zoom: 9, finish_label: "Boulogne", profile: "cycling",
+    waypoints: [
+      [50.3580, 3.5232],
+      [50.1748, 3.2347],
+      [49.8942, 2.2958],
+      [50.4282, 1.7622],
+      [50.7282, 1.6182]
+    ],
+    route: [[50.358,3.523],[50.175,3.235],[49.894,2.296],[50.428,1.762],[50.728,1.618]],
+    pois: [
+      {lat:50.3580,lng:3.5232,label:"VALENCIENNES",type:"start",detail:"Départ · km 0"},
+      {lat:49.8942,lng:2.2958,label:"Amiens",type:"col",detail:"Passage · km 62"},
+      {lat:50.7282,lng:1.6182,label:"BOULOGNE",type:"finish",detail:"Arrivée · km 104"}
+    ]
   },
   "scarpe": {
     title: "La Scarpe — Douai Gravel",
-    center: [50.410, 3.020], zoom: 12, finish_label: "Douai",
-    route: [[50.372,3.081],[50.380,3.060],[50.395,3.042],[50.412,3.028],[50.428,3.012],[50.440,2.995],[50.455,2.978],[50.462,2.958],[50.455,2.938],[50.440,2.920],[50.422,2.908],[50.405,2.918],[50.388,2.935],[50.372,2.952],[50.358,2.968],[50.345,2.988],[50.358,3.018],[50.365,3.048],[50.372,3.081]],
-    pois: [{lat:50.372,lng:3.081,label:"DOUAI",type:"start",detail:"Départ · km 0"},{lat:50.462,lng:2.958,label:"Forêt Scarpe",type:"summit",detail:"Gravel · km 35"},{lat:50.372,lng:3.081,label:"ARRIVÉE",type:"finish",detail:"Douai · km 76"}]
+    center: [50.410, 3.020], zoom: 12, finish_label: "Douai", profile: "cycling",
+    waypoints: [
+      [50.3722, 3.0818],
+      [50.4122, 3.0120],
+      [50.4622, 2.9382],
+      [50.4482, 2.9150],
+      [50.4202, 2.9280],
+      [50.3852, 2.9680],
+      [50.3722, 3.0818]
+    ],
+    route: [[50.372,3.081],[50.412,3.012],[50.462,2.938],[50.448,2.915],[50.420,2.928],[50.385,2.968],[50.372,3.081]],
+    pois: [
+      {lat:50.3722,lng:3.0818,label:"DOUAI",type:"start",detail:"Départ · km 0"},
+      {lat:50.4622,lng:2.9382,label:"Forêt Marchiennes",type:"summit",detail:"Gravel · km 35"},
+      {lat:50.3722,lng:3.0818,label:"ARRIVÉE",type:"finish",detail:"Douai · km 76"}
+    ]
   },
   "roubaix-recup": {
     title: "Sortie Roubaix — Récupération",
-    center: [50.685, 3.090], zoom: 13, finish_label: "Roubaix",
-    route: [[50.694,3.018],[50.702,3.038],[50.712,3.058],[50.718,3.080],[50.722,3.102],[50.716,3.122],[50.705,3.138],[50.692,3.148],[50.678,3.152],[50.664,3.142],[50.652,3.128],[50.648,3.108],[50.652,3.088],[50.662,3.068],[50.675,3.052],[50.688,3.040],[50.694,3.018]],
-    pois: [{lat:50.694,lng:3.018,label:"ROUBAIX",type:"start",detail:"Départ · km 0"},{lat:50.722,lng:3.102,label:"Hem",type:"col",detail:"km 12"},{lat:50.694,lng:3.018,label:"ARRIVÉE",type:"finish",detail:"Roubaix · km 48"}]
+    center: [50.685, 3.090], zoom: 13, finish_label: "Roubaix", profile: "cycling",
+    waypoints: [
+      [50.6942, 3.0182],
+      [50.7142, 3.0680],
+      [50.7222, 3.0982],
+      [50.7042, 3.1282],
+      [50.6782, 3.1522],
+      [50.6522, 3.1182],
+      [50.6482, 3.0882],
+      [50.6692, 3.0422],
+      [50.6942, 3.0182]
+    ],
+    route: [[50.694,3.018],[50.714,3.068],[50.722,3.102],[50.692,3.148],[50.652,3.108],[50.658,3.068],[50.694,3.018]],
+    pois: [
+      {lat:50.6942,lng:3.0182,label:"ROUBAIX",type:"start",detail:"Départ · km 0"},
+      {lat:50.7222,lng:3.0982,label:"Hem",type:"col",detail:"km 12"},
+      {lat:50.6942,lng:3.0182,label:"ARRIVÉE",type:"finish",detail:"Roubaix · km 48"}
+    ]
   },
   "dunkerque": {
     title: "Dunkerque — Côte d'Opale",
-    center: [50.880, 2.180], zoom: 10, finish_label: "Calais",
-    route: [[51.035,2.378],[51.012,2.340],[50.985,2.290],[50.958,2.242],[50.930,2.195],[50.902,2.168],[50.878,2.148],[50.850,2.128],[50.825,2.110],[50.800,2.098],[50.778,2.082],[50.750,2.068],[50.728,2.058],[50.722,2.082],[50.718,2.108],[50.715,2.135],[50.720,2.162],[50.725,2.190],[50.728,2.218]],
-    pois: [{lat:51.035,lng:2.378,label:"DUNKERQUE",type:"start",detail:"Départ · km 0"},{lat:50.870,lng:2.142,label:"Côte d'Opale",type:"summit",detail:"Falaises · km 65"},{lat:50.728,lng:2.218,label:"CALAIS",type:"finish",detail:"Arrivée · km 132"}]
+    center: [50.880, 2.180], zoom: 10, finish_label: "Calais", profile: "cycling",
+    waypoints: [
+      [51.0352, 2.3782],
+      [50.9882, 2.3022],
+      [50.8982, 2.1918],
+      [50.8452, 2.1282],
+      [50.8022, 2.1182],
+      [50.7282, 2.2182]
+    ],
+    route: [[51.035,2.378],[50.988,2.302],[50.898,2.192],[50.845,2.128],[50.802,2.118],[50.728,2.218]],
+    pois: [
+      {lat:51.0352,lng:2.3782,label:"DUNKERQUE",type:"start",detail:"Départ · km 0"},
+      {lat:50.8452,lng:2.1282,label:"Cap Blanc-Nez",type:"summit",detail:"Falaises · km 65"},
+      {lat:50.7282,lng:2.2182,label:"CALAIS",type:"finish",detail:"Arrivée · km 132"}
+    ]
   },
   "lille-bethune": {
     title: "Lille — La Bassée — Béthune",
-    center: [50.545, 2.870], zoom: 11, finish_label: "Béthune",
-    route: [[50.628,3.058],[50.612,3.022],[50.592,2.990],[50.568,2.960],[50.548,2.928],[50.528,2.900],[50.508,2.872],[50.492,2.848],[50.478,2.820],[50.462,2.798],[50.448,2.778],[50.438,2.758],[50.430,2.742],[50.435,2.722],[50.442,2.702],[50.452,2.688],[50.462,2.672]],
-    pois: [{lat:50.628,lng:3.058,label:"LILLE",type:"start",detail:"Départ · km 0"},{lat:50.492,lng:2.848,label:"La Bassée",type:"col",detail:"km 48"},{lat:50.462,lng:2.672,label:"BÉTHUNE",type:"finish",detail:"Arrivée · km 94"}]
+    center: [50.545, 2.870], zoom: 11, finish_label: "Béthune", profile: "cycling",
+    waypoints: [
+      [50.6282, 3.0582],
+      [50.5482, 2.9582],
+      [50.4922, 2.8482],
+      [50.4622, 2.6722]
+    ],
+    route: [[50.628,3.058],[50.548,2.958],[50.492,2.848],[50.462,2.672]],
+    pois: [
+      {lat:50.6282,lng:3.0582,label:"LILLE",type:"start",detail:"Départ · km 0"},
+      {lat:50.4922,lng:2.8482,label:"La Bassée",type:"col",detail:"km 48"},
+      {lat:50.4622,lng:2.6722,label:"BÉTHUNE",type:"finish",detail:"Arrivée · km 94"}
+    ]
   },
   "trilogie": {
     title: "Trilogie — Arenberg, Wallers, Carrefour",
-    center: [50.580, 3.180], zoom: 10, finish_label: "Cassel",
-    route: [[50.358,3.523],[50.395,3.450],[50.415,3.380],[50.428,3.290],[50.435,3.248],[50.448,3.258],[50.490,3.295],[50.535,3.295],[50.558,3.270],[50.598,3.230],[50.648,3.158],[50.675,3.095],[50.694,3.018],[50.715,2.970],[50.748,2.910],[50.788,2.840],[50.835,2.800]],
-    pois: [{lat:50.358,lng:3.523,label:"VALENCIENNES",type:"start",detail:"Départ · km 0"},{lat:50.435,lng:3.248,label:"Trouée d'Arenberg",type:"summit",detail:"★★★★★ · km 52"},{lat:50.675,lng:3.095,label:"Carrefour de l'Arbre",type:"sprint",detail:"★★★★★ · km 128"},{lat:50.835,lng:2.800,label:"CASSEL",type:"finish",detail:"Arrivée · km 187"}]
+    center: [50.580, 3.180], zoom: 10, finish_label: "Cassel", profile: "cycling",
+    waypoints: [
+      [50.3580, 3.5232],
+      [50.4352, 3.2489],
+      [50.4388, 3.2510],
+      [50.6742, 3.0952],
+      [50.6942, 3.0182],
+      [50.7882, 2.8498],
+      [50.8352, 2.8002]
+    ],
+    route: [[50.358,3.523],[50.435,3.248],[50.439,3.251],[50.674,3.095],[50.694,3.018],[50.788,2.850],[50.835,2.800]],
+    pois: [
+      {lat:50.3580,lng:3.5232,label:"VALENCIENNES",type:"start",detail:"Départ · km 0"},
+      {lat:50.4352,lng:3.2489,label:"Trouée d'Arenberg",type:"summit",detail:"★★★★★ · km 52"},
+      {lat:50.6742,lng:3.0952,label:"Carrefour de l'Arbre",type:"sprint",detail:"★★★★★ · km 128"},
+      {lat:50.8352,lng:2.8002,label:"CASSEL",type:"finish",detail:"Arrivée · km 187"}
+    ]
   },
   "plaine-flamande": {
     title: "Plaine Flamande — Endurance",
-    center: [50.740, 2.870], zoom: 11, finish_label: "Roubaix",
-    route: [[50.694,3.018],[50.718,2.988],[50.742,2.958],[50.765,2.928],[50.788,2.898],[50.808,2.862],[50.820,2.828],[50.812,2.792],[50.795,2.762],[50.772,2.738],[50.748,2.720],[50.725,2.710],[50.700,2.718],[50.678,2.732],[50.660,2.758],[50.650,2.790],[50.658,2.828],[50.672,2.868],[50.685,2.908],[50.692,2.958],[50.694,3.018]],
-    pois: [{lat:50.694,lng:3.018,label:"ROUBAIX",type:"start",detail:"Départ · km 0"},{lat:50.820,lng:2.828,label:"Hondschoote",type:"col",detail:"Plaine · km 48"},{lat:50.694,lng:3.018,label:"ARRIVÉE",type:"finish",detail:"Roubaix · km 96"}]
+    center: [50.740, 2.870], zoom: 11, finish_label: "Roubaix", profile: "cycling",
+    waypoints: [
+      [50.6942, 3.0182],
+      [50.7482, 2.9288],
+      [50.8202, 2.8282],
+      [50.7722, 2.7382],
+      [50.7002, 2.7182],
+      [50.6502, 2.7902],
+      [50.6582, 2.8282],
+      [50.6942, 3.0182]
+    ],
+    route: [[50.694,3.018],[50.748,2.929],[50.820,2.828],[50.772,2.738],[50.700,2.718],[50.650,2.790],[50.658,2.828],[50.694,3.018]],
+    pois: [
+      {lat:50.6942,lng:3.0182,label:"ROUBAIX",type:"start",detail:"Départ · km 0"},
+      {lat:50.8202,lng:2.8282,label:"Merville",type:"col",detail:"Plaine · km 48"},
+      {lat:50.6942,lng:3.0182,label:"ARRIVÉE",type:"finish",detail:"Roubaix · km 96"}
+    ]
   }
 };
 
@@ -85,9 +299,8 @@ const PROFILES = {
   "plaine-flamande":{N:56, km:96.0,  baseAlt:18, maxAlt:60,  style:"flat"}
 };
 
-function buildElevationData(rideKey) {
-  const ride = RIDES[rideKey] || RIDES["arenberg"];
-  const route = ride.route;
+function buildElevationData(rideKey, routeCoords) {
+  const route = routeCoords || RIDES[rideKey]?.route || RIDES["arenberg"].route;
   const p = PROFILES[rideKey] || PROFILES["arenberg"];
   const pts = [];
   for (let i = 0; i < p.N; i++) {
@@ -117,7 +330,7 @@ function buildElevationData(rideKey) {
 }
 
 /* ──────────────────────────────────────────────────────────
-   DÉTECTION SORTIE ACTIVE (URL ?ride=xxx ou data-ride sur body)
+   DÉTECTION SORTIE ACTIVE
 ─────────────────────────────────────────────────────────── */
 function getCurrentRideKey() {
   const params = new URLSearchParams(window.location.search);
@@ -131,9 +344,10 @@ function getCurrentRideKey() {
 const CURRENT_RIDE_KEY = getCurrentRideKey();
 const CURRENT_RIDE = RIDES[CURRENT_RIDE_KEY];
 const MAP_CENTER = CURRENT_RIDE.center;
-const ROUTE_LATLNG = CURRENT_RIDE.route;
 const POIS = CURRENT_RIDE.pois;
-const ELEV = buildElevationData(CURRENT_RIDE_KEY);
+
+let ROUTE_LATLNG = CURRENT_RIDE.route;
+let ELEV = buildElevationData(CURRENT_RIDE_KEY, ROUTE_LATLNG);
 
 const TILE_LAYERS = {
   osm:       {url:"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", options:{maxZoom:18, attribution:"© OpenStreetMap"}},
@@ -141,7 +355,6 @@ const TILE_LAYERS = {
   satellite: {url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", options:{maxZoom:18, attribution:"© Esri"}}
 };
 
-/* ── STATE ── */
 let miniMap=null, mainMap=null, mainTileLayer=null, routePolyline=null;
 let markersGroup=null, syncMarkerLeaflet=null, elevChart=null;
 let mobileOpen=false, routeVisible=true, markersVisible=true, currentTile="osm";
@@ -149,7 +362,7 @@ let mobileOpen=false, routeVisible=true, markersVisible=true, currentTile="osm";
 /* ──────────────────────────────────────────────────────────
    BOOT
 ─────────────────────────────────────────────────────────── */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initNav();
   initClock();
   initScrollNav();
@@ -157,11 +370,23 @@ document.addEventListener("DOMContentLoaded", () => {
   initHamburger();
   initTilt();
   initKeyboard();
-  if (document.getElementById("mini-map"))        initMiniMap();
-  if (document.getElementById("main-map"))        initMainMap();
-  if (document.getElementById("elevation-chart")) initElevationChart();
-  if (document.getElementById("fitness-chart"))   initFitnessChart();
-  if (document.getElementById("filter-chips"))    initFilterChips();
+  if (document.getElementById("filter-chips")) initFilterChips();
+  if (document.getElementById("fitness-chart")) initFitnessChart();
+
+  const hasMap = document.getElementById("mini-map") || document.getElementById("main-map") || document.getElementById("elevation-chart");
+  if (hasMap) {
+    // Injecte loader immédiatement
+    document.querySelectorAll("#mini-map,#main-map").forEach(c => injectMapLoader(c));
+
+    const realRoute = await loadRoute(CURRENT_RIDE_KEY);
+    if (realRoute && realRoute.length > 5) {
+      ROUTE_LATLNG = realRoute;
+      ELEV = buildElevationData(CURRENT_RIDE_KEY, realRoute);
+    }
+    if (document.getElementById("mini-map"))        initMiniMap();
+    if (document.getElementById("main-map"))        initMainMap();
+    if (document.getElementById("elevation-chart")) initElevationChart();
+  }
 });
 
 /* ──────────────────────────────────────────────────────────
@@ -201,130 +426,78 @@ function initHamburger() {
 }
 
 function initReveal() {
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      setTimeout(() => { e.target.classList.add("in"); animateBars(e.target); }, parseInt(e.target.dataset.delay||0,10));
-      io.unobserve(e.target);
-    });
-  }, {threshold:0.08, rootMargin:"0px 0px -24px 0px"});
-  document.querySelectorAll("[data-reveal]").forEach(el => io.observe(el));
-}
-
-function animateBars(container) {
-  container.querySelectorAll(".scard-fill, .z-fill, .ev-full-fill").forEach(fill => {
-    const w = fill.dataset.w || "0";
-    fill.style.width = "0%"; fill.getBoundingClientRect();
-    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = w + "%"; }));
-  });
+  const els = document.querySelectorAll("[data-reveal]");
+  if (!els.length) return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { const d = e.target.dataset.delay || 0; setTimeout(() => e.target.classList.add("in"), +d); obs.unobserve(e.target); } });
+  }, {threshold:0.12, rootMargin:"0px 0px -40px 0px"});
+  els.forEach(el => obs.observe(el));
 }
 
 /* ──────────────────────────────────────────────────────────
-   FILTRES — fonctionnels avec data-* sur les éléments
+   FILTER CHIPS
 ─────────────────────────────────────────────────────────── */
 function initFilterChips() {
-  const activeFilters = {};
-  // Lire état initial
-  document.querySelectorAll(".filter-chip.active[data-group]").forEach(chip => {
-    activeFilters[chip.dataset.group] = chip.textContent.trim();
-  });
-  document.querySelectorAll(".filter-chip[data-group]").forEach(chip => {
-    chip.addEventListener("click", () => {
-      const g = chip.dataset.group;
-      document.querySelectorAll(`.filter-chip[data-group="${g}"]`).forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      activeFilters[g] = chip.textContent.trim();
-      applyFilters(activeFilters);
+  const bar = document.getElementById("filter-chips");
+  if (!bar) return;
+  const state = {type:"tous", level:"tous"};
+  bar.querySelectorAll(".filter-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const group = btn.dataset.group;
+      bar.querySelectorAll(`.filter-chip[data-group="${group}"]`).forEach(b => { b.classList.remove("active"); b.setAttribute("aria-pressed","false"); });
+      btn.classList.add("active"); btn.setAttribute("aria-pressed","true");
+      state[group] = btn.textContent.trim().toLowerCase();
+      applyFilters(state);
     });
   });
 }
 
-const NEUTRAL_VALUES = ["tous","toutes","2025","all"];
-
-function matchesFilter(dataAttr, filterValue) {
-  if (!dataAttr) return true; // pas d'attribut = toujours visible
-  const v = filterValue.replace(/\s*🥇\s*/g,"").trim().toLowerCase();
-  if (NEUTRAL_VALUES.includes(v)) return true;
-  const values = dataAttr.toLowerCase().split(",").map(s => s.trim());
-  return values.some(a => a.includes(v) || v.includes(a));
-}
-
-function applyFilters(filters) {
-  // --- Sorties ---
-  document.querySelectorAll(".sortie-row").forEach(row => {
-    if (!row.dataset.type && !row.dataset.period && !row.dataset.intensity) return;
-    let vis = true;
-    for (const [g, v] of Object.entries(filters)) {
-      if (!matchesFilter(row.dataset[g], v)) { vis = false; break; }
-    }
-    row.style.display = vis ? "" : "none";
+function applyFilters(state) {
+  document.querySelectorAll("[data-type]").forEach(card => {
+    const values = (card.dataset.type||"").toLowerCase().split(",").map(s => s.trim());
+    const level  = (card.dataset.level||"").toLowerCase();
+    const ok = (state.type==="tous" || values.includes(state.type)) && (state.level==="tous" || level===state.level);
+    card.style.display = ok ? "" : "none";
   });
-
-  // --- Parcours cards ---
-  document.querySelectorAll(".ra-card").forEach(card => {
-    if (!card.dataset.type && !card.dataset.level) return;
-    let vis = true;
-    for (const [g, v] of Object.entries(filters)) {
-      if (!matchesFilter(card.dataset[g], v)) { vis = false; break; }
-    }
-    card.style.display = vis ? "" : "none";
-  });
-  // Masquer les stacks entièrement vides
-  document.querySelectorAll(".ra-stack").forEach(stack => {
-    const allHidden = Array.from(stack.querySelectorAll(".ra-card")).every(c => c.style.display === "none");
-    stack.style.display = allHidden ? "none" : "";
-  });
-  // Masquer les routes-grid entièrement vides
   document.querySelectorAll(".routes-grid").forEach(grid => {
-    const allHidden = Array.from(grid.children).every(c => c.style.display === "none");
-    grid.style.display = allHidden ? "none" : "";
-  });
-
-  // --- Segments ---
-  document.querySelectorAll(".seg-row").forEach(row => {
-    if (!row.dataset.seg && !row.dataset.zone) return;
-    let vis = true;
-    for (const [g, v] of Object.entries(filters)) {
-      const key = g === "seg" ? "seg" : g === "zone" ? "zone" : g;
-      if (!matchesFilter(row.dataset[key], v)) { vis = false; break; }
-    }
-    row.style.display = vis ? "" : "none";
+    const visible = [...grid.querySelectorAll("[data-type]")].some(c => c.style.display !== "none");
+    grid.style.opacity = visible ? "" : "0.3";
   });
 }
 
 /* ──────────────────────────────────────────────────────────
-   MINI MAP — tracé unique à la sortie courante
+   MINI MAP
 ─────────────────────────────────────────────────────────── */
 function initMiniMap() {
   if (typeof L === "undefined") return;
   const container = document.getElementById("mini-map");
   if (!container) return;
+  injectMapLoader(container);
   miniMap = L.map("mini-map", {center:MAP_CENTER, zoom:CURRENT_RIDE.zoom, zoomControl:false, scrollWheelZoom:false, dragging:false, touchZoom:false, doubleClickZoom:false, keyboard:false, attributionControl:false});
   L.tileLayer(TILE_LAYERS.topo.url, TILE_LAYERS.topo.options).addTo(miniMap);
   const poly = L.polyline(ROUTE_LATLNG, {color:"#D4291A", weight:2.5, opacity:0.9, lineJoin:"round", lineCap:"round"}).addTo(miniMap);
   miniMap.fitBounds(poly.getBounds(), {padding:[14,14]});
-  // Départ (vert) + Arrivée (rouge) avec vrais labels
   const startPoi = POIS.find(p => p.type === "start");
   const finishPoi = POIS.find(p => p.type === "finish") || POIS[POIS.length - 1];
   if (startPoi) addMarker(miniMap, [startPoi.lat, startPoi.lng], "DÉPART", "#2E7D4F");
   if (finishPoi) addMarker(miniMap, [finishPoi.lat, finishPoi.lng], CURRENT_RIDE.finish_label || "ARRIVÉE", "#D4291A");
+  addRouteSourceBadge(container, ROUTE_LATLNG.length);
 }
 
 /* ──────────────────────────────────────────────────────────
-   MAIN MAP — tracé + secteurs visibles par défaut
+   MAIN MAP
 ─────────────────────────────────────────────────────────── */
 function initMainMap() {
   if (typeof L === "undefined") return;
   const container = document.getElementById("main-map");
   if (!container) return;
+  injectMapLoader(container);
   mainMap = L.map("main-map", {center:MAP_CENTER, zoom:CURRENT_RIDE.zoom, zoomControl:true, scrollWheelZoom:true, attributionControl:false});
   mainMap.zoomControl.setPosition("bottomright");
   mainTileLayer = L.tileLayer(TILE_LAYERS.osm.url, TILE_LAYERS.osm.options).addTo(mainMap);
   L.polyline(ROUTE_LATLNG, {color:"#D4291A", weight:12, opacity:0.08}).addTo(mainMap);
   routePolyline = L.polyline(ROUTE_LATLNG, {color:"#D4291A", weight:2.5, opacity:0.95, lineJoin:"round", lineCap:"round"}).addTo(mainMap);
   mainMap.fitBounds(routePolyline.getBounds(), {padding:[40,40]});
-
-  // POIs
   markersGroup = L.layerGroup();
   POIS.forEach(poi => {
     const color = (poi.type==="summit"||poi.type==="start"||poi.type==="finish") ? "#D4291A" : "#2B5FBF";
@@ -333,20 +506,41 @@ function initMainMap() {
     marker.bindPopup(`<div style="padding:12px 14px;min-width:160px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(240,237,230,.35);margin-bottom:6px;">${poi.type}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#F0EDE6;line-height:1;margin-bottom:4px;">${poi.label}</div>${poi.detail?`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(240,237,230,.38);margin-top:4px;">${poi.detail}</div>`:""}</div>`, {closeButton:false, maxWidth:220});
     marker.addTo(markersGroup);
   });
-  markersGroup.addTo(mainMap); // visible par défaut ✓
-
-  // Sync btn Secteurs → actif par défaut
+  markersGroup.addTo(mainMap);
   const btnM = document.getElementById("btn-markers");
   if (btnM) { btnM.classList.add("active"); btnM.setAttribute("aria-pressed","true"); }
-
-  // Marqueur synchro élévation
   const syncIcon = L.divIcon({html:`<div style="width:10px;height:10px;background:#D4291A;border:2px solid rgba(240,237,230,.9);border-radius:50%;box-shadow:0 0 12px rgba(212,41,26,.85);pointer-events:none;"></div>`, className:"", iconSize:[10,10], iconAnchor:[5,5]});
   syncMarkerLeaflet = L.marker(ROUTE_LATLNG[0], {icon:syncIcon, interactive:false, zIndexOffset:1000});
-
   mainMap.on("click", e => {
     const near = nearestPoint(e.latlng.lat, e.latlng.lng);
     if (near) L.popup().setLatLng([near.lat,near.lng]).setContent(`<div style="padding:10px 13px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#D4291A;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">Position sur tracé</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(240,237,230,.7);">km ${near.km} · ${near.alt} m · ${near.grade>0?"+":""}${near.grade} %</div></div>`).openOn(mainMap);
   });
+  addRouteSourceBadge(container, ROUTE_LATLNG.length);
+}
+
+/* ──────────────────────────────────────────────────────────
+   UTILITAIRES CARTE
+─────────────────────────────────────────────────────────── */
+function injectMapLoader(container) {
+  if (!container || container.querySelector(".map-loader")) return;
+  const el = document.createElement("div");
+  el.className = "map-loader";
+  el.style.cssText = "display:none;position:absolute;inset:0;z-index:1000;background:rgba(13,13,16,.75);align-items:center;justify-content:center;gap:10px;pointer-events:none;";
+  el.innerHTML = `<div style="width:6px;height:6px;background:#D4291A;border-radius:50%;animation:pulse 1s infinite;"></div><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;color:rgba(240,237,230,.55);text-transform:uppercase;">Chargement tracé GPS…</span>`;
+  container.style.position = "relative";
+  container.appendChild(el);
+}
+
+function addRouteSourceBadge(container, ptCount) {
+  const old = container.querySelector(".route-src-badge");
+  if (old) old.remove();
+  const badge = document.createElement("div");
+  badge.className = "route-src-badge";
+  const isReal = ptCount > 30;
+  badge.style.cssText = "position:absolute;bottom:8px;left:8px;z-index:900;background:rgba(13,13,16,.85);border:1px solid rgba(255,255,255,.08);font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:2px;pointer-events:none;";
+  badge.style.color = isReal ? "rgba(46,125,79,.9)" : "rgba(240,237,230,.35)";
+  badge.textContent = isReal ? `✓ GPS réel · OSRM · ${ptCount} pts` : `~ tracé approximatif`;
+  container.appendChild(badge);
 }
 
 function createCustomIcon(label, color, large=false) {
@@ -490,4 +684,17 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
 });
 
-console.log("%cC.C. SAROUEL  v8.0\n%cHauts-de-France · Leaflet · Chart.js 4 · Filtres OK · Cartes uniques","background:#D4291A;color:#F0EDE6;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.18em;padding:6px 14px;","color:rgba(240,237,230,.5);font-size:12px;");
+/* ──────────────────────────────────────────────────────────
+   CACHE MANAGEMENT
+─────────────────────────────────────────────────────────── */
+window.clearRouteCache = function() {
+  Object.keys(RIDES).forEach(k => { try { localStorage.removeItem(cacheKey(k)); } catch(e) {} });
+  console.log("[OSRM] Cache vidé — rechargez la page.");
+};
+
+console.log(
+  "%cC.C. SAROUEL  v9.0\n%cTracés GPS réels via OSRM · Leaflet · Chart.js 4\n%c→ clearRouteCache() pour forcer le rechargement des tracés",
+  "background:#D4291A;color:#F0EDE6;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.18em;padding:6px 14px;",
+  "color:rgba(240,237,230,.5);font-size:12px;",
+  "color:rgba(43,95,191,.7);font-size:11px;"
+);
