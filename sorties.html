@@ -1,303 +1,277 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="C.C. SAROUEL — Historique complet des sorties cyclistes. Distance, dénivelé, puissance." />
-  <meta name="theme-color" content="#0D0D10" />
-  <title>C.C. SAROUEL — Sorties</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="asset/css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorties · Club de Cyclisme de Salouel</title>
+  <meta name="description" content="Toutes les sorties du Club de Cyclisme de Salouel.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-<a href="#main-content" class="skip-to-content">Aller au contenu</a>
+  <main id="main">
 
-<nav id="main-nav" role="navigation" aria-label="Navigation principale">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo" aria-label="Accueil - C.C. Sarouel">
-      <span class="nav-logo-mark" aria-hidden="true">S</span>
-      <span>C.C. SAROUEL</span>
-    </a>
-        <ul class="nav-links" role="list">
-      <li><a href="index.html"      class="nl">Accueil</a></li>
-      <li><a href="sorties.html"    class="nl">Sorties</a></li>
-      <li><a href="parcours.html"   class="nl">Parcours</a></li>
-      <li><a href="segments.html"   class="nl">Segments</a></li>
-      <li><a href="evenements.html" class="nl">Événements</a></li>
-      <li class="nav-dropdown">
-        <button class="nav-dropdown-trigger" aria-haspopup="true" aria-expanded="false">
-          Club
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <div class="nav-dropdown-menu" role="menu">
-          <a href="profil.html"          class="nav-dd-link" role="menuitem">Mon profil</a>
-          <div class="nav-dd-divider"></div>
-          <a href="club.html"            class="nav-dd-link" role="menuitem">Le club</a>
-          <a href="palmares.html"        class="nav-dd-link" role="menuitem">Palmarès</a>
-          <a href="contact.html"         class="nav-dd-link" role="menuitem">Contact</a>
-          <div class="nav-dd-divider"></div>
-          <a href="mentions-legales.html" class="nav-dd-link" role="menuitem">Mentions légales</a>
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb"><a href="index.html">Accueil</a><span class="sep">/</span><span>Sorties</span></nav>
+      <div class="page-head-chapter"><em>Archive complète</em></div>
+      <h1 class="d-l page-head-title">Les <span class="it">sorties</span></h1>
+      <p class="page-head-sub">Sorties club, entraînements et compétitions du Club. Chaque sortie est consultable avec son tracé, son profil altimétrique, ses points d'intérêt et — quand l'imagerie communautaire le permet — sa vue street view.</p>
+      <div class="page-head-meta"><div class="page-head-meta-item"><div class="page-head-meta-l">Sorties 2025</div><div class="page-head-meta-v">47</div></div><div class="page-head-meta-item"><div class="page-head-meta-l">Cumulé</div><div class="page-head-meta-v">4&nbsp;218<span class="unit">km</span></div></div><div class="page-head-meta-item"><div class="page-head-meta-l">D+ saison</div><div class="page-head-meta-v">52&nbsp;640<span class="unit">m</span></div></div><div class="page-head-meta-item"><div class="page-head-meta-l">Dernière</div><div class="page-head-meta-v">J−0</div></div></div>
+    </div>
+  </section>
+  <section class="section-sm">
+    <div class="wrap">
+      <div class="filter-row" data-reveal>
+        <button class="filter-chip active">Toutes</button>
+        <button class="filter-chip">Club</button>
+        <button class="filter-chip">Entraînement</button>
+        <button class="filter-chip">Course</button>
+        <button class="filter-chip">Gravel</button>
+      </div>
+
+      <div class="card-grid" data-reveal data-delay="100">
+
+        <!-- Carte 247 : Arenberg -->
+        <div class="rc-wrap">
+          <a href="sortie.html?id=arenberg-2025-04-05" class="rc">
+            <div class="rc-img">
+              <img src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=900&q=85" alt="">
+              <div class="rc-img-frame"></div>
+              <div class="rc-tags"><span class="tag tag-live"><span class="tag-dot"></span>Live</span></div>
+              <div class="rc-number">№ 247</div>
+              <div class="rc-caption"><em>5 avril 2025</em></div>
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">Reconnaissance <span class="it">Paris-Roubaix</span></h3>
+              <p class="rc-sub">Compiègne → Vélodrome de Roubaix</p>
+              <div class="rc-stats">
+                <div class="rc-stat"><div class="rc-stat-v">172<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">820<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">5<span class="unit">h</span>48</div><div class="rc-stat-l">Durée</div></div>
+              </div>
+            </div>
+          </a>
+          <button class="gsv-btn" data-lat="49.4179" data-lng="2.8262" data-title="Reconnaissance Paris-Roubaix" data-loc="Compiègne · Point de départ" aria-label="Vue Street View du départ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Street View
+          </button>
         </div>
-      </li>
-    </ul>
-    <div class="nav-right">
-      <div class="nav-live"><span class="nav-live-dot" aria-hidden="true"></span><time id="live-time">--:--:--</time></div>
-      <a href="profil.html" class="nav-profile"><span class="nav-profile-avatar" aria-hidden="true">A</span><span class="nav-profile-name">Atol</span></a>
-      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+
+        <!-- Carte 246 : Monts Flandres -->
+        <div class="rc-wrap">
+          <a href="sortie.html?id=monts-flandres-2025-03-28" class="rc">
+            <div class="rc-img">
+              <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900&q=85" alt="">
+              <div class="rc-img-frame"></div>
+              <div class="rc-tags"><span class="tag tag-brass">Monts</span></div>
+              <div class="rc-number">№ 246</div>
+              <div class="rc-caption"><em>28 mars 2025</em></div>
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">Monts <span class="it">des</span> Flandres</h3>
+              <p class="rc-sub">Cassel · Kemmelberg · Mont Noir</p>
+              <div class="rc-stats">
+                <div class="rc-stat"><div class="rc-stat-v">76<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">1640<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">3<span class="unit">h</span>40</div><div class="rc-stat-l">Durée</div></div>
+              </div>
+            </div>
+          </a>
+          <button class="gsv-btn" data-lat="50.8012" data-lng="2.4854" data-title="Monts des Flandres" data-loc="Cassel · Point de départ" aria-label="Vue Street View du départ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Street View
+          </button>
+        </div>
+
+        <!-- Carte 245 : Avesnois -->
+        <div class="rc-wrap">
+          <a href="sortie.html?id=avesnois-2025-03-15" class="rc">
+            <div class="rc-img">
+              <img src="https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=900&q=85" alt="">
+              <div class="rc-img-frame"></div>
+              <div class="rc-tags"><span class="tag">Club</span></div>
+              <div class="rc-number">№ 245</div>
+              <div class="rc-caption"><em>15 mars 2025</em></div>
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">Tour <span class="it">de</span> l'Avesnois</h3>
+              <p class="rc-sub">Bocage · Maroilles · Sars-Poteries</p>
+              <div class="rc-stats">
+                <div class="rc-stat"><div class="rc-stat-v">112<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">1980<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">4<span class="unit">h</span>15</div><div class="rc-stat-l">Durée</div></div>
+              </div>
+            </div>
+          </a>
+          <button class="gsv-btn" data-lat="50.1268" data-lng="3.7641" data-title="Tour de l'Avesnois" data-loc="Maroilles · Point de départ" aria-label="Vue Street View du départ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Street View
+          </button>
+        </div>
+
+        <!-- Carte 244 : Scarpe Gravel -->
+        <div class="rc-wrap">
+          <a href="sortie.html?id=scarpe-gravel-2025-03-02" class="rc">
+            <div class="rc-img">
+              <img src="https://images.unsplash.com/photo-1541625602330-2277a4c46182?w=900&q=85" alt="">
+              <div class="rc-img-frame"></div>
+              <div class="rc-tags"><span class="tag tag-brass">Gravel</span></div>
+              <div class="rc-number">№ 244</div>
+              <div class="rc-caption"><em>2 mars 2025</em></div>
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">La Scarpe <span class="it">en gravel</span></h3>
+              <p class="rc-sub">Forêt de Saint-Amand · Raismes</p>
+              <div class="rc-stats">
+                <div class="rc-stat"><div class="rc-stat-v">68<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">1240<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">3<span class="unit">h</span>30</div><div class="rc-stat-l">Durée</div></div>
+              </div>
+            </div>
+          </a>
+          <button class="gsv-btn" data-lat="50.4461" data-lng="3.4278" data-title="La Scarpe en gravel" data-loc="Saint-Amand-les-Eaux · Point de départ" aria-label="Vue Street View du départ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Street View
+          </button>
+        </div>
+
+        <!-- Carte 243 : Côte d'Opale -->
+        <div class="rc-wrap">
+          <a href="sortie.html?id=opale-2025-02-22" class="rc">
+            <div class="rc-img">
+              <img src="https://images.unsplash.com/photo-1571188654248-7a89213915f7?w=900&q=85" alt="">
+              <div class="rc-img-frame"></div>
+              <div class="rc-tags"><span class="tag">Côte</span></div>
+              <div class="rc-number">№ 243</div>
+              <div class="rc-caption"><em>22 février 2025</em></div>
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">Côte <span class="it">d'</span>Opale</h3>
+              <p class="rc-sub">Boulogne · Cap Gris-Nez</p>
+              <div class="rc-stats">
+                <div class="rc-stat"><div class="rc-stat-v">104<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">1380<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">4<span class="unit">h</span>40</div><div class="rc-stat-l">Durée</div></div>
+              </div>
+            </div>
+          </a>
+          <button class="gsv-btn" data-lat="50.7264" data-lng="1.6068" data-title="Côte d'Opale" data-loc="Boulogne-sur-Mer · Point de départ" aria-label="Vue Street View du départ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Street View
+          </button>
+        </div>
+
+        <!-- Carte 242 : Cambrésis -->
+        <div class="rc-wrap">
+          <a href="sortie.html?id=cambresis-2025-02-08" class="rc">
+            <div class="rc-img">
+              <img src="https://images.unsplash.com/photo-1605859888693-db1edf53b9f6?w=900&q=85" alt="">
+              <div class="rc-img-frame"></div>
+              <div class="rc-tags"><span class="tag">Endurance</span></div>
+              <div class="rc-number">№ 242</div>
+              <div class="rc-caption"><em>8 février 2025</em></div>
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">Boucle <span class="it">du</span> Cambrésis</h3>
+              <p class="rc-sub">Plat venté · effort soutenu</p>
+              <div class="rc-stats">
+                <div class="rc-stat"><div class="rc-stat-v">98<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">680<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
+                <div class="rc-stat"><div class="rc-stat-v">3<span class="unit">h</span>55</div><div class="rc-stat-l">Durée</div></div>
+              </div>
+            </div>
+          </a>
+          <button class="gsv-btn" data-lat="50.1763" data-lng="3.2350" data-title="Boucle du Cambrésis" data-loc="Cambrai · Point de départ" aria-label="Vue Street View du départ">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Street View
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Modal Street View ─────────────────────────────────────── -->
+  <div id="gsv-modal" role="dialog" aria-modal="true" aria-label="Street View" style="display:none;">
+    <div id="gsv-modal-backdrop"></div>
+    <div id="gsv-modal-panel">
+      <div id="gsv-modal-header">
+        <div id="gsv-modal-info">
+          <div id="gsv-modal-title"></div>
+          <div id="gsv-modal-loc"></div>
+        </div>
+        <div id="gsv-modal-actions">
+          <a id="gsv-modal-open" target="_blank" rel="noopener" title="Ouvrir dans Google Maps">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Ouvrir dans Maps
+          </a>
+          <button id="gsv-modal-close" aria-label="Fermer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="gsv-modal-body">
+        <iframe id="gsv-modal-iframe" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Google Street View"></iframe>
+        <div id="gsv-modal-badge">Street View · Google Maps</div>
+      </div>
     </div>
   </div>
-    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
-    <ul role="list">
-      <li><a href="index.html"           class="mn-link">Accueil</a></li>
-      <li><a href="sorties.html"         class="mn-link">Sorties</a></li>
-      <li><a href="parcours.html"        class="mn-link">Parcours</a></li>
-      <li><a href="segments.html"        class="mn-link">Segments</a></li>
-      <li><a href="evenements.html"      class="mn-link">Événements</a></li>
-      <li><a href="profil.html"          class="mn-link">Mon profil</a></li>
-      <li><a href="club.html"            class="mn-link">Le club</a></li>
-      <li><a href="palmares.html"        class="mn-link">Palmarès</a></li>
-      <li><a href="contact.html"         class="mn-link">Contact</a></li>
-      <li><a href="mentions-legales.html" class="mn-link">Mentions légales</a></li>
-    </ul>
-  </div>
-</nav>
 
-<!-- PAGE HEADER -->
-<main id="main-content"><header class="page-header">
-  <div class="page-eyebrow fu" style="--d:0s">
-    <span style="display:inline-block;width:24px;height:2px;background:var(--accent);flex-shrink:0;"></span>
-    Historique · Saison 2025
-  </div>
-  <h1 class="page-h1 fu" style="--d:.08s">
-    Toutes les<br><em>sorties</em>
-  </h1>
-  <p class="page-sub fu" style="--d:.16s">
-    247 sorties enregistrées cette saison. Filtrez par type, période ou intensité.
-  </p>
-  <div class="page-meta fu" style="--d:.24s" role="list" aria-label="Totaux de la saison">
-    <div class="page-meta-item" role="listitem">
-      <span class="page-meta-label">Total km</span>
-      <span class="page-meta-value">12 480<b>km</b></span>
-    </div>
-    <div class="page-meta-sep" aria-hidden="true"></div>
-    <div class="page-meta-item" role="listitem">
-      <span class="page-meta-label">Dénivelé</span>
-      <span class="page-meta-value">148 600<b>m</b></span>
-    </div>
-    <div class="page-meta-sep" aria-hidden="true"></div>
-    <div class="page-meta-item" role="listitem">
-      <span class="page-meta-label">Heures</span>
-      <span class="page-meta-value">482<b>h</b></span>
-    </div>
-    <div class="page-meta-sep" aria-hidden="true"></div>
-    <div class="page-meta-item" role="listitem">
-      <span class="page-meta-label">TSS total</span>
-      <span class="page-meta-value">48 640<b>pts</b></span>
-    </div>
-  </div>
-</header>
+  </main>
+  <script src="asset/js/data.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script>
+  /* ── Street View modal (sorties.html) ── */
+  (function () {
+    const modal   = document.getElementById('gsv-modal');
+    const backdrop= document.getElementById('gsv-modal-backdrop');
+    const iframe  = document.getElementById('gsv-modal-iframe');
+    const titleEl = document.getElementById('gsv-modal-title');
+    const locEl   = document.getElementById('gsv-modal-loc');
+    const openA   = document.getElementById('gsv-modal-open');
+    const closeBtn= document.getElementById('gsv-modal-close');
 
-<!-- LISTE DES SORTIES -->
-<section class="section" aria-labelledby="list-h" style="padding-top:0">
-  <h2 id="list-h" class="sr-only">Liste des sorties</h2>
+    function openModal(lat, lng, title, loc) {
+      titleEl.textContent = title;
+      locEl.textContent   = loc;
+      const url = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed&hl=fr`;
+      iframe.src = url;
+      openA.href = `https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}`;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    }
 
-  <!-- Filtres -->
-  <div id="filter-chips" class="filter-bar fu" style="--d:.3s" role="toolbar" aria-label="Filtres">
-    <span class="filter-bar-label">Type</span>
-    <button class="filter-chip active" data-group="type" type="button">Toutes</button>
-    <button class="filter-chip" data-group="type" type="button">Route</button>
-    <button class="filter-chip" data-group="type" type="button">Gravel</button>
-    <button class="filter-chip" data-group="type" type="button">MTB</button>
-    <div class="filter-sep" aria-hidden="true"></div>
-    <span class="filter-bar-label">Période</span>
-    <button class="filter-chip active" data-group="period" type="button">2025</button>
-    <button class="filter-chip" data-group="period" type="button">Juin</button>
-    <button class="filter-chip" data-group="period" type="button">Mai</button>
-    <button class="filter-chip" data-group="period" type="button">Avr</button>
-    <div class="filter-sep" aria-hidden="true"></div>
-    <span class="filter-bar-label">Intensité</span>
-    <button class="filter-chip" data-group="intensity" type="button">PR</button>
-    <button class="filter-chip" data-group="intensity" type="button">KOM</button>
-  </div>
+    function closeModal() {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+      iframe.src = 'about:blank';
+    }
 
-  <!-- En-tête tableau -->
-  <div class="sortie-row-head" aria-hidden="true">
-    <span>Sortie</span>
-    <span>Distance</span>
-    <span>Dénivelé</span>
-    <span>Durée</span>
-    <span>TSS</span>
-    <span>Résultat</span>
-  </div>
+    document.querySelectorAll('.gsv-btn').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal(
+          this.dataset.lat,
+          this.dataset.lng,
+          this.dataset.title,
+          this.dataset.loc
+        );
+      });
+    });
 
-  <div class="sorties-grid" role="list" aria-label="Liste des sorties">
-
-    <a href="sortie.html?ride=arenberg" class="sortie-row" role="listitem" data-reveal data-delay="0" data-type="route" data-period="mai" data-intensity="kom">
-      <div class="sortie-info">
-        <span class="sortie-name">Secteurs d'Arenberg</span>
-        <span class="sortie-meta">14 Avr 2025 · Route · Wallers, Nord</span>
-      </div>
-      <span class="sortie-val">87<small>km</small></span>
-      <span class="sortie-val">820<small>m</small></span>
-      <span class="sortie-val">4h22</span>
-      <span class="sortie-val">318<small>pts</small></span>
-      <span class="sortie-badge kom">🥇 KOM</span>
-    </a>
-
-    <a href="sortie.html?ride=flandres" class="sortie-row" role="listitem" data-reveal data-delay="40" data-type="route" data-period="juin" data-intensity="">
-      <div class="sortie-info">
-        <span class="sortie-name">Tour des Monts des Flandres</span>
-        <span class="sortie-meta">10 Juin 2025 · Route · Nord</span>
-      </div>
-      <span class="sortie-val">112<small>km</small></span>
-      <span class="sortie-val">680<small>m</small></span>
-      <span class="sortie-val">5h08</span>
-      <span class="sortie-val">272<small>pts</small></span>
-      <span class="sortie-badge new">Nouveau</span>
-    </a>
-
-    <a href="sortie.html?ride=avesnois" class="sortie-row" role="listitem" data-reveal data-delay="80" data-type="route" data-period="juin" data-intensity="pr">
-      <div class="sortie-info">
-        <span class="sortie-name">Cyclo de l'Avesnois</span>
-        <span class="sortie-meta">7 Juin 2025 · Route · Avesnois</span>
-      </div>
-      <span class="sortie-val">68<small>km</small></span>
-      <span class="sortie-val">680<small>m</small></span>
-      <span class="sortie-val">2h52</span>
-      <span class="sortie-val">186<small>pts</small></span>
-      <span class="sortie-badge pr">PR Montée</span>
-    </a>
-
-    <a href="sortie.html?ride=valenciennes" class="sortie-row" role="listitem" data-reveal data-delay="120" data-type="route" data-period="juin" data-intensity="kom">
-      <div class="sortie-info">
-        <span class="sortie-name">Valenciennes — Amiens — Boulogne</span>
-        <span class="sortie-meta">2 Juin 2025 · Route · Nord-Pas-de-Calais</span>
-      </div>
-      <span class="sortie-val">104<small>km</small></span>
-      <span class="sortie-val">520<small>m</small></span>
-      <span class="sortie-val">5h44</span>
-      <span class="sortie-val">342<small>pts</small></span>
-      <span class="sortie-badge pr">KOM Arenberg</span>
-    </a>
-
-    <a href="sortie.html?ride=scarpe" class="sortie-row" role="listitem" data-reveal data-delay="160" data-type="gravel" data-period="mai" data-intensity="">
-      <div class="sortie-info">
-        <span class="sortie-name">La Scarpe — Douai Gravel</span>
-        <span class="sortie-meta">28 Mai 2025 · Gravel · Douai</span>
-      </div>
-      <span class="sortie-val">76<small>km</small></span>
-      <span class="sortie-val">480<small>m</small></span>
-      <span class="sortie-val">3h38</span>
-      <span class="sortie-val">208<small>pts</small></span>
-      <span class="sortie-badge new">Gravel</span>
-    </a>
-
-    <a href="sortie.html?ride=roubaix-recup" class="sortie-row" role="listitem" data-reveal data-delay="200" data-type="route" data-period="mai" data-intensity="">
-      <div class="sortie-info">
-        <span class="sortie-name">Sortie Roubaix — Récupération</span>
-        <span class="sortie-meta">24 Mai 2025 · Route · Roubaix</span>
-      </div>
-      <span class="sortie-val">48<small>km</small></span>
-      <span class="sortie-val">210<small>m</small></span>
-      <span class="sortie-val">2h10</span>
-      <span class="sortie-val">124<small>pts</small></span>
-      <span class="sortie-badge pr">Z2</span>
-    </a>
-
-    <a href="sortie.html?ride=dunkerque" class="sortie-row" role="listitem" data-reveal data-delay="240" data-type="route" data-period="mai" data-intensity="kom">
-      <div class="sortie-info">
-        <span class="sortie-name">Dunkerque — Côte d'Opale</span>
-        <span class="sortie-meta">18 Mai 2025 · Route · Dunkerque</span>
-      </div>
-      <span class="sortie-val">132<small>km</small></span>
-      <span class="sortie-val">360<small>m</small></span>
-      <span class="sortie-val">6h22</span>
-      <span class="sortie-val">384<small>pts</small></span>
-      <span class="sortie-badge kom">🥇 KOM</span>
-    </a>
-
-    <a href="sortie.html?ride=lille-bethune" class="sortie-row" role="listitem" data-reveal data-delay="280" data-type="route" data-period="mai" data-intensity="pr">
-      <div class="sortie-info">
-        <span class="sortie-name">Lille — La Bassée — Béthune</span>
-        <span class="sortie-meta">12 Mai 2025 · Route · Pas-de-Calais</span>
-      </div>
-      <span class="sortie-val">94<small>km</small></span>
-      <span class="sortie-val">640<small>m</small></span>
-      <span class="sortie-val">4h48</span>
-      <span class="sortie-val">296<small>pts</small></span>
-      <span class="sortie-badge pr">PR Glandon</span>
-    </a>
-
-    <a href="sortie.html?ride=trilogie" class="sortie-row" role="listitem" data-reveal data-delay="320" data-type="route" data-period="mai" data-intensity="kom">
-      <div class="sortie-info">
-        <span class="sortie-name">Trilogie — Arenberg, Wallers, Carrefour de l'Arbre</span>
-        <span class="sortie-meta">4 Mai 2025 · Route · Nord</span>
-      </div>
-      <span class="sortie-val">187<small>km</small></span>
-      <span class="sortie-val">1 180<small>m</small></span>
-      <span class="sortie-val">9h12</span>
-      <span class="sortie-val">512<small>pts</small></span>
-      <span class="sortie-badge kom">🥇 Record</span>
-    </a>
-
-    <a href="sortie.html?ride=plaine-flamande" class="sortie-row" role="listitem" data-reveal data-delay="360" data-type="route" data-period="avr" data-intensity="">
-      <div class="sortie-info">
-        <span class="sortie-name">Plaine Flamande — Endurance</span>
-        <span class="sortie-meta">28 Avr 2025 · Route · Hauts-de-France</span>
-      </div>
-      <span class="sortie-val">96<small>km</small></span>
-      <span class="sortie-val">180<small>m</small></span>
-      <span class="sortie-val">3h56</span>
-      <span class="sortie-val">148<small>pts</small></span>
-      <span class="sortie-badge new">Z2</span>
-    </a>
-
-  </div>
-
-  <div style="display:flex;justify-content:center;margin-top:20px;" data-reveal>
-    <button class="btn-ghost" type="button">
-      Charger plus (237 sorties restantes)
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-  </div>
-</section>
-
-</main>
-<footer class="site-footer" role="contentinfo">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <span class="footer-logo">C.C. SAROUEL</span>
-      <p class="footer-tagline">Club Cycliste de Sarouel · Nord · <em>Hauts-de-France</em></p>
-    </div>
-    <nav class="footer-nav" aria-label="Navigation pied de page">
-      <a href="index.html">Accueil</a>
-      <a href="sorties.html">Sorties</a>
-      <a href="parcours.html">Parcours</a>
-      <a href="segments.html">Segments</a>
-      <a href="evenements.html">Événements</a>
-      <a href="profil.html">Profil</a>
-    </nav>
-    <dl class="footer-meta">
-      <div><dt>Appareil</dt><dd>Garmin Edge 840 Solar</dd></div>
-      <div><dt>Capteur</dt><dd>Quarq DZero Bilatéral</dd></div>
-      <div><dt>Vélo</dt><dd>Canyon Ultimate CF SLX</dd></div>
-      <div><dt>Saison</dt><dd>2025</dd></div>
-    </dl>
-    <address class="footer-gps">
-      <span>50° 35′ 12″ N</span>
-      <span>03° 04′ 48″ E</span>
-      <span class="footer-alt">Sarouel · Nord</span>
-    </address>
-  </div>
-  <div class="footer-bar">
-    <span>© 2025 C.C. SAROUEL — Cyclisme de performance</span>
-    <span>Chart.js 4 · Leaflet · v7.0</span>
-  </div>
-</footer>
-
-<style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}</style>
-<script src="asset/js/main.js"></script>
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal.style.display !== 'none') closeModal();
+    });
+  })();
+  </script>
 </body>
 </html>

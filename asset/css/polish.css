@@ -1,0 +1,551 @@
+/* ═══════════════════════════════════════════════════════════════
+   Club de Cyclisme de Salouel — polish.css — v1
+   Surcouche : interactivité, états focus/hover, responsive
+   Couches après style.css — palette identique
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Focus visible cohérent (laiton, accessible) ────────── */
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid var(--brass-hi, #CAA35B);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+button:focus-visible,
+.btn:focus-visible,
+.filter-chip:focus-visible {
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px rgba(202, 163, 91, 0.15);
+}
+
+/* ─── Cards : hover plus marqué ──────────────────────────── */
+.rc {
+  transition: transform .35s cubic-bezier(.2, .7, .2, 1),
+              box-shadow .35s ease,
+              border-color .35s ease;
+}
+.rc:hover,
+.rc:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--line-brass, rgba(176, 142, 74, 0.32));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .25),
+              0 0 0 1px rgba(176, 142, 74, .1);
+}
+.rc img {
+  transition: transform .8s cubic-bezier(.2, .7, .2, 1);
+}
+.rc:hover img {
+  transform: scale(1.04);
+}
+
+/* List-ornate-row animations */
+.list-ornate-row {
+  transition: background .25s ease, padding-left .25s ease;
+}
+.list-ornate-row:hover {
+  padding-left: 8px;
+}
+.list-ornate-row .btn-arrow,
+.list-ornate-row .arrow {
+  transition: transform .3s cubic-bezier(.2, .7, .2, 1);
+}
+.list-ornate-row:hover .btn-arrow,
+.list-ornate-row:hover .arrow {
+  transform: translateX(6px);
+}
+
+/* ─── POI items hover ────────────────────────────────────── */
+.poi-item {
+  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+.poi-item:hover {
+  background: rgba(176, 142, 74, 0.06);
+  border-color: var(--line-brass, rgba(176, 142, 74, 0.32));
+}
+.poi-item:active {
+  transform: scale(.99);
+}
+.poi-item.active {
+  background: rgba(176, 142, 74, 0.1);
+  border-color: var(--brass, #B08E4A);
+}
+
+/* ─── Filter chips ───────────────────────────────────────── */
+.filter-chip {
+  transition: all .2s ease;
+}
+.filter-chip:hover:not(.active) {
+  border-color: var(--line-brass, rgba(176, 142, 74, 0.32));
+  color: var(--cream, #EDE6D3);
+}
+
+/* ─── Buttons ────────────────────────────────────────────── */
+.btn {
+  transition: all .25s cubic-bezier(.2, .7, .2, 1);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn-brass:hover {
+  box-shadow: 0 6px 20px rgba(176, 142, 74, 0.35);
+}
+
+/* ─── Header sortie : skeleton de chargement ────────────── */
+.sortie-head-title:empty::after,
+.sortie-head-title:not(:empty):where(:has-text("Chargement"))::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 12px;
+  border-radius: 50%;
+  background: var(--brass, #B08E4A);
+  animation: ccs-pulse 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+@keyframes ccs-pulse {
+  0%, 100% { opacity: .3; transform: scale(.8); }
+  50%      { opacity: 1;  transform: scale(1.2); }
+}
+
+/* ─── Scrub bar : amélioration du thumb ─────────────────── */
+.scrub-thumb {
+  transition: box-shadow .2s ease, transform .2s ease;
+  cursor: grab;
+}
+.scrub-rail:hover .scrub-thumb {
+  box-shadow: 0 0 0 6px rgba(176, 142, 74, 0.2);
+}
+.scrub-rail:active .scrub-thumb {
+  cursor: grabbing;
+  box-shadow: 0 0 0 8px rgba(176, 142, 74, 0.3);
+  transform: translate(-50%, -50%) scale(1.15);
+}
+.scrub-tick {
+  transition: transform .2s ease, height .2s ease;
+}
+.scrub-tick:hover {
+  transform: translateX(-50%) scaleY(1.4);
+}
+
+/* ─── Map markers : cursor pointer ──────────────────────── */
+.leaflet-container .map-marker {
+  cursor: pointer;
+}
+.poi-pin {
+  transition: transform .2s ease;
+}
+.poi-pin:hover {
+  transform: scale(1.15);
+}
+
+/* ─── Reveal animations plus douces ─────────────────────── */
+[data-reveal]:not(.revealed) {
+  opacity: 0;
+  transform: translateY(20px);
+}
+[data-reveal] {
+  transition: opacity .8s cubic-bezier(.2, .7, .2, 1),
+              transform .8s cubic-bezier(.2, .7, .2, 1);
+}
+[data-reveal].revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* ─── Nav sticky : transition douce ─────────────────────── */
+#main-nav,
+.main-nav {
+  transition: background .3s ease, backdrop-filter .3s ease, border-color .3s ease;
+}
+
+/* ─── Responsive : mobile / tablette ────────────────────── */
+@media (max-width: 900px) {
+  .sortie-head-title {
+    font-size: clamp(2.2rem, 8vw, 3.6rem) !important;
+  }
+  .sortie-head-stats {
+    gap: 16px !important;
+  }
+  .sh-stat {
+    flex: 1 1 calc(50% - 16px) !important;
+    min-width: 0 !important;
+  }
+
+  /* Explorer : empile street-view + minimap */
+  .explorer-scene {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+  }
+  .explorer-sv {
+    min-height: 320px;
+  }
+  .sv-fallback {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr 1fr !important;
+  }
+  .minimap-wrap {
+    height: 200px !important;
+  }
+
+  /* POI panel : empile aside */
+  .poi-panel {
+    grid-template-columns: 1fr !important;
+  }
+  .poi-aside {
+    margin-top: 32px;
+  }
+
+  /* Scrub bar plus compact */
+  .scrub-bar {
+    flex-wrap: wrap;
+    gap: 12px !important;
+  }
+  .scrub-controls {
+    flex: 0 0 auto;
+  }
+  .scrub-track {
+    flex: 1 1 calc(100% - 100px);
+    min-width: 0;
+  }
+  .scrub-info {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  /* Hints clavier cachés sur mobile */
+  .explorer-bar-hints {
+    display: none;
+  }
+
+  /* Segments table scrollable horizontalement */
+  .seg-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .seg-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sortie-head-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sortie-head-tags {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .breadcrumb {
+    font-size: .72rem;
+  }
+  .sortie-head-stats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .filter-row {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding-bottom: 8px;
+  }
+  .filter-chip {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .field-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* ─── Minimap expanded sur grand écran ──────────────────── */
+.minimap-wrap.expanded {
+  position: fixed;
+  inset: 5vh 5vw;
+  height: auto !important;
+  z-index: 1000;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, .6);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.minimap-wrap.expanded .minimap-map {
+  height: 100% !important;
+}
+
+/* ─── POI form : focus ring sur inputs ──────────────────── */
+.poi-form input:focus,
+.poi-form select:focus,
+.poi-form textarea:focus {
+  border-color: var(--brass, #B08E4A) !important;
+  box-shadow: 0 0 0 3px rgba(176, 142, 74, 0.15);
+}
+
+/* ─── Liens : focus visible ─────────────────────────────── */
+a:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--brass, #B08E4A);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* ─── Print : feuille propre ────────────────────────────── */
+@media print {
+  #main-nav, .main-nav, footer, .scrub-bar, .poi-add, .filter-row,
+  .explorer-bar-hints, .sortie-head-actions, .minimap-expand {
+    display: none !important;
+  }
+  .sortie-layout {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .explorer-scene {
+    height: auto !important;
+    grid-template-rows: 400px !important;
+  }
+}
+
+/* ─── Animation page-load (subtile) ─────────────────────── */
+@keyframes ccs-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-head {
+  animation: ccs-fade-in .6s ease-out;
+}
+
+/* ─── Scroll-bar (Chromium) ─────────────────────────────── */
+.poi-items::-webkit-scrollbar,
+.seg-table-wrap::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.poi-items::-webkit-scrollbar-track,
+.seg-table-wrap::-webkit-scrollbar-track {
+  background: rgba(237, 230, 211, .04);
+}
+.poi-items::-webkit-scrollbar-thumb,
+.seg-table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(176, 142, 74, .3);
+  border-radius: 3px;
+}
+.poi-items::-webkit-scrollbar-thumb:hover,
+.seg-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(176, 142, 74, .5);
+}
+
+/* ─── Selection ─────────────────────────────────────────── */
+::selection {
+  background: rgba(176, 142, 74, .35);
+  color: var(--cream, #EDE6D3);
+}
+
+/* ─── Loading state pour les éléments dynamiques ────────── */
+#sortie-stats:empty {
+  min-height: 80px;
+  position: relative;
+}
+#sortie-stats:empty::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(176, 142, 74, .08),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: ccs-shimmer 1.5s infinite;
+}
+@keyframes ccs-shimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 100% 0; }
+}
+
+/* ── Google Street View iframe ─────────────────────────────── */
+#mly-viewer { position: relative; overflow: hidden; }
+#gsv-iframe  { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+#gsv-overlay {
+  position: absolute; bottom: 10px; right: 10px; z-index: 10;
+  background: rgba(18,18,18,.82); color: var(--gold, #C7BC9E);
+  font-family: 'Archivo', sans-serif; font-size: 11px; letter-spacing: .08em;
+  padding: 5px 10px; border-radius: 3px; cursor: pointer;
+  border: 1px solid rgba(176,142,74,.35); backdrop-filter: blur(4px);
+  transition: background .2s;
+}
+#gsv-overlay:hover { background: rgba(40,35,28,.9); }
+
+/* ─── Street View button & card wrapper ──────────────────── */
+.rc-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.rc-wrap .rc {
+  flex: 1;
+}
+.gsv-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 16px;
+  margin-top: 6px;
+  background: rgba(176, 142, 74, 0.07);
+  border: 1px solid rgba(176, 142, 74, 0.28);
+  border-radius: 3px;
+  color: var(--brass, #B08E4A);
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .22s ease, border-color .22s ease, color .22s ease;
+}
+.gsv-btn:hover {
+  background: rgba(176, 142, 74, 0.16);
+  border-color: rgba(176, 142, 74, 0.55);
+  color: #C9A85C;
+}
+.gsv-btn svg {
+  flex-shrink: 0;
+  opacity: .85;
+}
+
+/* ─── Street View modal ──────────────────────────────────── */
+#gsv-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#gsv-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 10, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#gsv-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 880px;
+  background: var(--surface-1, #0f0f0f);
+  border: 1px solid rgba(176, 142, 74, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 80px rgba(0,0,0,.7);
+  animation: gsv-in .25s cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes gsv-in {
+  from { opacity: 0; transform: scale(.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+#gsv-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(176, 142, 74, 0.15);
+  background: rgba(0,0,0,.25);
+}
+#gsv-modal-title {
+  font-family: 'Archivo', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--cream, #EDE6D3);
+}
+#gsv-modal-loc {
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--brass, #B08E4A);
+  margin-top: 2px;
+}
+#gsv-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#gsv-modal-open {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--brass, #B08E4A);
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid rgba(176, 142, 74, 0.3);
+  border-radius: 2px;
+  transition: background .2s, border-color .2s;
+}
+#gsv-modal-open:hover {
+  background: rgba(176, 142, 74, 0.12);
+  border-color: rgba(176, 142, 74, 0.55);
+}
+#gsv-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: 1px solid rgba(237, 230, 211, 0.12);
+  border-radius: 2px;
+  color: rgba(237, 230, 211, 0.5);
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+#gsv-modal-close:hover {
+  color: var(--cream, #EDE6D3);
+  border-color: rgba(237, 230, 211, 0.35);
+}
+#gsv-modal-body {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+#gsv-modal-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+#gsv-modal-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(12, 12, 12, 0.78);
+  color: var(--brass, #B08E4A);
+  font-family: 'Archivo', sans-serif;
+  font-size: 9px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+@media (max-width: 600px) {
+  #gsv-modal-panel { max-width: 100%; }
+  #gsv-modal { padding: 0; align-items: flex-end; }
+  #gsv-modal-panel { border-radius: 6px 6px 0 0; }
+  #gsv-modal-body { aspect-ratio: 4 / 3; }
+}
