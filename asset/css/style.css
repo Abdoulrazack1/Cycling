@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   Club de Cyclisme de Salouel — style.css — v12 · LE CERCLE
+   Club de Cyclisme de Salouel — style.css — v12 · Club de Cyclisme de Salouel
    Direction : Club privé · luxe discret · vert émeraude, crème, laiton
    Réf : Conceptzilla luxury golf club
    Typo : Playfair Display + EB Garamond + Archivo
@@ -21,6 +21,9 @@
   --green-a:   rgba(46,85,63,.14);
 
   /* Crème parchemin */
+  --parch:   #EDE6D3;
+  --parch-2: #C7BC9E;
+  --parch-3: #9F9578;
   --cream:     #EDE6D3;
   --cream-2:   #E0D7BE;
   --cream-3:   #C7BC9E;
@@ -2134,8 +2137,10 @@ ul { list-style: none; }
   position: absolute;
   inset: 0;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
-#mly-viewer { width: 100%; height: 100%; }
+#mly-viewer { width: 100%; flex: 1; }
 .mapillary-viewer { width: 100%; height: 100%; }
 
 .sv-empty {

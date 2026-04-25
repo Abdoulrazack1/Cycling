@@ -67,26 +67,49 @@
       </div>
 
       <div class="explorer-scene">
-        <div class="explorer-sv">
-          <div id="mly-viewer" hidden style="position:relative;overflow:hidden;"></div>
-
-          <div class="sv-empty" id="sv-empty" hidden>
-            <div class="sv-empty-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-            <div class="sv-empty-title">Street View indisponible ici</div>
-            <div class="sv-empty-desc">Google Street View n'a pas de couverture à cette position. Avancez sur la frise pour trouver une vue disponible.</div>
+        <div class="explorer-sv" data-view="gsv">
+          <!-- Barre de mode vue -->
+          <div class="sv-mode-bar" id="sv-mode-bar">
+            <button class="sv-mode-btn active" id="sv-btn-gsv" title="Google Street View">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Street View
+            </button>
+            <button class="sv-mode-btn" id="sv-btn-sat" title="Vue satellite">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Satellite
+            </button>
+            <button class="sv-mode-btn" id="sv-btn-osm" title="Carte OSM">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l6 6 4-4 8 5"/><path d="M21 3H3v18h18V3z"/></svg>
+              Carte
+            </button>
+            <span class="sv-mode-sep"></span>
+            <span class="sv-source-badge" id="sv-source-label">Google Street View</span>
           </div>
 
-          <div class="sv-fallback" id="sv-fallback" hidden>
-            <div class="sv-fallback-notice">Street View · Chargement…</div>
-            <div class="sv-fallback-cell">
-              <div class="sv-fallback-cell-tag">Vue satellite · Esri</div>
-              <div id="sv-fallback-sat"></div>
+          <div class="sv-layers">
+            <!-- Le viewer GSV/Mapillary (visible par défaut) -->
+            <div id="mly-viewer" class="sv-layer sv-layer-gsv"></div>
+
+            <!-- Le message "pas de couverture" (masqué via CSS, affiché par JS) -->
+            <div class="sv-empty sv-layer" id="sv-empty">
+              <div class="sv-empty-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div class="sv-empty-title">Street View indisponible ici</div>
+              <div class="sv-empty-desc">Google Street View n'a pas de couverture à cette position, ou l'embed est bloqué. Essayez la vue satellite, ou ouvrez la position dans Google Maps.</div>
+              <button class="btn btn-ghost btn-sm" id="sv-open-maps" type="button">↗ Ouvrir dans Google Maps</button>
             </div>
-            <div class="sv-fallback-cell">
-              <div class="sv-fallback-cell-tag">Vue cartographique · OSM</div>
-              <div id="sv-fallback-map"></div>
+
+            <!-- Le fallback satellite/OSM (toujours en flow mais caché via visibility) -->
+            <div class="sv-fallback sv-layer" id="sv-fallback">
+              <div class="sv-fallback-cell sv-cell-sat">
+                <div class="sv-fallback-cell-tag">Vue satellite · Esri</div>
+                <div id="sv-fallback-sat"></div>
+              </div>
+              <div class="sv-fallback-cell sv-cell-osm">
+                <div class="sv-fallback-cell-tag">Vue cartographique · OSM</div>
+                <div id="sv-fallback-map"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -112,6 +135,13 @@
             <button class="scrub-btn" id="scrub-fwd" aria-label="Avancer">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 6v12l8.5-6L13 6zM4 18l8.5-6L4 6v12z"/></svg>
             </button>
+          </div>
+          <div class="scrub-speed-wrap" title="Vitesse de défilement">
+            <span class="scrub-speed-icon" aria-hidden="true">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            <input type="range" id="scrub-speed" min="0.25" max="4" step="0.25" value="1" aria-label="Vitesse de lecture">
+            <span class="scrub-speed-label" id="scrub-speed-label">1×</span>
           </div>
           <div class="scrub-track">
             <div class="scrub-rail" id="scrub-rail">
@@ -254,7 +284,7 @@
               <th>Long.</th>
               <th>Temps</th>
               <th>vs N−1</th>
-              <th>Rang Cercle</th>
+              <th>Rang Club</th>
             </tr>
           </thead>
           <tbody id="seg-tbody"></tbody>
@@ -269,7 +299,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin></script>
   <!-- Mapillary optionnel — actif uniquement si MAPILLARY_TOKEN est renseigné dans sortie.js -->
   <script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js" crossorigin async></script>
+  <script>
+    /* Activer le backend REST — modifier l'URL si nécessaire */
+    window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };
+    
+  </script>
   <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
   <script src="asset/js/main.js"></script>
   <script src="asset/js/sortie.js"></script>
 </body>

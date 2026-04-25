@@ -30,7 +30,7 @@
       <div class="story-two" data-reveal>
         <div class="story-img">
           <div class="story-img-stamp">Événement phare</div>
-          <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1400&q=85" alt="">
+          <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1400&q=85" alt="Cyclistes sur route">
           <div class="story-img-frame"></div>
           <div class="story-img-caption">Quatrième édition · 13 avril 2025</div>
         </div>
@@ -54,7 +54,7 @@
             </div>
           </div>
           <div class="story-cta">
-            <a href="contact.html" class="btn btn-brass">S'inscrire</a>
+            <button type="button" class="btn btn-brass" id="btn-register-saloueloise" data-event-id="10">S'inscrire</button>
             <a href="sortie.html?id=arenberg-2025-04-05" class="btn btn-ghost">Voir le parcours <span class="btn-arrow">→</span></a>
           </div>
         </div>
@@ -62,72 +62,264 @@
 
       <div class="list-ornate" data-reveal data-delay="100" style="margin-top: 64px;">
         <div class="list-ornate-head"><span>Date</span><span>Événement</span><span>Lieu</span><span>Distance</span><span></span></div>
-        <a class="list-ornate-row">
-          <div class="list-ornate-date">27 avril<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">Gravel <span class="it">de la</span> Scarpe</div>
-            <div class="list-ornate-sub">2<sup>e</sup> édition · 48 km / 82 km · organisation Cercle</div>
-          </div>
-          <div class="list-ornate-meta"><b>St-Amand</b> · 8 h 30<br><span>Bois de Raismes</span></div>
-          <div class="list-ornate-dist">82<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a class="list-ornate-row">
-          <div class="list-ornate-date">18 mai<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">La Ronde <span class="it">des</span> Monts</div>
-            <div class="list-ornate-sub">Cyclosportive FFC · participation équipe course</div>
-          </div>
-          <div class="list-ornate-meta"><b>Cassel</b> · 9 h 00<br><span>Mont des Cats</span></div>
-          <div class="list-ornate-dist">95<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a class="list-ornate-row">
-          <div class="list-ornate-date">8 juin<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">Critérium <span class="it">de</span> Salouel</div>
-            <div class="list-ornate-sub">Toutes catégories · circuit fermé · ouvert aux extérieurs</div>
-          </div>
-          <div class="list-ornate-meta"><b>Salouel</b> · 14 h 00<br><span>Z.I. nord</span></div>
-          <div class="list-ornate-dist">40<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a class="list-ornate-row">
-          <div class="list-ornate-date">15 juin<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">Championnat <span class="it">régional</span> UFOLEP</div>
-            <div class="list-ornate-sub">Route · toutes catégories</div>
-          </div>
-          <div class="list-ornate-meta"><b>Orchies</b> · 14 h 00<br><span>Hauts-de-France</span></div>
-          <div class="list-ornate-dist">58<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a class="list-ornate-row">
-          <div class="list-ornate-date">6 juillet<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">Grand Prix <span class="it">de</span> Salouel</div>
-            <div class="list-ornate-sub">Course FSGT · 1<sup>re</sup>, 2<sup>e</sup>, 3<sup>e</sup> cat · organisation Cercle</div>
-          </div>
-          <div class="list-ornate-meta"><b>Salouel</b> · 13 h 30<br><span>Centre-ville</span></div>
-          <div class="list-ornate-dist">65<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a class="list-ornate-row">
-          <div class="list-ornate-date">14 sept.<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">Rando <span class="it">des</span> 3 Provinces</div>
-            <div class="list-ornate-sub">Randonnée ouverte à tous · 45 / 80 / 120 km</div>
-          </div>
-          <div class="list-ornate-meta"><b>Maroilles</b> · 8 h 00<br><span>Avesnois</span></div>
-          <div class="list-ornate-dist">120<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
+        <!-- Les lignes seront injectées dynamiquement par le script ci-dessous -->
       </div>
     </div>
   </section>
 
   </main>
+
+  <!-- ── Modal d'inscription événement ────────────────────── -->
+  <div id="ev-modal" class="ev-modal" hidden role="dialog" aria-modal="true" aria-labelledby="ev-modal-title">
+    <div class="ev-modal-backdrop" data-close></div>
+    <div class="ev-modal-panel">
+      <button type="button" class="ev-modal-close" aria-label="Fermer" data-close>×</button>
+      <div class="ev-modal-chapter"><em>Inscription</em></div>
+      <h3 class="ev-modal-title" id="ev-modal-title">—</h3>
+      <p class="ev-modal-sub" id="ev-modal-sub">—</p>
+
+      <div id="ev-form-error"   class="auth-error"   role="alert"  hidden style="margin-top:18px;"></div>
+      <div id="ev-form-success" class="auth-success" role="status" hidden style="margin-top:18px;"></div>
+
+      <form id="ev-form" class="event-inscr-form" novalidate>
+        <div class="field-row">
+          <div class="field"><label for="ev-prenom">Prénom *</label><input id="ev-prenom" type="text" autocomplete="given-name" required></div>
+          <div class="field"><label for="ev-nom">Nom *</label><input id="ev-nom" type="text" autocomplete="family-name" required></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ev-email">Email *</label><input id="ev-email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="ev-tel">Téléphone</label><input id="ev-tel" type="tel" autocomplete="tel"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ev-cat">Catégorie</label>
+            <select id="ev-cat">
+              <option value="">— Indifférent —</option>
+              <option value="loisir">Loisir / Découverte</option>
+              <option value="sport">Sport (≥ 28 km/h)</option>
+              <option value="expert">Expert / FFC</option>
+              <option value="ecole">École de vélo (8–14 ans)</option>
+            </select>
+          </div>
+          <div class="field"><label for="ev-dist">Distance (km)</label><input id="ev-dist" type="number" min="0" placeholder="ex. 115"></div>
+        </div>
+
+        <div class="ev-modal-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Annuler</button>
+          <button type="submit" class="btn btn-brass btn-sm" id="ev-submit">Confirmer l'inscription</button>
+        </div>
+      </form>
+
+      <p class="ev-modal-foot">
+        Pour les sociétaires, l'inscription est confirmée immédiatement. Pour les non-licenciés, un membre du bureau vous recontactera sous 48 h pour finaliser le règlement.
+      </p>
+    </div>
+  </div>
+
+  <style>
+    .ev-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .ev-modal[hidden] { display: none; }
+    .ev-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); }
+    .ev-modal-panel {
+      position: relative; z-index: 1;
+      background: var(--ink, #0a1410); border: 1px solid var(--line-2, rgba(176,142,74,.35));
+      width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+      padding: 36px 36px 28px;
+      animation: ev-modal-in .2s ease-out;
+    }
+    @keyframes ev-modal-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .ev-modal-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 30px; height: 30px;
+      border: 1px solid var(--line, rgba(176,142,74,.18));
+      background: transparent; color: var(--t-cream-2, #C7BC9E);
+      font-size: 18px; line-height: 1; cursor: pointer; border-radius: 50%;
+      transition: all .15s;
+    }
+    .ev-modal-close:hover { border-color: var(--brass, #B08E4A); color: var(--brass, #B08E4A); }
+    .ev-modal-chapter { font-family: var(--f-disp); font-style: italic; font-size: 12px; color: var(--brass, #B08E4A); margin-bottom: 6px; letter-spacing: .04em; }
+    .ev-modal-title { font-family: var(--f-disp); font-size: 26px; font-weight: 400; color: var(--t-cream, #EDE6D3); margin-bottom: 8px; line-height: 1.1; }
+    .ev-modal-title .it { font-style: italic; color: var(--brass, #B08E4A); }
+    .ev-modal-sub { font-family: var(--f-sans); font-size: 12px; color: var(--t-cream-2, #C7BC9E); }
+    .ev-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+    .ev-modal-foot { font-family: var(--f-sans); font-size: 11px; color: var(--t-cream-3, rgba(199,188,158,.55)); margin-top: 18px; line-height: 1.6; font-style: italic; }
+  </style>
+
+  <script>
+    /* Activer le backend REST — modifier l'URL si nécessaire */
+    window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };
+    
+  </script>
   <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
   <script src="asset/js/main.js"></script>
+  <script>
+  /* ── Chargement dynamique des événements depuis l'API ── */
+  (async function loadEvenements() {
+    await new Promise(resolve => {
+      const check = (n = 0) => {
+        if (window.CCS_DATA) return resolve();
+        if (n < 50) setTimeout(() => check(n + 1), 80);
+        else resolve();
+      };
+      check();
+    });
+    if (!window.CCS_DATA) return;
+
+    const listEl = document.querySelector('.list-ornate');
+    if (!listEl) return;
+
+    const TYPE_LABELS = {
+      cyclosportive: 'Cyclosportive', gravel: 'Gravel', criterium: 'Critérium',
+      course: 'Course', rando: 'Randonnée', championnat: 'Championnat', autre: 'Événement'
+    };
+
+    function daysDiff(dateStr) {
+      const d = Math.ceil((new Date(dateStr) - Date.now()) / 86400000);
+      if (d > 0) return `J−${d}`;
+      if (d === 0) return "Aujourd'hui";
+      return `il y a ${Math.abs(d)} j`;
+    }
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function renderRow(ev) {
+      const label = TYPE_LABELS[ev.type] || 'Événement';
+      const jj = daysDiff(ev.date);
+      const isoDate = new Date(ev.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+      const dayName = new Date(ev.date).toLocaleDateString('fr-FR', { weekday: 'long' });
+      const isOpen = ev.statut === 'ouvert' && new Date(ev.date) > new Date();
+
+      return `
+        <a href="sortie.html?id=${escHtml(ev.sortie_id || ev.slug || ev.id)}" class="list-ornate-row">
+          <div class="list-ornate-date">${isoDate}<span class="list-ornate-date-small">${dayName}</span></div>
+          <div>
+            <div class="list-ornate-title">${ev.title_html || escHtml(ev.title)}</div>
+            <div class="list-ornate-sub">${escHtml(ev.subtitle || '')}</div>
+          </div>
+          <div class="list-ornate-meta"><b>${escHtml(ev.lieu || '')}</b> · ${escHtml(ev.heure || '8 h 30')}<br><span>${escHtml(ev.region || '')}</span></div>
+          <div class="list-ornate-dist">${ev.distance_km || '—'}<span class="unit">km</span></div>
+          <div class="list-ornate-arrow">
+            ${isOpen ? `<button type="button" class="btn btn-brass btn-sm" data-event-id="${ev.id}" data-register>S'inscrire</button>` : '<span style="color:var(--t-cream-3);font-size:11px;">' + (ev.statut || '') + '</span>'}
+          </div>
+        </a>`;
+    }
+
+    try {
+      const evs = await window.CCS_DATA.listEvenements({ limit: 20 });
+      if (!evs?.length) return;
+      listEl.innerHTML = evs.map(renderRow).join('');
+
+      /* Empêcher la navigation quand on clique sur le bouton S'inscrire */
+      listEl.querySelectorAll('[data-register]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openInscriptionModal(btn.dataset.eventId, evs);
+        });
+      });
+
+      /* Mettre à jour les stats du page-head */
+      const metas = document.querySelectorAll('.page-head-meta-v');
+      if (metas.length >= 1) metas[0].textContent = evs.length;
+      const participants = evs.reduce((s, e) => s + (parseInt(e.inscrits) || 0), 0);
+      if (metas.length >= 2) metas[1].textContent = participants.toLocaleString('fr-FR');
+      const futurs = evs.filter(e => new Date(e.date) > new Date()).sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (futurs.length && metas.length >= 4) metas[3].textContent = daysDiff(futurs[0].date);
+    } catch (err) {
+      console.warn('[CCS] événements dynamique :', err.message);
+    }
+
+    /* Brancher aussi le bouton de la Saloueloise */
+    document.getElementById('btn-register-saloueloise')?.addEventListener('click', async () => {
+      try {
+        const evs = await window.CCS_DATA.listEvenements({ limit: 20 });
+        const saloueloise = evs.find(e => /saloueloise/i.test(e.title || e.slug || ''));
+        openInscriptionModal(saloueloise?.id || 1, evs);
+      } catch {
+        openInscriptionModal(1, []);
+      }
+    });
+  })();
+
+  /* ── Modal d'inscription événement ───────────────────── */
+  const evModal     = document.getElementById('ev-modal');
+  const evForm      = document.getElementById('ev-form');
+  const evTitle     = document.getElementById('ev-modal-title');
+  const evSub       = document.getElementById('ev-modal-sub');
+  const evError     = document.getElementById('ev-form-error');
+  const evSuccess   = document.getElementById('ev-form-success');
+  const evSubmit    = document.getElementById('ev-submit');
+  let currentEventId = null;
+
+  function openInscriptionModal(eventId, allEvents = []) {
+    currentEventId = eventId;
+    const ev = allEvents.find(e => String(e.id) === String(eventId)) || null;
+
+    if (ev) {
+      evTitle.innerHTML = ev.title_html || ev.title;
+      evSub.textContent = `${new Date(ev.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · ${ev.lieu || ''}`;
+    } else {
+      evTitle.textContent = 'Inscription à un événement';
+      evSub.textContent = '';
+    }
+    evError.hidden = true; evSuccess.hidden = true;
+    evForm.style.display = '';
+    evForm.reset();
+
+    /* Pré-remplir si connecté */
+    const u = window.CCS_AUTH?.getUser();
+    if (u) {
+      document.getElementById('ev-prenom').value = u.prenom || '';
+      document.getElementById('ev-nom').value    = u.nom    || '';
+      document.getElementById('ev-email').value  = u.email  || '';
+    }
+
+    evModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('ev-prenom').focus(), 80);
+  }
+
+  function closeInscriptionModal() {
+    evModal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  evModal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeInscriptionModal));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !evModal.hidden) closeInscriptionModal(); });
+
+  evForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    evError.hidden = true; evSuccess.hidden = true;
+
+    const data = {
+      prenom:    document.getElementById('ev-prenom').value.trim(),
+      nom:       document.getElementById('ev-nom').value.trim(),
+      email:     document.getElementById('ev-email').value.trim(),
+      telephone: document.getElementById('ev-tel').value.trim() || undefined,
+      categorie: document.getElementById('ev-cat').value || undefined,
+      distance:  parseInt(document.getElementById('ev-dist').value) || undefined,
+    };
+
+    if (!data.prenom || !data.nom || !data.email) {
+      evError.textContent = 'Prénom, nom et email sont requis'; evError.hidden = false; return;
+    }
+
+    evSubmit.textContent = 'Envoi…'; evSubmit.disabled = true;
+
+    try {
+      await window.CCS_DATA.inscrireEvenement(currentEventId, data);
+      evSuccess.textContent = 'Inscription confirmée ! Vous recevrez un email de confirmation.';
+      evSuccess.hidden = false;
+      evForm.style.display = 'none';
+      setTimeout(closeInscriptionModal, 3000);
+    } catch (err) {
+      evError.textContent = err.message || 'Erreur lors de l\'inscription';
+      evError.hidden = false;
+      evSubmit.textContent = "Confirmer l'inscription"; evSubmit.disabled = false;
+    }
+  });
+  </script>
 </body>
 </html>

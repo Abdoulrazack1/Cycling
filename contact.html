@@ -29,7 +29,7 @@
       <div class="profile-chapter"><em>Formulaire</em></div>
       <h3 class="contact-form-title">Envoyer <span class="it">un</span> message</h3>
       <p class="contact-form-sub">Tous les champs marqués d'une étoile sont requis.</p>
-      <form onsubmit="event.preventDefault(); window.toast('Message envoyé (démo)', 'success');">
+      <form onsubmit="event.preventDefault(); handleContactSubmit(event);">
         <div class="field-row">
           <div class="field"><label for="c-first">Prénom *</label><input id="c-first" type="text" required></div>
           <div class="field"><label for="c-last">Nom *</label><input id="c-last" type="text" required></div>
@@ -63,7 +63,7 @@
       <div class="info-card">
         <div class="info-card-chapter"><em>Clubhouse</em></div>
         <div class="info-card-title">14 rue <span class="it">de</span> l'Église</div>
-        <div class="info-card-body"><strong>59500 Salouel</strong><br>Ouvert mercredi 18 h–20 h et dimanche 8 h–12 h.</div>
+        <div class="info-card-body"><strong>80480 Salouel</strong><br>Ouvert mercredi 18 h–20 h et dimanche 8 h–12 h.</div>
       </div>
       <div class="info-card">
         <div class="info-card-chapter"><em>Email</em></div>
@@ -84,7 +84,57 @@
   </div>
 
   </main>
+  <script>
+    /* Activer le backend REST — modifier l'URL si nécessaire */
+    window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };
+    
+  </script>
   <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
   <script src="asset/js/main.js"></script>
+
+  <script>
+  async function handleContactSubmit(e) {
+    const btn = e.target.querySelector('[type="submit"]');
+    const data = {
+      prenom:    document.getElementById('c-first')?.value?.trim(),
+      nom:       document.getElementById('c-last')?.value?.trim(),
+      email:     document.getElementById('c-email')?.value?.trim(),
+      telephone: document.getElementById('c-phone')?.value?.trim() || undefined,
+      sujet:     document.getElementById('c-subject')?.value,
+      message:   document.getElementById('c-msg')?.value?.trim(),
+    };
+    if (!data.prenom || !data.nom || !data.email || !data.sujet || !data.message) {
+      window.toast?.('Remplissez tous les champs obligatoires', 'warning'); return;
+    }
+    const origText = btn.textContent;
+    btn.textContent = 'Envoi…'; btn.disabled = true;
+    try {
+      await window.CCS_DATA.sendContact(data);
+      window.toast?.('Message envoyé — nous vous répondrons sous 48h', 'success');
+      e.target.reset();
+    } catch (err) {
+      window.toast?.(err.message || 'Erreur envoi', 'error');
+    } finally {
+      btn.textContent = origText; btn.disabled = false;
+    }
+  }
+
+  /* Pré-remplir si l'utilisateur est connecté */
+  (async function prefillFromUser() {
+    const waitFor = (cond, max = 30) => new Promise(r => {
+      const tick = (n) => cond() ? r(true) : (n >= max ? r(false) : setTimeout(() => tick(n+1), 60));
+      tick(0);
+    });
+    await waitFor(() => !!window.CCS_AUTH);
+    await window.CCS_AUTH.ready();
+    const u = window.CCS_AUTH.getUser();
+    if (!u) return;
+    const $ = (id) => document.getElementById(id);
+    if ($('c-first') && !$('c-first').value) $('c-first').value = u.prenom || '';
+    if ($('c-last')  && !$('c-last').value)  $('c-last').value  = u.nom    || '';
+    if ($('c-email') && !$('c-email').value) $('c-email').value = u.email  || '';
+  })();
+  </script>
 </body>
 </html>

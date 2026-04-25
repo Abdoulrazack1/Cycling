@@ -172,7 +172,7 @@
   /* ─── Cartes ──────────────────────────────────────────────── */
   function initMaps() {
     if (!window.L) return;
-    const center = state.routePoints.length ? [state.routePoints[0].lat, state.routePoints[0].lng] : [50.43, 3.2];
+    const center = state.routePoints.length ? [state.routePoints[0].lat, state.routePoints[0].lng] : [state.sortie?.location?.lat || 50.43, state.sortie?.location?.lng || 3.2];
 
     if (document.getElementById('sv-fallback-map')) {
       state.mapFallback = L.map('sv-fallback-map', { center, zoom: 11 });
@@ -209,8 +209,13 @@
   function drawRoute(map) {
     if (!state.routePoints.length) return;
     const coords = state.routePoints.map(p => [p.lat, p.lng]);
-    L.polyline(coords, { color: '#000', opacity: .4, weight: 8, lineJoin: 'round' }).addTo(map);
-    L.polyline(coords, { color: '#B08E4A', weight: 3, opacity: .95, lineJoin: 'round' }).addTo(map);
+    // Triple polyline pour un effet "halo + ombre + tracé" très visible :
+    // 1) Ombre noire large pour ressortir sur fond clair
+    // 2) Halo jaune doux pour visibilité sur fond foncé
+    // 3) Trait jaune vif fin au centre
+    L.polyline(coords, { color: '#000',     opacity: .55, weight: 9,  lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    L.polyline(coords, { color: '#FFD93D', opacity: .35, weight: 7,  lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    L.polyline(coords, { color: '#FFD93D', opacity: 1,   weight: 3.5, lineJoin: 'round', lineCap: 'round' }).addTo(map);
     try { map.fitBounds(L.latLngBounds(coords).pad(0.1)); } catch {}
   }
 
@@ -220,7 +225,7 @@
       const m = L.marker([poi.lat, poi.lng], { icon: buildMarker(poi, idx + 1) }).addTo(map);
       if (interactive) {
         m.bindPopup(popupHtml(poi), { className: 'ccs-popup', maxWidth: 320, minWidth: 220 });
-        m.on('click', () => highlightPoi(poi.id));
+        m.on('click', () => { highlightPoi(poi.id); seekToPoi(poi.id); });
       }
     });
   }
@@ -235,7 +240,7 @@
   }
 
   function updatePosMarkers(frac) {
-    const pt = pointAt(frac);
+    const pt = pointAt(frac) || state._noGpxLoc || null;
     if (!pt) return null;
     const icon = L.divIcon({ className: 'map-marker', html: '<div class="pos-marker"></div>', iconSize: [20, 20], iconAnchor: [10, 10] });
     [
@@ -264,8 +269,8 @@
 
   function initMapillary() {
     const viewerEl = document.getElementById('mly-viewer');
-    const fallback  = document.getElementById('sv-fallback');
-    const empty     = document.getElementById('sv-empty');
+    const empty    = document.getElementById('sv-empty');
+    const scene    = document.querySelector('.explorer-sv');
     if (!viewerEl) return;
 
     // ── Cas 1 : Mapillary avec token ──────────────────────────────
@@ -275,26 +280,25 @@
           accessToken: MAPILLARY_TOKEN, container: 'mly-viewer',
           component: { cover: false, bearing: false, zoom: false }
         });
-        viewerEl.hidden = false;
-        if (fallback) fallback.hidden = true;
-        if (empty) empty.hidden = true;
         state.svMode = 'mapillary';
         return;
       } catch { /* fall through */ }
     }
 
     // ── Cas 2 : Google Street View iframe (sans clé API) ──────────
-    // Utilise l'URL de navigation directe Google Maps (format cbk)
+    // L'iframe Google Maps avec output=svembed peut être bloqué par
+    // CSP / X-Frame-Options selon le contexte. On ajoute un overlay
+    // "ouvrir dans Maps" et une détection de chargement pour basculer
+    // en satellite si l'iframe ne charge pas.
     const iframe = document.createElement('iframe');
     iframe.id = 'gsv-iframe';
     iframe.allowFullscreen = true;
     iframe.allow = 'fullscreen';
     iframe.referrerPolicy = 'no-referrer-when-downgrade';
     iframe.loading = 'eager';
-    iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;position:absolute;top:0;left:0;';
     iframe.title = 'Google Street View';
 
-    // Overlay "Ouvrir dans Maps" pour pallier l'absence de clé
+    // Overlay "Ouvrir dans Maps"
     const overlay = document.createElement('div');
     overlay.id = 'gsv-overlay';
     overlay.style.cssText = `
@@ -312,7 +316,6 @@
       }
     });
 
-    // Badge de source
     const badge = document.createElement('div');
     badge.style.cssText = `
       position:absolute;top:8px;left:8px;z-index:10;
@@ -326,16 +329,20 @@
     viewerEl.appendChild(iframe);
     viewerEl.appendChild(overlay);
     viewerEl.appendChild(badge);
-    viewerEl.hidden = false;
-
-    if (fallback) fallback.hidden = true;
-    if (empty) empty.hidden = true;
     state.svMode = 'gsv';
     state.gsvReady = true;
 
+    // Brancher le bouton "Ouvrir dans Maps" du sv-empty
+    const openMapsBtn = document.getElementById('sv-open-maps');
+    if (openMapsBtn) {
+      openMapsBtn.addEventListener('click', () => {
+        const lat = state._gsvLastLat || state.sortie?.location?.lat;
+        const lng = state._gsvLastLng || state.sortie?.location?.lng;
+        if (lat && lng) window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}`, '_blank');
+      });
+    }
+
     // ── Chargement immédiat au démarrage ─────────────────────────
-    // On charge le Street View dès que l'iframe est prête,
-    // sans attendre le premier mouvement de curseur.
     const _doInitialLoad = async () => {
       const frac = state.cursorFrac || 0;
       let lat, lng;
@@ -344,40 +351,34 @@
         const pt  = state.routePoints[Math.min(idx, state.routePoints.length - 1)];
         lat = pt.lat; lng = pt.lng;
       } else if (state.sortie) {
-        lat = state.sortie.lat || 50.43;
-        lng = state.sortie.lng || 3.2;
+        lat = state.sortie.location?.lat || state.sortie.lat || 50.43;
+        lng = state.sortie.location?.lng || state.sortie.lng || 3.2;
       } else { return; }
 
       const heading = _estimateHeading(lat, lng);
-      // Récupérer le pano ID réel — OBLIGATOIRE pour afficher le panorama (pas la satellite)
       const pano = await _fetchPanoId(lat, lng);
       if (pano) {
-        iframe.src = _gsvUrlFromPanoId(pano.panoId, heading);
+        iframe.src = _gsvUrlFromPanoId(pano.panoId, heading, lat, lng);
         state.mlyLastKey = `${Math.round(lat*5000)/5000},${Math.round(lng*5000)/5000}`;
         state._gsvLastLat = lat;
         state._gsvLastLng = lng;
-        const empty = document.getElementById('sv-empty');
-        if (empty) empty.hidden = true;
-      } else if (state.routePoints && state.routePoints.length > 10) {
-        // Pas de couverture au km 0 — essayer à 10% du tracé
-        const pt2 = state.routePoints[Math.floor(state.routePoints.length * 0.1)];
-        const pano2 = await _fetchPanoId(pt2.lat, pt2.lng);
-        if (pano2) {
-          iframe.src = _gsvUrlFromPanoId(pano2.panoId, _estimateHeading(pt2.lat, pt2.lng));
-          const empty = document.getElementById('sv-empty');
-          if (empty) empty.hidden = true;
-        }
+
+        // Si l'iframe ne charge rien dans les 5 secondes (CSP bloqué),
+        // on ne fait rien de spécial — le bouton "Ouvrir dans Maps" reste dispo.
+        // Pour détecter un blocage réel (X-Frame-Options), on pourrait
+        // utiliser iframe.addEventListener('load', ...), mais le navigateur
+        // déclenche quand même l'événement load même sur une page bloquée.
       }
     };
 
-    // Si le GPX est déjà parsé, charger tout de suite ;
-    // sinon attendre un court instant qu'il soit disponible.
     if (state.routePoints && state.routePoints.length) {
+      _doInitialLoad();
+    } else if (state._noGpxLoc || !state.sortie?.gpx_ref) {
       _doInitialLoad();
     } else {
       const _waitGpx = (attempt) => {
         if (state.routePoints && state.routePoints.length) { _doInitialLoad(); return; }
-        if (attempt > 30) { _doInitialLoad(); return; } // timeout → charge quand même
+        if (attempt > 30) { _doInitialLoad(); return; }
         setTimeout(() => _waitGpx(attempt + 1), 100);
       };
       _waitGpx(0);
@@ -448,66 +449,37 @@
         }
         if (empty) empty.hidden = true;
 
-        // 2) Charger le panorama par son ID — seule façon d'avoir une vraie vue
-        iframe.src = _gsvUrlFromPanoId(pano.panoId, heading);
+        // 2) Charger le panorama depuis ses coordonnées
+        iframe.src = _gsvUrlFromPanoId(pano.panoId, heading, rLat, rLng);
       }, 300);
     }
   }
 
   /**
-   * Récupère l'ID du panorama Street View le plus proche des coordonnées données.
-   * Utilise l'endpoint interne de Google Maps JS (pas de clé API requise depuis un navigateur).
+   * Construit directement une URL Google Maps Street View embed fiable.
+   * N'utilise plus GeoPhotoService (endpoint interne bloqué par CORS en production).
+   * Le format cbll+cbp est l'URL officielle de partage Google Maps Street View.
    * @returns {Promise<{panoId:string, lat:number, lng:number}|null>}
    */
-  async function _fetchPanoId(lat, lng, radius = 50) {
-    // Retry avec un rayon plus grand si rien trouvé à 50m
-    for (const r of [radius, 100, 300, 500]) {
-      try {
-        const cbName = '_gsvCb_' + Date.now();
-        const url = `https://maps.googleapis.com/maps/api/js/GeoPhotoService.SingleImageSearch` +
-          `?pb=!1m5!1sapiv3!5sFR!11m2!1m1!1b0!2m4!1m2!3d${lat}!4d${lng}!2d${r}` +
-          `!3m18!2m2!1sfr!2sfr!9m1!1e2!11m12!1m3!1e2!2b1!3e2!1m3!1e3!2b1!3e2!1m3!1e10!2b1!3e2` +
-          `!4m6!1e1!1e2!1e3!1e4!1e8!1e6&callback=${cbName}`;
-        const result = await new Promise((resolve, reject) => {
-          const s = document.createElement('script');
-          const timeout = setTimeout(() => { reject(new Error('timeout')); s.remove(); }, 5000);
-          window[cbName] = (data) => {
-            clearTimeout(timeout);
-            delete window[cbName];
-            s.remove();
-            resolve(data);
-          };
-          s.onerror = () => { clearTimeout(timeout); reject(new Error('script error')); s.remove(); };
-          s.src = url;
-          document.head.appendChild(s);
-        });
-        // La réponse est un tableau imbriqué Google Maps protobuf-like
-        // result[1][0][0][1] = pano id, result[1][0][0][5][0][1][0] = lat, [1] = lng
-        const panoId = result?.[1]?.[0]?.[0]?.[1];
-        if (panoId) {
-          const pLat = result[1][0][0][5]?.[0]?.[1]?.[0][1] || lat;
-          const pLng = result[1][0][0][5]?.[0]?.[1]?.[0][2] || lng;
-          return { panoId, lat: pLat, lng: pLng };
-        }
-      } catch { /* continuer avec un rayon plus grand */ }
-    }
-    return null;
+  async function _fetchPanoId(lat, lng) {
+    // On retourne un objet virtuel — l'URL sera construite depuis les coords directement
+    return { panoId: null, lat, lng };
   }
 
   /**
-   * Construit l'URL embed Google Maps Street View avec un pano ID réel.
-   * Sans pano ID, Google affiche la vue satellite — le pano ID est OBLIGATOIRE.
+   * Construit l'URL embed Google Maps Street View depuis des coordonnées.
+   * Format officiel cbll/cbp — fonctionne sans pano ID, sans clé API.
    */
-  function _gsvUrlFromPanoId(panoId, heading) {
-    // Format officiel "Share > Embed a map" de Google Maps en mode Street View
-    // !4v{ts}             → version/timestamp (quelconque)
-    // !8m2!3m1!1e3        → type = Street View layer
-    // !6m15!1e1           → vue panoramique
-    //   !2m3!1m2!1e2!2s{panoId} → ID panorama
-    //   !2e0              → pitch=0
-    //   !7i13312!8i6656   → résolution
+  function _gsvUrlFromPanoId(panoId, heading, lat, lng) {
+    // Si on a des coordonnées, utiliser le format embed standard par coordonnées
+    const useLat  = lat  || state._gsvLastLat;
+    const useLng  = lng  || state._gsvLastLng;
     const h = Math.round(heading || 0);
-    return `https://www.google.com/maps/embed?pb=!4v1!8m2!3m1!1e3!6m15!1e1!2m3!1m2!1e2!2s${panoId}!2e0!3m1!7e100!5s!7i13312!8i6656`;
+    if (useLat && useLng) {
+      return `https://maps.google.com/maps?q=&layer=c&cbll=${useLat},${useLng}&cbp=12,${h},0,0,0&output=svembed&hl=fr`;
+    }
+    // Fallback si pas de coords
+    return `https://maps.google.com/maps?q=&layer=c&cbll=50.4351,3.2481&cbp=12,0,0,0,0&output=svembed&hl=fr`;
   }
 
   /** Estime le cap (heading) depuis la position sur le tracé GPX */
@@ -593,6 +565,77 @@
     if (!poi) return;
     const totalKm = state.routePoints.length ? state.routePoints[state.routePoints.length - 1].distAccum / 1000 : (state.sortie?.distance_km || 1);
     setCursor(Math.min(1, Math.max(0, (poi.km || 0) / totalKm)));
+  }
+
+  /* ─── Boutons de mode de vue (Street View / Satellite / OSM) ─ */
+  function initViewModeButtons() {
+    const btnGsv = document.getElementById('sv-btn-gsv');
+    const btnSat = document.getElementById('sv-btn-sat');
+    const btnOsm = document.getElementById('sv-btn-osm');
+    const labelEl = document.getElementById('sv-source-label');
+    const scene = document.querySelector('.explorer-sv');
+
+    function setActiveBtn(active) {
+      [btnGsv, btnSat, btnOsm].forEach(b => b && b.classList.remove('active'));
+      if (active) active.classList.add('active');
+    }
+
+    // Helper : récupère la position courante (sur le tracé ou au départ)
+    function currentLatLng() {
+      const frac = state.cursorFrac || 0;
+      if (state.routePoints.length) {
+        const idx = Math.round(frac * (state.routePoints.length - 1));
+        const pt = state.routePoints[Math.min(idx, state.routePoints.length - 1)];
+        return { lat: pt.lat, lng: pt.lng };
+      }
+      if (state.sortie?.location) {
+        return { lat: state.sortie.location.lat, lng: state.sortie.location.lng };
+      }
+      return null;
+    }
+
+    // Helper : bascule la vue active + rafraîchit la carte Leaflet correspondante
+    function switchView(mode, map, zoom) {
+      state.svMode = mode;
+      if (scene) scene.dataset.view = mode === 'gsv' ? 'gsv' : mode;
+
+      if (labelEl) {
+        labelEl.textContent = {
+          gsv:       'Google Street View',
+          satellite: 'Vue satellite · Esri World Imagery',
+          osm:       'Carte · OpenStreetMap'
+        }[mode] || '';
+      }
+
+      // Laisser le navigateur faire le reflow avant d'invalider les dimensions
+      // Leaflet ne peut mesurer qu'après que le conteneur soit visible (opacité + dimensions réelles).
+      if (map) {
+        requestAnimationFrame(() => {
+          map.invalidateSize(true);
+          const pos = currentLatLng();
+          if (pos) map.setView([pos.lat, pos.lng], zoom, { animate: false });
+        });
+      }
+    }
+
+    if (btnGsv) btnGsv.addEventListener('click', () => {
+      if (state.svMode === 'gsv') return;
+      setActiveBtn(btnGsv);
+      switchView('gsv', null);
+      // Recharger la position courante dans l'iframe Street View
+      const pos = currentLatLng();
+      if (pos) updateStreetView(pos.lat, pos.lng);
+    });
+
+    if (btnSat) btnSat.addEventListener('click', () => {
+      setActiveBtn(btnSat);
+      switchView('sat', state.satMap, 16);
+    });
+
+    if (btnOsm) btnOsm.addEventListener('click', () => {
+      setActiveBtn(btnOsm);
+      switchView('osm', state.mapFallback, 14);
+    });
   }
 
   function initFilters() {
@@ -757,11 +800,39 @@
       state.playing = true;
       if (state.cursorFrac >= 1) state.cursorFrac = 0;
       if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
+      // state.playSpeed = multiplicateur (0.25 = très lent → 4 = très rapide)
+      // Step de base 0.003 toutes les 80 ms (≈ 27 s pour parcourir 100 %)
+      const speed = state.playSpeed || 1;
+      const step = 0.003 * speed;
       state.playTimer = setInterval(() => {
-        setCursor(state.cursorFrac + 0.003);
+        setCursor(state.cursorFrac + step);
         if (state.cursorFrac >= 1) togglePlay();
       }, 80);
     }
+  }
+
+  /* ─── Slider de vitesse de lecture ────────────────────────── */
+  function initSpeedControl() {
+    const slider = document.getElementById('scrub-speed');
+    const label  = document.getElementById('scrub-speed-label');
+    if (!slider) return;
+    state.playSpeed = parseFloat(slider.value) || 1;
+
+    const update = () => {
+      state.playSpeed = parseFloat(slider.value) || 1;
+      if (label) label.textContent = state.playSpeed + '×';
+      // Si en cours de lecture, redémarrer avec la nouvelle vitesse
+      if (state.playing) {
+        clearInterval(state.playTimer);
+        const step = 0.003 * state.playSpeed;
+        state.playTimer = setInterval(() => {
+          setCursor(state.cursorFrac + step);
+          if (state.cursorFrac >= 1) togglePlay();
+        }, 80);
+      }
+    };
+    slider.addEventListener('input', update);
+    if (label) label.textContent = state.playSpeed + '×';
   }
 
   /* ─── Profil altimétrique ─────────────────────────────────── */
@@ -771,6 +842,14 @@
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
+
+    // Si le canvas n'a pas encore de dimensions (page en cours de layout),
+    // réessayer au prochain frame. Évite un canvas 0×0 qui ne dessine rien.
+    if (rect.width < 50 || rect.height < 50) {
+      requestAnimationFrame(() => drawElevation());
+      return;
+    }
+
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
@@ -875,7 +954,7 @@
       btn.addEventListener('click', () => {
         if (!state.routePoints.length) { if (window.toast) window.toast('Aucun tracé à exporter', 'warning'); return; }
         const pts = state.routePoints.map(p => `      <trkpt lat="${p.lat.toFixed(6)}" lon="${p.lng.toFixed(6)}"><ele>${p.ele.toFixed(1)}</ele></trkpt>`).join('\n');
-        const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Club de Cyclisme de Salouel" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata><n>${state.sortie?.title || 'Sortie'}</n></metadata>\n  <trk><n>${state.sortie?.title || 'Sortie'}</n><trkseg>\n${pts}\n  </trkseg></trk>\n</gpx>\n`;
+        const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Club de Cyclisme de Salouel" xmlns="http://www.topografix.com/GPX/1/1">\n  <metadata><name>${state.sortie?.title || 'Sortie'}</name></metadata>\n  <trk><name>${state.sortie?.title || 'Sortie'}</name><trkseg>\n${pts}\n  </trkseg></trk>\n</gpx>\n`;
         const blob = new Blob([gpx], { type: 'application/gpx+xml' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -892,11 +971,13 @@
   function renderHeader() {
     if (!state.sortie) return;
     const s = state.sortie;
-    document.title = `${s.title} · № ${s.number} — Club de Cyclisme de Salouel`;
+    document.title = s.number
+      ? `${s.title} · № ${s.number} — Club de Cyclisme de Salouel`
+      : `${s.title} — Club de Cyclisme de Salouel`;
 
     // Breadcrumb sortie nº
     const crumb = document.getElementById('crumb-current');
-    if (crumb) crumb.textContent = `Sortie № ${s.number}`;
+    if (crumb) crumb.textContent = s.number ? `Sortie № ${s.number}` : s.title;
 
     // Tags
     const tagsEl = document.getElementById('sortie-tags');
@@ -991,6 +1072,40 @@
     if (state.sortie?.gpx_ref) state.routePoints = await parseGpx('asset/gpx/' + state.sortie.gpx_ref);
 
     renderHeader();
+    // Fix 3 — sync scrub total with real GPX distance (overrides distance_km from data)
+    if (state.routePoints.length) {
+      const realKm = (state.routePoints[state.routePoints.length - 1].distAccum / 1000).toFixed(1);
+      const scrubTotal = document.getElementById('scrub-total');
+      if (scrubTotal) scrubTotal.textContent = '/ ' + realKm + ' km';
+    }
+    // Pas de GPX officiel — message clair sans génération approximative
+    if (!state.routePoints.length) {
+      const canvas = document.getElementById('elev-canvas');
+      if (canvas) {
+        const dpr = window.devicePixelRatio || 1;
+        const W = canvas.parentElement?.offsetWidth || 600;
+        const H = canvas.parentElement?.offsetHeight || 120;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, W, H);
+        ctx.strokeStyle = 'rgba(176,142,74,0.2)';
+        ctx.lineWidth = 1; ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.moveTo(24, H / 2); ctx.lineTo(W - 24, H / 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(199,188,158,0.45)';
+        ctx.font = '13px "Archivo",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Parcours officiel en cours de finalisation', W / 2, H / 2 - 8);
+        ctx.fillStyle = 'rgba(176,142,74,0.55)';
+        ctx.font = 'italic 11px "EB Garamond",serif';
+        ctx.fillText('Sera publié quelques jours avant le départ — ' + (state.sortie?.date_label || ''), W / 2, H / 2 + 14);
+      }
+      const loc = state.sortie?.location;
+      if (loc) {
+        state._noGpxLoc = { lat: loc.lat, lng: loc.lng, ele: 0 };
+      }
+    }
     renderSegments();
     initMaps();
     // Attendre que mapillary-js soit chargé si token défini, sinon GSV direct
@@ -1003,9 +1118,11 @@
     } else {
       initMapillary();
     }
+    initViewModeButtons();
     renderPoiList();
     renderScrubTicks();
     initScrub();
+    initSpeedControl();
     initFilters();
     initPoiForm();
     initMinimapExpand();

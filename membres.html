@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les sociétaires · Club de Cyclisme de Salouel</title>
+  <meta name="description" content="Les sociétaires du C.C. Salouel — trombinoscope et bureau.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <style>
+    /* ── Page membres ────────────────────────────────────────── */
+    .members-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+    .member-card {
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      padding: 24px 20px;
+      text-align: center;
+      transition: border-color .25s, transform .25s;
+    }
+    .member-card:hover {
+      border-color: var(--brass-b);
+      transform: translateY(-2px);
+    }
+    .member-avatar {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brass-lo), var(--brass-hi));
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink);
+      font-family: var(--f-disp);
+      font-size: 26px; font-style: italic;
+      margin: 0 auto 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    }
+    .member-num {
+      font-family: var(--f-sans);
+      font-size: 10px;
+      letter-spacing: .14em;
+      color: var(--parch-3);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .member-name {
+      font-family: var(--f-disp);
+      font-size: 17px;
+      color: var(--parch);
+      margin-bottom: 6px;
+    }
+    .member-name .it { font-style: italic; color: var(--brass); }
+    .member-role {
+      font-family: var(--f-sans);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border: 1px solid var(--line-2);
+      border-radius: 2px;
+      display: inline-block;
+      color: var(--parch-2);
+    }
+    .member-role.admin { color: var(--brass); border-color: var(--brass-b); }
+    .member-role.moderateur { color: #7abcda; border-color: rgba(122,188,218,.3); }
+    .member-meta {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-family: var(--f-sans);
+      font-size: 11px;
+      color: var(--parch-3);
+      line-height: 1.6;
+    }
+    .member-meta b { color: var(--parch-2); font-weight: 500; }
+    .member-filters {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .members-empty {
+      padding: 48px;
+      text-align: center;
+      font-family: var(--f-sans);
+      font-size: 13px;
+      color: var(--parch-2);
+    }
+    .members-loading {
+      display: flex; justify-content: center; padding: 48px;
+    }
+    .members-loading .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--line);
+      border-top-color: var(--brass);
+      border-radius: 50%;
+      animation: m-spin .8s linear infinite;
+    }
+    @keyframes m-spin { to { transform: rotate(360deg); } }
+  </style>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <main id="main">
+
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb">
+        <a href="index.html">Accueil</a>
+        <span class="sep">/</span>
+        <a href="club.html">Le Club</a>
+        <span class="sep">/</span>
+        <span>Les sociétaires</span>
+      </nav>
+      <div class="page-head-chapter"><em>Trombinoscope</em></div>
+      <h1 class="d-l page-head-title">Les <span class="it">sociétaires</span></h1>
+      <p class="page-head-sub">Les licenciés qui font le Club. Bureau, modérateurs et membres de trois générations — du papy du dimanche à l'espoir FFC en catégorie 3e.</p>
+      <div class="page-head-meta">
+        <div class="page-head-meta-item"><div class="page-head-meta-l">Sociétaires</div><div class="page-head-meta-v" id="stat-total">—</div></div>
+        <div class="page-head-meta-item"><div class="page-head-meta-l">Bureau</div><div class="page-head-meta-v" id="stat-bureau">—</div></div>
+        <div class="page-head-meta-item"><div class="page-head-meta-l">FFC</div><div class="page-head-meta-v" id="stat-ffc">—</div></div>
+        <div class="page-head-meta-item"><div class="page-head-meta-l">Nouv. 2025</div><div class="page-head-meta-v" id="stat-new">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-sm">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <div class="sec-head-number">
+          <div class="sec-head-chapter"><em>Chapitre I.</em></div>
+          <div class="sec-head-marker">Nr 01</div>
+        </div>
+        <div class="sec-head-right">
+          <h2 class="d-l sec-head-title">Bureau <span class="it">&amp;</span> membres</h2>
+          <p class="sec-head-desc">Bureau élu chaque année en assemblée générale. Les membres sont classés par numéro de sociétaire (le n°1 étant le président).</p>
+        </div>
+      </div>
+
+      <div class="member-filters" data-reveal data-delay="100">
+        <button class="filter-chip active" data-role="all">Tous</button>
+        <button class="filter-chip" data-role="admin">Bureau</button>
+        <button class="filter-chip" data-role="moderateur">Modérateurs</button>
+        <button class="filter-chip" data-role="membre">Membres</button>
+      </div>
+
+      <div class="members-grid" id="members-grid" data-reveal data-delay="200">
+        <div class="members-loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <script>
+    window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };
+  </script>
+  <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script>
+  (async function loadMembres() {
+    // Attendre que CCS_DATA soit prêt
+    await new Promise(resolve => {
+      const check = (n = 0) => {
+        if (window.CCS_DATA) return resolve();
+        if (n < 50) setTimeout(() => check(n + 1), 80);
+        else resolve();
+      };
+      check();
+    });
+    if (!window.CCS_DATA) return;
+
+    const grid = document.getElementById('members-grid');
+    const ROLE_LABELS = { admin: 'Bureau', moderateur: 'Modérateur', membre: 'Membre' };
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderCard(m) {
+      const initials = (m.prenom?.[0] || '?').toUpperCase();
+      const role = m.role || 'membre';
+      const licence = m.licence_ffc ? `<div><b>Licence FFC</b><br>${escHtml(m.licence_ffc)}</div>` : '';
+      const adhesion = m.annee_adhesion ? `<div><b>Adhérent depuis</b><br>${m.annee_adhesion}</div>` : '';
+      const km = m.km_saison ? `<div><b>Km saison</b><br>${Number(m.km_saison).toLocaleString('fr-FR')} km</div>` : '';
+      const metaContent = [licence, adhesion, km].filter(Boolean).join('');
+      return `
+        <div class="member-card" data-role="${role}">
+          <div class="member-avatar">${initials}</div>
+          <div class="member-num">№ ${String(m.numero || '—').padStart(3, '0')}</div>
+          <div class="member-name">${escHtml(m.prenom)} <span class="it">${escHtml(m.nom)}</span></div>
+          <span class="member-role ${role}">${ROLE_LABELS[role] || role}</span>
+          ${metaContent ? `<div class="member-meta">${metaContent}</div>` : ''}
+        </div>`;
+    }
+
+    let allMembres = [];
+    let activeRole = 'all';
+
+    function renderGrid() {
+      let filtered = allMembres;
+      if (activeRole !== 'all') {
+        filtered = allMembres.filter(m => (m.role || 'membre') === activeRole);
+      }
+      if (!filtered.length) {
+        grid.innerHTML = '<div class="members-empty" style="grid-column:1/-1;">Aucun sociétaire dans cette catégorie.</div>';
+        return;
+      }
+      grid.innerHTML = filtered.map(renderCard).join('');
+    }
+
+    try {
+      const membres = await window.CCS_DATA.membres();
+      if (!membres?.length) {
+        grid.innerHTML = '<div class="members-empty" style="grid-column:1/-1;">Liste des sociétaires non disponible — connexion à la base nécessaire.</div>';
+        return;
+      }
+      // Trier par numéro croissant
+      allMembres = membres.slice().sort((a, b) => (a.numero || 999) - (b.numero || 999));
+
+      // Connecter les filtres
+      document.querySelectorAll('.filter-chip[data-role]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeRole = btn.dataset.role;
+          renderGrid();
+        });
+      });
+
+      renderGrid();
+
+      // Stats du page-head
+      const bureau = allMembres.filter(m => m.role === 'admin' || m.role === 'moderateur').length;
+      const ffc    = allMembres.filter(m => m.licence_ffc).length;
+      const year   = new Date().getFullYear();
+      const nouveaux = allMembres.filter(m => m.annee_adhesion === year).length;
+
+      document.getElementById('stat-total').textContent  = allMembres.length;
+      document.getElementById('stat-bureau').textContent = bureau;
+      document.getElementById('stat-ffc').textContent    = ffc;
+      document.getElementById('stat-new').textContent    = nouveaux;
+    } catch (err) {
+      console.warn('[CCS] membres :', err.message);
+      grid.innerHTML = '<div class="members-empty" style="grid-column:1/-1;">Impossible de charger la liste des sociétaires.</div>';
+    }
+  })();
+  </script>
+</body>
+</html>
