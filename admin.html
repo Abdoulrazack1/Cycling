@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration · C.C. Salouel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <style>
+    /* ── Layout admin ────────────────────────────────────────── */
+    .admin-wrap { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 64px); margin-top: 64px; }
+    .admin-sidebar {
+      background: var(--ink-2); border-right: 1px solid var(--line);
+      padding: 32px 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto;
+    }
+    .admin-sidebar-title {
+      font-family: var(--f-sans); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--parch-2); padding: 0 24px 12px; opacity: .6;
+    }
+    .admin-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 24px; color: var(--parch-2);
+      font-family: var(--f-sans); font-size: 12px; letter-spacing: .06em;
+      cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+      transition: background .2s, color .2s; border-left: 2px solid transparent;
+    }
+    .admin-nav-item:hover { background: var(--ink-3); color: var(--parch); }
+    .admin-nav-item.active { background: var(--ink-3); color: var(--brass); border-left-color: var(--brass); }
+    .admin-nav-item svg { flex-shrink: 0; opacity: .7; }
+    .admin-main { padding: 40px 48px; overflow-y: auto; }
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+
+    /* ── Cards stats ─────────────────────────────────────────── */
+    .admin-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 16px; margin-bottom: 40px; }
+    .admin-stat-card {
+      background: var(--ink-2); border: 1px solid var(--line);
+      padding: 20px; text-align: center;
+    }
+    .admin-stat-v { font-family: var(--f-disp); font-size: 32px; color: var(--brass); }
+    .admin-stat-l { font-family: var(--f-sans); font-size: 11px; letter-spacing: .1em; color: var(--parch-2); margin-top: 4px; }
+
+    /* ── Tables ──────────────────────────────────────────────── */
+    .admin-table { width: 100%; border-collapse: collapse; font-family: var(--f-sans); font-size: 12px; }
+    .admin-table th {
+      text-align: left; padding: 10px 14px; color: var(--parch-2);
+      letter-spacing: .1em; text-transform: uppercase; font-size: 10px;
+      border-bottom: 1px solid var(--line); background: var(--ink-2);
+    }
+    .admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); color: var(--parch-2); vertical-align: middle; }
+    .admin-table tr:hover td { background: var(--ink-2); color: var(--parch); }
+    .admin-table .tag-status { padding: 3px 8px; border-radius: 2px; font-size: 10px; letter-spacing: .08em; }
+    .tag-passee  { background: rgba(176,142,74,.12); color: var(--brass); }
+    .tag-future  { background: rgba(74,142,174,.12); color: #7abcda; }
+    .tag-en_cours{ background: rgba(74,174,74,.12); color: #80c080; }
+    .tag-ouvert  { background: rgba(74,142,74,.12); color: #80c080; }
+    .tag-complet { background: rgba(174,74,74,.12); color: #c08080; }
+    .tag-nouveau { background: rgba(74,100,174,.12); color: #8090da; }
+    .tag-lu      { background: rgba(174,174,74,.12); color: #dada80; }
+    .tag-traite  { background: rgba(74,174,74,.12); color: #80c080; }
+    .admin-table .btn-xs {
+      padding: 3px 8px; font-size: 10px; border: 1px solid var(--line);
+      background: transparent; color: var(--parch-2); cursor: pointer;
+      border-radius: 2px; font-family: var(--f-sans); letter-spacing: .06em;
+      transition: border-color .2s, color .2s;
+    }
+    .admin-table .btn-xs:hover { border-color: var(--brass); color: var(--brass); }
+    .btn-xs-danger:hover { border-color: #c04040 !important; color: #c04040 !important; }
+
+    /* ── Forms ───────────────────────────────────────────────── */
+    .admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .admin-form-full { grid-column: 1 / -1; }
+    .admin-section-title {
+      font-family: var(--f-disp); font-size: 18px; margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 1000;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .admin-modal {
+      background: var(--ink); border: 1px solid var(--line-2);
+      width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto;
+      padding: 40px;
+    }
+    .admin-modal-title { font-family: var(--f-disp); font-size: 22px; margin-bottom: 28px; }
+    .admin-modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+    [hidden] { display: none !important; }
+    .loading-spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid var(--line); border-top-color: var(--brass);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .admin-empty { text-align: center; padding: 48px; color: var(--parch-2); font-family: var(--f-sans); font-size: 13px; }
+  </style>
+</head>
+<body data-requires-auth="true" data-requires-admin="true">
+  <main id="main">
+    <div class="admin-wrap">
+
+      <!-- ── Sidebar ────────────────────────────────────────── -->
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-title">Administration</div>
+        <button class="admin-nav-item active" data-panel="dashboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Tableau de bord
+        </button>
+        <button class="admin-nav-item" data-panel="sorties">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+          Sorties
+        </button>
+        <button class="admin-nav-item" data-panel="evenements">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Événements
+        </button>
+        <button class="admin-nav-item" data-panel="membres">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Membres
+        </button>
+        <button class="admin-nav-item" data-panel="contacts">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Messages <span id="contacts-badge" class="tag-status tag-nouveau" hidden>0</span>
+        </button>
+        <button class="admin-nav-item" data-panel="gpx">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Fichiers GPX
+        </button>
+        <button class="admin-nav-item" data-panel="club">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M21 12h-2M5 12H3M18.66 18.66l-1.41-1.41M6.34 5.34L4.93 4.93M12 19v2M12 3V1"/></svg>
+          Paramètres club
+        </button>
+        <div style="margin-top:24px; border-top:1px solid var(--line); padding-top:24px;">
+          <a href="index.html" class="admin-nav-item" style="opacity:.6;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Retour au site
+          </a>
+        </div>
+      </aside>
+
+      <!-- ── Contenu principal ─────────────────────────────── -->
+      <div class="admin-main">
+
+        <!-- Dashboard -->
+        <div id="panel-dashboard" class="admin-panel active">
+          <h1 class="d-m" style="margin-bottom:8px;">Tableau <span class="it">de bord</span></h1>
+          <p class="lede" style="margin-bottom:32px; opacity:.7;">Vue d'ensemble du club</p>
+          <div class="admin-stats" id="dashboard-stats">
+            <div class="admin-stat-card"><div class="loading-spinner"></div></div>
+          </div>
+          <div id="dashboard-recent"></div>
+        </div>
+
+        <!-- Sorties -->
+        <div id="panel-sorties" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Sorties <span class="it">&</span> parcours</span>
+            <button class="btn btn-brass btn-sm" id="btn-new-sortie">+ Nouvelle sortie</button>
+          </div>
+          <div id="sorties-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- Événements -->
+        <div id="panel-evenements" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Événements <span class="it">&</span> calendrier</span>
+            <button class="btn btn-brass btn-sm" id="btn-new-event">+ Nouvel événement</button>
+          </div>
+          <div id="evenements-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- Membres -->
+        <div id="panel-membres" class="admin-panel">
+          <div class="admin-section-title">Membres <span class="it">du club</span></div>
+          <div id="membres-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- Contacts -->
+        <div id="panel-contacts" class="admin-panel">
+          <div class="admin-section-title">Messages <span class="it">de contact</span></div>
+          <div id="contacts-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- GPX -->
+        <div id="panel-gpx" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Fichiers <span class="it">GPX</span></span>
+            <label class="btn btn-brass btn-sm" style="cursor:pointer;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              Uploader GPX
+              <input type="file" id="gpx-upload-input" accept=".gpx" hidden multiple>
+            </label>
+          </div>
+          <div id="gpx-upload-progress" hidden style="margin-bottom:16px;"></div>
+          <div id="gpx-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- Paramètres club -->
+        <div id="panel-club" class="admin-panel">
+          <div class="admin-section-title">Paramètres <span class="it">du club</span></div>
+          <div id="club-settings-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+      </div><!-- /admin-main -->
+    </div><!-- /admin-wrap -->
+  </main><!-- /main -->
+
+  <!-- ── Modales ─────────────────────────────────────────────── -->
+  <div id="modal-overlay" class="admin-modal-overlay" hidden>
+    <div class="admin-modal" id="modal-content"></div>
+  </div>
+
+  <script>window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };</script>
+  <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script>
+  (() => {
+    'use strict';
+    const API = window.CCS_CONFIG.apiBase;
+
+    // ── Helpers ─────────────────────────────────────────────────
+    function apiFetch(path, opts = {}) {
+      const token = CCS_AUTH.getToken();
+      return fetch(API + path, {
+        ...opts,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
+          ...(opts.headers || {})
+        }
+      }).then(async r => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || r.statusText);
+        return data;
+      });
+    }
+
+    function fmt(n) { return String(n ?? '—'); }
+    function badge(statut) {
+      return `<span class="tag-status tag-${statut}">${statut}</span>`;
+    }
+    function escHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Navigation panels ────────────────────────────────────────
+    document.querySelectorAll('.admin-nav-item[data-panel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = document.getElementById('panel-' + btn.dataset.panel);
+        if (panel) {
+          panel.classList.add('active');
+          loadPanel(btn.dataset.panel);
+        }
+      });
+    });
+
+    // ── Panel loaders ────────────────────────────────────────────
+    const loaded = new Set();
+    function loadPanel(name) {
+      if (name === 'dashboard') { loadDashboard(); return; }
+      if (!loaded.has(name)) { loaded.add(name); }
+      const loaders = {
+        sorties:    loadSorties,
+        evenements: loadEvenements,
+        membres:    loadMembres,
+        contacts:   loadContacts,
+        gpx:        loadGpx,
+        club:       loadClub,
+      };
+      loaders[name]?.();
+    }
+
+    // ── Dashboard ────────────────────────────────────────────────
+    async function loadDashboard() {
+      const wrap = document.getElementById('dashboard-stats');
+      try {
+        const [sorties, evenements, membres, contacts] = await Promise.all([
+          apiFetch('/sorties?limit=3'),
+          apiFetch('/evenements?limit=3'),
+          apiFetch('/membres'),
+          apiFetch('/contact?limit=1'),
+        ]);
+        const total = sorties.total || (sorties.sorties||[]).length;
+        const nouveaux = contacts.messages?.filter(m => m.statut === 'nouveau').length || 0;
+
+        wrap.innerHTML = `
+          <div class="admin-stat-card"><div class="admin-stat-v">${total}</div><div class="admin-stat-l">Sorties</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-v">${evenements.length || 0}</div><div class="admin-stat-l">Événements</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-v">${membres.length || 0}</div><div class="admin-stat-l">Membres</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-v" style="${nouveaux > 0 ? 'color:#c08080' : ''}">${nouveaux}</div><div class="admin-stat-l">Messages non lus</div></div>`;
+
+        if (nouveaux > 0) {
+          const badge = document.getElementById('contacts-badge');
+          badge.textContent = nouveaux; badge.hidden = false;
+        }
+
+        const recentWrap = document.getElementById('dashboard-recent');
+        const recentSorties = (sorties.sorties || sorties).slice(0,3);
+        recentWrap.innerHTML = `
+          <h3 style="font-family:var(--f-disp);font-size:16px;margin-bottom:16px;">Dernières <span class="it">sorties</span></h3>
+          <table class="admin-table">
+            <thead><tr><th>Titre</th><th>Date</th><th>Distance</th><th>Statut</th><th></th></tr></thead>
+            <tbody>${recentSorties.map(s => `
+              <tr>
+                <td><b>${escHtml(s.title)}</b></td>
+                <td>${s.date || '—'}</td>
+                <td>${s.distance_km || '—'} km</td>
+                <td>${badge(s.statut || 'passee')}</td>
+                <td><a href="sortie.html?id=${encodeURIComponent(s.id)}" class="btn-xs">Voir →</a></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ── Sorties ──────────────────────────────────────────────────
+    async function loadSorties() {
+      const wrap = document.getElementById('sorties-table-wrap');
+      try {
+        const data = await apiFetch('/sorties?limit=100');
+        const sorties = data.sorties || data;
+        if (!sorties.length) { wrap.innerHTML = '<div class="admin-empty">Aucune sortie</div>'; return; }
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>Titre</th><th>Date</th><th>Distance</th><th>GPX</th><th>Statut</th><th></th></tr></thead>
+            <tbody>${sorties.map(s => `
+              <tr data-id="${escHtml(s.id)}">
+                <td style="font-family:var(--f-sans);font-size:10px;opacity:.6;">${escHtml(s.id)}</td>
+                <td><b>${escHtml(s.title)}</b><br><small style="opacity:.5;">${escHtml(s.subtitle||'')}</small></td>
+                <td>${s.date || '—'}</td>
+                <td>${s.distance_km || '—'} km</td>
+                <td>${s.gpx_ref ? '✅' : '—'}</td>
+                <td>${badge(s.statut || 'passee')}</td>
+                <td style="display:flex;gap:6px;align-items:center;">
+                  <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="btn-xs" target="_blank">↗</a>
+                  <button class="btn-xs btn-edit-sortie" data-id="${escHtml(s.id)}">Éditer</button>
+                  <button class="btn-xs btn-xs-danger btn-del-sortie" data-id="${escHtml(s.id)}">✕</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        wrap.querySelectorAll('.btn-del-sortie').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm(`Supprimer la sortie "${btn.dataset.id}" ?`)) return;
+            try {
+              await apiFetch('/sorties/' + encodeURIComponent(btn.dataset.id), { method: 'DELETE' });
+              toast('Sortie supprimée', 'success');
+              loadSorties();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+        wrap.querySelectorAll('.btn-edit-sortie').forEach(btn => {
+          btn.addEventListener('click', () => openSortieModal(btn.dataset.id));
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ── Membres ──────────────────────────────────────────────────
+    async function loadMembres() {
+      const wrap = document.getElementById('membres-table-wrap');
+      try {
+        const membres = await apiFetch('/membres');
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>№</th><th>Nom</th><th>Email</th><th>Rôle</th><th>FTP</th><th>Km saison</th><th></th></tr></thead>
+            <tbody>${membres.map(m => `
+              <tr>
+                <td style="opacity:.5;">${m.numero || '—'}</td>
+                <td><b>${escHtml(m.prenom)} ${escHtml(m.nom)}</b></td>
+                <td style="opacity:.7;">${escHtml(m.email || '')}</td>
+                <td>${badge(m.role)}</td>
+                <td>${m.ftp_w ? m.ftp_w + ' w' : '—'}</td>
+                <td>${m.km_saison ? m.km_saison + ' km' : '—'}</td>
+                <td style="display:flex;gap:6px;">
+                  ${m.role !== 'admin' ? `
+                    <button class="btn-xs btn-promote" data-id="${m.id}" data-role="${m.role === 'moderateur' ? 'membre' : 'moderateur'}">
+                      ${m.role === 'moderateur' ? '↓ Membre' : '↑ Modo'}
+                    </button>
+                    <button class="btn-xs btn-xs-danger btn-deactivate" data-id="${m.id}">Désactiver</button>
+                  ` : '<span style="opacity:.3">Admin</span>'}
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        wrap.querySelectorAll('.btn-promote').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            try {
+              await apiFetch('/membres/' + btn.dataset.id + '/role', { method: 'PATCH', body: JSON.stringify({ role: btn.dataset.role }) });
+              toast('Rôle mis à jour', 'success');
+              loadMembres();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+        wrap.querySelectorAll('.btn-deactivate').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Désactiver ce membre ?')) return;
+            try {
+              await apiFetch('/membres/' + btn.dataset.id + '/actif', { method: 'PATCH', body: JSON.stringify({ actif: false }) });
+              toast('Membre désactivé', 'success');
+              loadMembres();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ── Contacts ─────────────────────────────────────────────────
+    async function loadContacts() {
+      const wrap = document.getElementById('contacts-table-wrap');
+      try {
+        const data = await apiFetch('/contact?limit=100');
+        const msgs = data.messages || [];
+        if (!msgs.length) { wrap.innerHTML = '<div class="admin-empty">Aucun message</div>'; return; }
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Date</th><th>Nom</th><th>Sujet</th><th>Statut</th><th></th></tr></thead>
+            <tbody>${msgs.map(m => `
+              <tr>
+                <td style="opacity:.6;">${new Date(m.created_at).toLocaleDateString('fr-FR')}</td>
+                <td><b>${escHtml(m.prenom)} ${escHtml(m.nom)}</b><br><small>${escHtml(m.email)}</small></td>
+                <td>${escHtml(m.sujet)}</td>
+                <td>${badge(m.statut)}</td>
+                <td style="display:flex;gap:6px;">
+                  <button class="btn-xs btn-read-msg" data-id="${m.id}" data-msg='${JSON.stringify({ prenom: m.prenom, nom: m.nom, email: m.email, sujet: m.sujet, message: m.message, date: m.created_at }).replace(/'/g,"&#39;")}'>Lire</button>
+                  <button class="btn-xs btn-status-msg" data-id="${m.id}" data-statut="traite">✓ Traité</button>
+                  <button class="btn-xs btn-status-msg btn-xs-danger" data-id="${m.id}" data-statut="archive">Archive</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        wrap.querySelectorAll('.btn-read-msg').forEach(btn => {
+          btn.addEventListener('click', () => {
+            try {
+              const d = JSON.parse(btn.dataset.msg.replace(/&#39;/g,"'"));
+              openModal(`
+                <div class="admin-modal-title">Message <span class="it">de</span> ${escHtml(d.prenom)} ${escHtml(d.nom)}</div>
+                <p style="font-family:var(--f-sans);font-size:11px;opacity:.6;margin-bottom:16px;">${escHtml(d.email)} · ${new Date(d.date).toLocaleDateString('fr-FR')}</p>
+                <p style="font-family:var(--f-sans);font-size:13px;font-weight:600;margin-bottom:8px;">${escHtml(d.sujet)}</p>
+                <p style="font-family:var(--f-sans);font-size:13px;line-height:1.7;white-space:pre-wrap;">${escHtml(d.message)}</p>
+                <div class="admin-modal-actions"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Fermer</button><a href="mailto:${escHtml(d.email)}?subject=Re: ${encodeURIComponent(d.sujet)}" class="btn btn-brass btn-sm">Répondre par email</a></div>`);
+              apiFetch('/contact/' + btn.dataset.id + '/statut', { method: 'PATCH', body: JSON.stringify({ statut: 'lu' }) }).then(() => loadContacts()).catch(() => {});
+            } catch {}
+          });
+        });
+        wrap.querySelectorAll('.btn-status-msg').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            try {
+              await apiFetch('/contact/' + btn.dataset.id + '/statut', { method: 'PATCH', body: JSON.stringify({ statut: btn.dataset.statut }) });
+              toast('Statut mis à jour', 'success');
+              loadContacts();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ── GPX ──────────────────────────────────────────────────────
+    async function loadGpx() {
+      const wrap = document.getElementById('gpx-table-wrap');
+      try {
+        const files = await apiFetch('/gpx');
+        if (!files.length) { wrap.innerHTML = '<div class="admin-empty">Aucun fichier GPX uploadé</div>'; return; }
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Fichier</th><th>Taille</th><th>Modifié</th><th></th></tr></thead>
+            <tbody>${files.map(f => `
+              <tr>
+                <td style="font-family:var(--f-sans);font-size:11px;">${escHtml(f.filename)}</td>
+                <td>${(f.size/1024).toFixed(1)} Ko</td>
+                <td style="opacity:.6;">${new Date(f.modified).toLocaleDateString('fr-FR')}</td>
+                <td style="display:flex;gap:6px;">
+                  <a href="${API}/gpx/${encodeURIComponent(f.filename)}" class="btn-xs" download>↓ Télécharger</a>
+                  <button class="btn-xs btn-xs-danger btn-del-gpx" data-name="${escHtml(f.filename)}">✕ Supprimer</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+        wrap.querySelectorAll('.btn-del-gpx').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm(`Supprimer ${btn.dataset.name} ?`)) return;
+            try {
+              await apiFetch('/gpx/' + encodeURIComponent(btn.dataset.name), { method: 'DELETE' });
+              toast('Fichier supprimé', 'success'); loadGpx();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // Upload GPX
+    document.getElementById('gpx-upload-input')?.addEventListener('change', async (e) => {
+      const files = [...e.target.files];
+      if (!files.length) return;
+      const progress = document.getElementById('gpx-upload-progress');
+      progress.hidden = false;
+      progress.innerHTML = `<span style="font-family:var(--f-sans);font-size:12px;opacity:.7;">Upload en cours…</span>`;
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('gpx', file);
+        try {
+          const token = CCS_AUTH.getToken();
+          const res = await fetch(API + '/gpx/upload', {
+            method: 'POST', credentials: 'include',
+            headers: token ? { Authorization: 'Bearer ' + token } : {},
+            body: fd
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          toast(`${file.name} uploadé`, 'success');
+        } catch (err) { toast(`${file.name} : ${err.message}`, 'error'); }
+      }
+      progress.hidden = true;
+      e.target.value = '';
+      loadGpx();
+    });
+
+    // ── Club settings ────────────────────────────────────────────
+    async function loadClub() {
+      const wrap = document.getElementById('club-settings-wrap');
+      try {
+        const settings = await apiFetch('/club');
+        const fields = Object.entries(settings).map(([k, v]) => `
+          <div class="field" style="margin-bottom:16px;">
+            <label style="font-family:var(--f-sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;" for="club-${k}">${k.replace(/_/g,' ')}</label>
+            <input id="club-${k}" name="${escHtml(k)}" type="text" value="${escHtml(v||'')}">
+          </div>`).join('');
+        wrap.innerHTML = `
+          <div style="max-width:480px;">
+            ${fields}
+            <button class="btn btn-brass" id="save-club-btn">Enregistrer</button>
+          </div>`;
+        document.getElementById('save-club-btn')?.addEventListener('click', async () => {
+          const updates = {};
+          wrap.querySelectorAll('input[name]').forEach(el => { updates[el.name] = el.value; });
+          try {
+            await apiFetch('/club', { method: 'PUT', body: JSON.stringify(updates) });
+            toast('Paramètres sauvegardés', 'success');
+          } catch (err) { toast(err.message, 'error'); }
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ── Événements ───────────────────────────────────────────────
+    async function loadEvenements() {
+      const wrap = document.getElementById('evenements-table-wrap');
+      try {
+        const events = await apiFetch('/evenements?limit=100');
+        if (!events.length) { wrap.innerHTML = '<div class="admin-empty">Aucun événement</div>'; return; }
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Titre</th><th>Date</th><th>Lieu</th><th>Inscrits</th><th>Statut</th><th></th></tr></thead>
+            <tbody>${events.map(e => `
+              <tr>
+                <td><b>${escHtml(e.title)}</b></td>
+                <td>${e.date || '—'}</td>
+                <td>${escHtml(e.lieu || '—')}</td>
+                <td>${e.inscrits || 0}${e.max_inscrits ? '/' + e.max_inscrits : ''}</td>
+                <td>${badge(e.statut)}</td>
+                <td style="display:flex;gap:6px;">
+                  <button class="btn-xs btn-edit-event" data-id="${e.id}">Éditer</button>
+                  <button class="btn-xs btn-xs-danger btn-del-event" data-id="${e.id}">✕</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+        wrap.querySelectorAll('.btn-edit-event').forEach(btn => {
+          btn.addEventListener('click', () => openEventModal(btn.dataset.id));
+        });
+        wrap.querySelectorAll('.btn-del-event').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Supprimer cet événement ?')) return;
+            try {
+              await apiFetch('/evenements/' + btn.dataset.id, { method: 'DELETE' });
+              toast('Événement supprimé', 'success'); loadEvenements();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ── Modal helpers ────────────────────────────────────────────
+    function openModal(html) {
+      document.getElementById('modal-content').innerHTML = html;
+      document.getElementById('modal-overlay').hidden = false;
+    }
+    function closeModal() { document.getElementById('modal-overlay').hidden = true; }
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    async function openSortieModal(id) {
+      let sortie = null;
+      let availableGpx = [];
+      if (id) {
+        try { sortie = await apiFetch('/sorties/' + encodeURIComponent(id)); } catch {}
+      }
+      // Charger la liste des GPX disponibles pour le dropdown
+      try {
+        availableGpx = await apiFetch('/gpx');
+        if (!Array.isArray(availableGpx)) availableGpx = [];
+      } catch {}
+      const s = sortie || {};
+      const currentGpx = s.gpx_ref || s.gpx_filename || '';
+
+      // Construire le HTML du dropdown
+      const gpxOptions = ['<option value="">— Aucun GPX assigné —</option>'];
+      const allFilenames = new Set(availableGpx.map(g => g.filename));
+      // Si la sortie a un GPX qui n'est plus dans la liste (fichier supprimé), l'ajouter quand même
+      if (currentGpx && !allFilenames.has(currentGpx)) {
+        gpxOptions.push(`<option value="${escHtml(currentGpx)}" selected>${escHtml(currentGpx)} (fichier introuvable)</option>`);
+      }
+      availableGpx.forEach(g => {
+        const sel = (g.filename === currentGpx) ? 'selected' : '';
+        const sizeKb = g.size ? ` · ${(g.size/1024).toFixed(0)} ko` : '';
+        gpxOptions.push(`<option value="${escHtml(g.filename)}" ${sel}>${escHtml(g.filename)}${sizeKb}</option>`);
+      });
+
+      openModal(`
+        <div class="admin-modal-title">${id ? 'Éditer' : 'Nouvelle'} <span class="it">sortie</span></div>
+        <div class="admin-form-grid">
+          <div class="field admin-form-full"><label>ID *</label><input id="m-id" value="${escHtml(s.id||'')}" ${id?'readonly':''}></div>
+          <div class="field"><label>Titre *</label><input id="m-title" value="${escHtml(s.title||'')}"></div>
+          <div class="field"><label>Date *</label><input id="m-date" type="date" value="${s.date ? String(s.date).slice(0,10) : ''}"></div>
+          <div class="field admin-form-full"><label>Sous-titre</label><input id="m-subtitle" value="${escHtml(s.subtitle||'')}"></div>
+          <div class="field admin-form-full"><label>Description</label><textarea id="m-desc" rows="3">${escHtml(s.description||'')}</textarea></div>
+          <div class="field"><label>Distance (km)</label><input id="m-dist" type="number" step="0.1" value="${s.distance_km||''}"></div>
+          <div class="field"><label>D+ (m)</label><input id="m-dplus" type="number" value="${s.elevation_gain||''}"></div>
+          <div class="field admin-form-full">
+            <label>Parcours GPX officiel</label>
+            <div style="display:flex;gap:8px;align-items:stretch;">
+              <select id="m-gpx" style="flex:1;">${gpxOptions.join('')}</select>
+              <button type="button" class="btn btn-ghost btn-sm" id="m-gpx-upload-btn" style="white-space:nowrap;">↑ Uploader nouveau</button>
+              <input type="file" id="m-gpx-upload-input" accept=".gpx" hidden>
+            </div>
+            <div id="m-gpx-upload-msg" style="font-family:var(--f-sans);font-size:11px;color:var(--parch-3);margin-top:6px;"></div>
+          </div>
+          <div class="field"><label>Statut</label>
+            <select id="m-statut">
+              <option value="passee" ${s.statut==='passee'?'selected':''}>Passée</option>
+              <option value="en_cours" ${s.statut==='en_cours'?'selected':''}>En cours</option>
+              <option value="future" ${s.statut==='future'?'selected':''}>Future</option>
+            </select>
+          </div>
+          <div class="field"><label>Lat départ</label><input id="m-lat" type="number" step="any" value="${s.location?.lat||''}"></div>
+          <div class="field"><label>Lng départ</label><input id="m-lng" type="number" step="any" value="${s.location?.lng||''}"></div>
+        </div>
+        <div id="modal-err" class="auth-error" hidden></div>
+        <div class="admin-modal-actions">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Annuler</button>
+          <button class="btn btn-brass btn-sm" id="modal-save-sortie">Enregistrer</button>
+        </div>`);
+
+      // Upload GPX direct depuis le formulaire de sortie
+      const uploadBtn = document.getElementById('m-gpx-upload-btn');
+      const uploadInput = document.getElementById('m-gpx-upload-input');
+      const uploadMsg = document.getElementById('m-gpx-upload-msg');
+      uploadBtn?.addEventListener('click', () => uploadInput.click());
+      uploadInput?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.gpx')) {
+          uploadMsg.style.color = '#c08080';
+          uploadMsg.textContent = 'Format invalide — fichier .gpx requis';
+          return;
+        }
+        uploadMsg.style.color = 'var(--brass)';
+        uploadMsg.textContent = `Upload de ${file.name}…`;
+        const fd = new FormData(); fd.append('gpx', file);
+        try {
+          const token = CCS_AUTH.getToken();
+          const res = await fetch(API + '/gpx/upload', {
+            method: 'POST',
+            credentials: 'include',
+            headers: token ? { Authorization: 'Bearer ' + token } : {},
+            body: fd
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Upload échoué');
+          // Ajouter le nouveau fichier au dropdown et le sélectionner
+          const select = document.getElementById('m-gpx');
+          const opt = document.createElement('option');
+          opt.value = data.filename || file.name;
+          opt.textContent = (data.filename || file.name) + ` · ${(file.size/1024).toFixed(0)} ko`;
+          opt.selected = true;
+          select.appendChild(opt);
+          uploadMsg.style.color = '#80c080';
+          uploadMsg.textContent = `✅ ${data.filename || file.name} uploadé et sélectionné`;
+        } catch (err) {
+          uploadMsg.style.color = '#c08080';
+          uploadMsg.textContent = '❌ ' + err.message;
+        }
+        uploadInput.value = '';
+      });
+
+      document.getElementById('modal-save-sortie').addEventListener('click', async () => {
+        const errEl = document.getElementById('modal-err');
+        const body = {
+          id:              document.getElementById('m-id').value.trim(),
+          title:           document.getElementById('m-title').value.trim(),
+          date:            document.getElementById('m-date').value,
+          subtitle:        document.getElementById('m-subtitle').value.trim(),
+          description:     document.getElementById('m-desc').value.trim(),
+          distance_km:     parseFloat(document.getElementById('m-dist').value) || null,
+          elevation_gain:  parseInt(document.getElementById('m-dplus').value) || null,
+          gpx_ref:         document.getElementById('m-gpx').value.trim() || null,
+          statut:          document.getElementById('m-statut').value,
+          location: {
+            lat: parseFloat(document.getElementById('m-lat').value) || null,
+            lng: parseFloat(document.getElementById('m-lng').value) || null,
+          }
+        };
+        if (!body.id || !body.title || !body.date) {
+          errEl.textContent = 'ID, titre et date sont requis'; errEl.hidden = false; return;
+        }
+        try {
+          if (id) {
+            await apiFetch('/sorties/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(body) });
+          } else {
+            await apiFetch('/sorties', { method: 'POST', body: JSON.stringify(body) });
+          }
+          closeModal();
+          toast(id ? 'Sortie mise à jour' : 'Sortie créée', 'success');
+          loadSorties();
+        } catch (err) { errEl.textContent = err.message; errEl.hidden = false; }
+      });
+    }
+
+    document.getElementById('btn-new-sortie')?.addEventListener('click', () => openSortieModal(null));
+    document.getElementById('btn-new-event')?.addEventListener('click', () => openEventModal(null));
+
+    async function openEventModal(id) {
+      let ev = null;
+      if (id) {
+        try { ev = await apiFetch('/evenements/' + encodeURIComponent(id)); } catch {}
+      }
+      const e = ev || {};
+      openModal(`
+        <div class="admin-modal-title">${id ? 'Éditer' : 'Nouvel'} <span class="it">événement</span></div>
+        <div class="admin-form-grid">
+          <div class="field"><label>Titre *</label><input id="e-title" value="${escHtml(e.title||'')}"></div>
+          <div class="field"><label>Type *</label>
+            <select id="e-type">
+              <option value="cyclosportive" ${e.type==='cyclosportive'?'selected':''}>Cyclosportive</option>
+              <option value="gravel"        ${e.type==='gravel'?'selected':''}>Gravel</option>
+              <option value="criterium"     ${e.type==='criterium'?'selected':''}>Critérium</option>
+              <option value="course"        ${e.type==='course'?'selected':''}>Course</option>
+              <option value="rando"         ${e.type==='rando'?'selected':''}>Randonnée</option>
+              <option value="championnat"   ${e.type==='championnat'?'selected':''}>Championnat</option>
+              <option value="autre"         ${e.type==='autre'?'selected':''}>Autre</option>
+            </select>
+          </div>
+          <div class="field admin-form-full"><label>Sous-titre</label><input id="e-subtitle" value="${escHtml(e.subtitle||'')}"></div>
+          <div class="field admin-form-full"><label>Description</label><textarea id="e-desc" rows="3">${escHtml(e.description||'')}</textarea></div>
+          <div class="field"><label>Date *</label><input id="e-date" type="date" value="${e.date ? String(e.date).slice(0,10) : ''}"></div>
+          <div class="field"><label>Heure</label><input id="e-heure" type="time" value="${escHtml(e.heure||'08:30')}"></div>
+          <div class="field"><label>Lieu</label><input id="e-lieu" value="${escHtml(e.lieu||'')}"></div>
+          <div class="field"><label>Région</label><input id="e-region" value="${escHtml(e.region||'')}"></div>
+          <div class="field"><label>Distance (km)</label><input id="e-dist" type="number" value="${e.distance_km||''}"></div>
+          <div class="field"><label>Engagement (€)</label><input id="e-eur" type="number" step="0.5" value="${e.engagement_eur||''}"></div>
+          <div class="field"><label>Max inscrits</label><input id="e-max" type="number" value="${e.max_inscrits||''}"></div>
+          <div class="field"><label>Statut</label>
+            <select id="e-statut">
+              <option value="ouvert"  ${e.statut==='ouvert'?'selected':''}>Ouvert</option>
+              <option value="complet" ${e.statut==='complet'?'selected':''}>Complet</option>
+              <option value="termine" ${e.statut==='termine'?'selected':''}>Terminé</option>
+              <option value="annule"  ${e.statut==='annule'?'selected':''}>Annulé</option>
+            </select>
+          </div>
+          <div class="field admin-form-full"><label>Lié à la sortie (id)</label><input id="e-sortie" value="${escHtml(e.sortie_id||'')}" placeholder="ex. arenberg-2025-04-05"></div>
+        </div>
+        <div id="e-modal-err" class="auth-error" hidden></div>
+        <div class="admin-modal-actions">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Annuler</button>
+          <button class="btn btn-brass btn-sm" id="modal-save-event">Enregistrer</button>
+        </div>`);
+
+      document.getElementById('modal-save-event').addEventListener('click', async () => {
+        const errEl = document.getElementById('e-modal-err');
+        const body = {
+          title:          document.getElementById('e-title').value.trim(),
+          type:           document.getElementById('e-type').value,
+          subtitle:       document.getElementById('e-subtitle').value.trim(),
+          description:    document.getElementById('e-desc').value.trim(),
+          date:           document.getElementById('e-date').value,
+          heure:          document.getElementById('e-heure').value,
+          lieu:           document.getElementById('e-lieu').value.trim(),
+          region:         document.getElementById('e-region').value.trim(),
+          distance_km:    parseInt(document.getElementById('e-dist').value) || null,
+          engagement_eur: parseFloat(document.getElementById('e-eur').value) || null,
+          max_inscrits:   parseInt(document.getElementById('e-max').value) || null,
+          statut:         document.getElementById('e-statut').value,
+          sortie_id:      document.getElementById('e-sortie').value.trim() || null,
+        };
+        if (!body.title || !body.date) {
+          errEl.textContent = 'Titre et date sont requis'; errEl.hidden = false; return;
+        }
+        try {
+          if (id) {
+            await apiFetch('/evenements/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(body) });
+          } else {
+            await apiFetch('/evenements', { method: 'POST', body: JSON.stringify(body) });
+          }
+          closeModal();
+          toast(id ? 'Événement mis à jour' : 'Événement créé', 'success');
+          loadEvenements();
+        } catch (err) { errEl.textContent = err.message; errEl.hidden = false; }
+      });
+    }
+
+    // ── Toast ────────────────────────────────────────────────────
+    function toast(msg, type = 'info') {
+      if (window.toast) window.toast(msg, type);
+      else console.log(`[${type}] ${msg}`);
+    }
+
+    // ── Init ─────────────────────────────────────────────────────
+    // Attendre l'init complète de CCS_AUTH puis charger le dashboard.
+    // Si l'utilisateur n'est pas admin, auth.js l'aura redirigé via
+    // data-requires-admin="true" sur le <body> avant que ce code tourne.
+    (async () => {
+      // Attendre que window.CCS_AUTH existe
+      const waitFor = (cond, max = 50) => new Promise(resolve => {
+        const tick = (n) => {
+          if (cond()) return resolve(true);
+          if (n >= max) return resolve(false);
+          setTimeout(() => tick(n + 1), 60);
+        };
+        tick(0);
+      });
+      await waitFor(() => !!window.CCS_AUTH);
+      await window.CCS_AUTH.ready();
+
+      if (!window.CCS_AUTH.isLoggedIn() || !window.CCS_AUTH.isAdmin()) {
+        // auth.js gère la redirection — par sécurité on s'arrête ici
+        return;
+      }
+
+      document.body.dataset.role = window.CCS_AUTH.getUser()?.role || '';
+      loadDashboard();
+    })();
+  })();
+  </script>
+</body>
+</html>

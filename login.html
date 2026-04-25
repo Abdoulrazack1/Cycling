@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion · Club de Cyclisme de Salouel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+
+  <style>
+    /* ── Checkbox custom & options ligne ──────────────────── */
+    .auth-options {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 18px; gap: 12px; flex-wrap: wrap;
+      font-family: var(--f-sans); font-size: 12px;
+    }
+    .auth-checkbox {
+      display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none;
+      color: var(--t-cream-2, #C7BC9E);
+      position: relative;
+    }
+    .auth-checkbox input {
+      position: absolute; opacity: 0; pointer-events: none;
+    }
+    .auth-checkbox-box {
+      width: 16px; height: 16px;
+      border: 1px solid var(--line-2, rgba(176,142,74,.35));
+      border-radius: 2px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; transition: all .15s;
+      flex-shrink: 0;
+    }
+    .auth-checkbox input:checked + .auth-checkbox-box {
+      background: var(--brass, #B08E4A);
+      border-color: var(--brass, #B08E4A);
+    }
+    .auth-checkbox input:checked + .auth-checkbox-box::after {
+      content: '';
+      width: 8px; height: 5px;
+      border-left: 2px solid #1a1a1a;
+      border-bottom: 2px solid #1a1a1a;
+      transform: rotate(-45deg) translate(1px,-1px);
+    }
+    .auth-checkbox:hover .auth-checkbox-box { border-color: var(--brass, #B08E4A); }
+    .auth-checkbox input:focus-visible + .auth-checkbox-box {
+      outline: 2px solid var(--brass, #B08E4A);
+      outline-offset: 2px;
+    }
+    .auth-options-link {
+      color: var(--brass, #B08E4A);
+      text-decoration: none;
+      font-size: 12px;
+      transition: color .2s;
+    }
+    .auth-options-link:hover { color: var(--brass-hi, #CAA35B); text-decoration: underline; }
+
+    .auth-loading {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 40px;
+      font-family: var(--f-sans); font-size: 12px;
+      color: var(--t-cream-3, rgba(199,188,158,.55));
+    }
+    .auth-loading-spin {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(176,142,74,.2);
+      border-top-color: var(--brass, #B08E4A);
+      border-radius: 50%;
+      animation: auth-spin .8s linear infinite;
+    }
+    @keyframes auth-spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main id="main">
+    <div class="auth-page">
+      <div class="auth-box">
+        <div class="auth-box-logo">S.</div>
+
+        <div id="auth-checking" class="auth-loading">
+          <span class="auth-loading-spin"></span>
+          <span>Vérification de votre session…</span>
+        </div>
+
+        <div class="filter-row" style="margin-bottom:28px;display:none;" id="auth-tabs">
+          <button class="filter-chip active" data-tab="login" type="button">Connexion</button>
+          <button class="filter-chip" data-tab="register" type="button">Nouveau membre</button>
+        </div>
+
+        <form id="tab-login" hidden autocomplete="on" novalidate>
+          <h2 class="auth-box-title">Se <span class="it">connecter</span></h2>
+          <p class="auth-box-sub">Espace sociétaires du C.C. Salouel</p>
+
+          <div id="login-error" class="auth-error" role="alert" hidden></div>
+
+          <div class="field">
+            <label for="login-id">Email ou nom d'utilisateur</label>
+            <input id="login-id" name="username" type="text" autocomplete="username" required placeholder="admin@club-salouel.fr">
+          </div>
+          <div class="field" style="margin-top:16px;">
+            <label for="login-pw">Mot de passe</label>
+            <input id="login-pw" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+          </div>
+
+          <div class="auth-options">
+            <label class="auth-checkbox" for="login-remember">
+              <input id="login-remember" name="remember" type="checkbox" checked>
+              <span class="auth-checkbox-box" aria-hidden="true"></span>
+              <span>Se souvenir de moi</span>
+            </label>
+            <a href="mot-de-passe-oublie.html" class="auth-options-link">Mot de passe oublié ?</a>
+          </div>
+
+          <button class="btn btn-brass" id="login-btn" type="submit" style="width:100%;margin-top:24px;">
+            Se connecter
+          </button>
+
+          <div class="auth-switch">
+            Pas encore membre ? <a href="#" data-tab="register" class="tab-link">Rejoindre le club →</a>
+          </div>
+        </form>
+
+        <form id="tab-register" hidden autocomplete="on" novalidate>
+          <h2 class="auth-box-title">Rejoindre <span class="it">le club</span></h2>
+          <p class="auth-box-sub">Créez votre espace sociétaire</p>
+
+          <div id="register-error"   class="auth-error"   role="alert"  hidden></div>
+          <div id="register-success" class="auth-success" role="status" hidden>Compte créé — redirection en cours…</div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="reg-prenom">Prénom *</label>
+              <input id="reg-prenom" name="given-name" type="text" autocomplete="given-name" required placeholder="Antoine">
+            </div>
+            <div class="field">
+              <label for="reg-nom">Nom *</label>
+              <input id="reg-nom" name="family-name" type="text" autocomplete="family-name" required placeholder="Lemaire">
+            </div>
+          </div>
+          <div class="field" style="margin-top:16px;">
+            <label for="reg-username">Nom d'utilisateur *</label>
+            <input id="reg-username" name="username" type="text" autocomplete="username" required placeholder="antoine.lemaire">
+          </div>
+          <div class="field" style="margin-top:16px;">
+            <label for="reg-email">Email *</label>
+            <input id="reg-email" name="email" type="email" autocomplete="email" required placeholder="antoine@example.com">
+          </div>
+          <div class="field" style="margin-top:16px;">
+            <label for="reg-pw">Mot de passe * (8 caractères min.)</label>
+            <input id="reg-pw" name="new-password" type="password" autocomplete="new-password" required minlength="8" placeholder="••••••••">
+          </div>
+          <div class="field-row" style="margin-top:16px;">
+            <div class="field">
+              <label for="reg-licence">Licence FFC</label>
+              <input id="reg-licence" type="text" placeholder="FFC2025XXX">
+            </div>
+            <div class="field">
+              <label for="reg-annee">Année d'adhésion</label>
+              <input id="reg-annee" type="number" min="1978" max="2030" placeholder="2025">
+            </div>
+          </div>
+
+          <button class="btn btn-brass" id="register-btn" type="submit" style="width:100%;margin-top:24px;">
+            Créer mon compte
+          </button>
+
+          <div class="auth-switch">
+            Déjà membre ? <a href="#" data-tab="login" class="tab-link">Se connecter →</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };
+  </script>
+  <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    function switchTab(tab) {
+      document.getElementById('tab-login').hidden    = tab !== 'login';
+      document.getElementById('tab-register').hidden = tab !== 'register';
+      document.querySelectorAll('[data-tab]').forEach(el => {
+        if (el.classList.contains('filter-chip')) {
+          el.classList.toggle('active', el.dataset.tab === tab);
+        }
+      });
+      const firstInput = (tab === 'login' ? '#login-id' : '#reg-prenom');
+      setTimeout(() => document.querySelector(firstInput)?.focus(), 50);
+    }
+    document.querySelectorAll('[data-tab]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab(el.dataset.tab);
+      });
+    });
+
+    function getRedirect() {
+      const p = new URLSearchParams(location.search);
+      const r = p.get('redirect');
+      if (r && /^[a-zA-Z0-9_\-./?=&%]+$/.test(r) && !r.includes('://')) return r;
+      return 'index.html';
+    }
+
+    (async function bootstrap() {
+      const waitFor = (cond, max = 50) => new Promise(resolve => {
+        const tick = (n) => {
+          if (cond()) return resolve(true);
+          if (n >= max) return resolve(false);
+          setTimeout(() => tick(n + 1), 60);
+        };
+        tick(0);
+      });
+      await waitFor(() => !!window.CCS_AUTH);
+      await CCS_AUTH.ready();
+
+      if (CCS_AUTH.isLoggedIn()) {
+        window.location.href = getRedirect();
+        return;
+      }
+
+      document.getElementById('auth-checking').style.display = 'none';
+      document.getElementById('auth-tabs').style.display = '';
+      switchTab('login');
+    })();
+
+    async function doLogin(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      const login = document.getElementById('login-id').value.trim();
+      const pw    = document.getElementById('login-pw').value;
+      const remember = document.getElementById('login-remember').checked;
+
+      if (!login || !pw) {
+        errEl.textContent = 'Remplissez tous les champs';
+        errEl.hidden = false; return;
+      }
+      errEl.hidden = true;
+      btn.textContent = 'Connexion…'; btn.disabled = true;
+
+      try {
+        await CCS_AUTH.login(login, pw, remember);
+        window.location.href = getRedirect();
+      } catch (err) {
+        errEl.textContent = err.message || 'Identifiants invalides';
+        errEl.hidden = false;
+        btn.textContent = 'Se connecter'; btn.disabled = false;
+        document.getElementById('login-pw').focus();
+      }
+    }
+
+    document.getElementById('tab-login').addEventListener('submit', doLogin);
+
+    async function doRegister(e) {
+      if (e) e.preventDefault();
+      const btn   = document.getElementById('register-btn');
+      const errEl = document.getElementById('register-error');
+      const sucEl = document.getElementById('register-success');
+      errEl.hidden = true; sucEl.hidden = true;
+
+      const fields = {
+        prenom:        document.getElementById('reg-prenom').value.trim(),
+        nom:           document.getElementById('reg-nom').value.trim(),
+        username:      document.getElementById('reg-username').value.trim(),
+        email:         document.getElementById('reg-email').value.trim(),
+        password:      document.getElementById('reg-pw').value,
+        licence_ffc:   document.getElementById('reg-licence').value.trim() || undefined,
+        annee_adhesion:parseInt(document.getElementById('reg-annee').value) || undefined,
+      };
+
+      if (!fields.prenom || !fields.nom || !fields.username || !fields.email || !fields.password) {
+        errEl.textContent = 'Remplissez tous les champs obligatoires';
+        errEl.hidden = false; return;
+      }
+      if (fields.password.length < 8) {
+        errEl.textContent = 'Mot de passe trop court (8 caractères minimum)';
+        errEl.hidden = false; return;
+      }
+
+      btn.textContent = 'Création…'; btn.disabled = true;
+      try {
+        await CCS_AUTH.register(fields);
+        sucEl.hidden = false;
+        setTimeout(() => { window.location.href = getRedirect(); }, 1200);
+      } catch (err) {
+        errEl.textContent = err.message || 'Erreur lors de la création du compte';
+        errEl.hidden = false;
+        btn.textContent = 'Créer mon compte'; btn.disabled = false;
+      }
+    }
+
+    document.getElementById('tab-register').addEventListener('submit', doRegister);
+  })();
+  </script>
+</body>
+</html>

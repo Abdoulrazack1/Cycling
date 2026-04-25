@@ -1,0 +1,839 @@
+{
+  "paris-roubaix-challenge": [
+    {
+      "id": "par-1",
+      "type": "depart",
+      "label": "Départ — Busigny",
+      "desc": "Place de la Mairie · 7h30",
+      "km": 0,
+      "lat": 50.04017,
+      "lng": 3.45278
+    },
+    {
+      "id": "par-2",
+      "type": "secteur",
+      "label": "Troisvilles → Inchy",
+      "desc": "2,2 km · pavé 3★ (secteur 28)",
+      "km": 8.4,
+      "lat": 50.1025,
+      "lng": 3.40278
+    },
+    {
+      "id": "par-3",
+      "type": "ravito",
+      "label": "Ravito — Saint-Python",
+      "desc": "Premier ravitaillement · km 35",
+      "km": 16.8,
+      "lat": 50.16361,
+      "lng": 3.435
+    },
+    {
+      "id": "par-4",
+      "type": "secteur",
+      "label": "Solesmes → Saint-Python",
+      "desc": "1,7 km · pavé 3★ (secteur 26)",
+      "km": 22.4,
+      "lat": 50.17222,
+      "lng": 3.5125
+    },
+    {
+      "id": "par-5",
+      "type": "secteur",
+      "label": "Vertain → Saint-Martin",
+      "desc": "2,3 km · pavé 3★ (secteur 25)",
+      "km": 25.5,
+      "lat": 50.2,
+      "lng": 3.51389
+    },
+    {
+      "id": "par-6",
+      "type": "secteur",
+      "label": "Capelle → Ruesnes",
+      "desc": "1,7 km · pavé 3★",
+      "km": 29.1,
+      "lat": 50.23083,
+      "lng": 3.49917
+    },
+    {
+      "id": "par-7",
+      "type": "secteur",
+      "label": "Quérénaing → Maing",
+      "desc": "2,5 km · pavé 3★",
+      "km": 34.9,
+      "lat": 50.25917,
+      "lng": 3.43056
+    },
+    {
+      "id": "par-8",
+      "type": "ravito",
+      "label": "Ravito — Valenciennes",
+      "desc": "Place du marché · km 75",
+      "km": 46.9,
+      "lat": 50.345,
+      "lng": 3.32833
+    },
+    {
+      "id": "par-9",
+      "type": "secteur",
+      "label": "Haveluy → Wallers",
+      "desc": "2,5 km · pavé 4★",
+      "km": 53.6,
+      "lat": 50.40472,
+      "lng": 3.34083
+    },
+    {
+      "id": "par-10",
+      "type": "danger",
+      "label": "Danger — Entrée Arenberg",
+      "desc": "Réduction de vitesse obligatoire",
+      "km": 56.9,
+      "lat": 50.42528,
+      "lng": 3.30667
+    },
+    {
+      "id": "par-11",
+      "type": "secteur",
+      "label": "Trouée d'Arenberg",
+      "desc": "2,3 km · pavé 5★ · forêt",
+      "km": 61.2,
+      "lat": 50.43472,
+      "lng": 3.24806
+    },
+    {
+      "id": "par-12",
+      "type": "danger",
+      "label": "Danger — Sortie Arenberg",
+      "desc": "Pavé glissant en sortie",
+      "km": 62.8,
+      "lat": 50.42222,
+      "lng": 3.26
+    },
+    {
+      "id": "par-13",
+      "type": "secteur",
+      "label": "Hornaing → Wandignies",
+      "desc": "3,7 km · pavé 4★",
+      "km": 68.2,
+      "lat": 50.46917,
+      "lng": 3.27778
+    },
+    {
+      "id": "par-14",
+      "type": "ravito",
+      "label": "Ravito — Marchiennes",
+      "desc": "Place de la Mairie · km 110",
+      "km": 74.8,
+      "lat": 50.4875,
+      "lng": 3.18889
+    },
+    {
+      "id": "par-15",
+      "type": "secteur",
+      "label": "Warlaing → Brillon",
+      "desc": "2,4 km · pavé 3★",
+      "km": 77.8,
+      "lat": 50.50972,
+      "lng": 3.21306
+    },
+    {
+      "id": "par-16",
+      "type": "secteur",
+      "label": "Tilloy → Sars-et-Rosières",
+      "desc": "2,4 km · pavé 4★",
+      "km": 79.5,
+      "lat": 50.52472,
+      "lng": 3.205
+    },
+    {
+      "id": "par-17",
+      "type": "secteur",
+      "label": "Beuvry → Orchies",
+      "desc": "1,4 km · pavé 3★",
+      "km": 81.9,
+      "lat": 50.54611,
+      "lng": 3.20194
+    },
+    {
+      "id": "par-18",
+      "type": "secteur",
+      "label": "Auchy → Bersée",
+      "desc": "2,7 km · pavé 4★",
+      "km": 83.6,
+      "lat": 50.55167,
+      "lng": 3.18028
+    },
+    {
+      "id": "par-19",
+      "type": "secteur",
+      "label": "Mons-en-Pévèle",
+      "desc": "3,0 km · pavé 5★",
+      "km": 85.3,
+      "lat": 50.56583,
+      "lng": 3.18861
+    },
+    {
+      "id": "par-20",
+      "type": "secteur",
+      "label": "Mérignies → Avelin",
+      "desc": "0,7 km · pavé 3★",
+      "km": 87,
+      "lat": 50.55083,
+      "lng": 3.19528
+    },
+    {
+      "id": "par-21",
+      "type": "secteur",
+      "label": "Pont-Thibault → Ennevelin",
+      "desc": "1,4 km · pavé 3★",
+      "km": 87.9,
+      "lat": 50.55167,
+      "lng": 3.18222
+    },
+    {
+      "id": "par-22",
+      "type": "secteur",
+      "label": "Templeuve · Le Moulin",
+      "desc": "0,5 km · pavé 4★",
+      "km": 89.2,
+      "lat": 50.55917,
+      "lng": 3.16944
+    },
+    {
+      "id": "par-23",
+      "type": "ravito",
+      "label": "Ravito — Templeuve",
+      "desc": "Centre · km 142",
+      "km": 90.2,
+      "lat": 50.56833,
+      "lng": 3.16667
+    },
+    {
+      "id": "par-24",
+      "type": "secteur",
+      "label": "Cysoing → Bourghelles",
+      "desc": "1,3 km · pavé 3★",
+      "km": 93.9,
+      "lat": 50.5925,
+      "lng": 3.20389
+    },
+    {
+      "id": "par-25",
+      "type": "secteur",
+      "label": "Bourghelles → Wannehain",
+      "desc": "1,1 km · pavé 3★",
+      "km": 94.5,
+      "lat": 50.5975,
+      "lng": 3.20139
+    },
+    {
+      "id": "par-26",
+      "type": "secteur",
+      "label": "Camphin-en-Pévèle",
+      "desc": "1,8 km · pavé 4★",
+      "km": 96.2,
+      "lat": 50.61167,
+      "lng": 3.20833
+    },
+    {
+      "id": "par-27",
+      "type": "secteur",
+      "label": "Carrefour de l'Arbre",
+      "desc": "2,1 km · pavé 5★",
+      "km": 98.1,
+      "lat": 50.62833,
+      "lng": 3.21528
+    },
+    {
+      "id": "par-28",
+      "type": "secteur",
+      "label": "Gruson",
+      "desc": "1,1 km · pavé 3★",
+      "km": 99.7,
+      "lat": 50.64083,
+      "lng": 3.20278
+    },
+    {
+      "id": "par-29",
+      "type": "secteur",
+      "label": "Hem",
+      "desc": "1,4 km · pavé 3★",
+      "km": 102.3,
+      "lat": 50.65861,
+      "lng": 3.18083
+    },
+    {
+      "id": "par-30",
+      "type": "arrivee",
+      "label": "Arrivée — Vélodrome Roubaix",
+      "desc": "André-Pétrieux · ligne mythique",
+      "km": 105.8,
+      "lat": 50.69028,
+      "lng": 3.17139
+    }
+  ],
+  "enfer-des-flandres": [
+    {
+      "id": "enf-1",
+      "type": "depart",
+      "label": "Départ — Cassel",
+      "desc": "Place du Général de Gaulle · 7h30",
+      "km": 0,
+      "lat": 50.80111,
+      "lng": 2.48472
+    },
+    {
+      "id": "enf-2",
+      "type": "signaleur",
+      "label": "Signaleur — Steenvoorde",
+      "desc": "Traversée centre",
+      "km": 9.9,
+      "lat": 50.79833,
+      "lng": 2.625
+    },
+    {
+      "id": "enf-3",
+      "type": "secteur",
+      "label": "Mont des Cats",
+      "desc": "1,1 km · 7,2 % · sommet pavé",
+      "km": 16.6,
+      "lat": 50.78444,
+      "lng": 2.7175
+    },
+    {
+      "id": "enf-4",
+      "type": "ravito",
+      "label": "Ravito — Abbaye Mont des Cats",
+      "desc": "Pause longue · vue mer par temps clair",
+      "km": 17.5,
+      "lat": 50.7825,
+      "lng": 2.72917
+    },
+    {
+      "id": "enf-5",
+      "type": "secteur",
+      "label": "Mont Noir",
+      "desc": "900 m · 6,8 % moyen",
+      "km": 19.1,
+      "lat": 50.77,
+      "lng": 2.71583
+    },
+    {
+      "id": "enf-6",
+      "type": "secteur",
+      "label": "Mont de Boeschepe",
+      "desc": "600 m · 5,4 % moyen",
+      "km": 24,
+      "lat": 50.78222,
+      "lng": 2.78306
+    },
+    {
+      "id": "enf-7",
+      "type": "secteur",
+      "label": "Kemmelberg",
+      "desc": "800 m · 9,4 % · pavé · 22 % max",
+      "km": 27.1,
+      "lat": 50.78778,
+      "lng": 2.82556
+    },
+    {
+      "id": "enf-8",
+      "type": "secteur",
+      "label": "Mont Rouge",
+      "desc": "1,2 km · 6,1 % moyen",
+      "km": 29.9,
+      "lat": 50.785,
+      "lng": 2.86472
+    },
+    {
+      "id": "enf-9",
+      "type": "ravito",
+      "label": "Ravito — Westouter",
+      "desc": "Place village · km 75",
+      "km": 33.9,
+      "lat": 50.76722,
+      "lng": 2.81528
+    },
+    {
+      "id": "enf-10",
+      "type": "secteur",
+      "label": "Catsberg (Mont des Cats côté est)",
+      "desc": "900 m · 8,2 % moyen",
+      "km": 39.6,
+      "lat": 50.74,
+      "lng": 2.74583
+    },
+    {
+      "id": "enf-11",
+      "type": "signaleur",
+      "label": "Signaleur — Bailleul",
+      "desc": "Traversée centre-ville",
+      "km": 40.5,
+      "lat": 50.73972,
+      "lng": 2.73389
+    },
+    {
+      "id": "enf-12",
+      "type": "danger",
+      "label": "Danger — Descente Boeschepe",
+      "desc": "Pavé glissant · gravillons",
+      "km": 46.3,
+      "lat": 50.79167,
+      "lng": 2.72611
+    },
+    {
+      "id": "enf-13",
+      "type": "ravito",
+      "label": "Ravito — Steenvoorde",
+      "desc": "Centre · km 130",
+      "km": 51.7,
+      "lat": 50.8,
+      "lng": 2.65
+    },
+    {
+      "id": "enf-14",
+      "type": "arrivee",
+      "label": "Arrivée — Cassel",
+      "desc": "Retour Place du Général de Gaulle",
+      "km": 63.3,
+      "lat": 50.80111,
+      "lng": 2.48472
+    }
+  ],
+  "lille-hardelot": [
+    {
+      "id": "lil-1",
+      "type": "depart",
+      "label": "Départ — Lille",
+      "desc": "Grand Place · 6h00",
+      "km": 0,
+      "lat": 50.63278,
+      "lng": 3.05972
+    },
+    {
+      "id": "lil-2",
+      "type": "ravito",
+      "label": "Ravito — Bauvin",
+      "desc": "km 25",
+      "km": 18.5,
+      "lat": 50.55,
+      "lng": 2.84
+    },
+    {
+      "id": "lil-3",
+      "type": "ravito",
+      "label": "Ravito — Béthune",
+      "desc": "Grand Place · km 50",
+      "km": 34.3,
+      "lat": 50.52917,
+      "lng": 2.63889
+    },
+    {
+      "id": "lil-4",
+      "type": "ravito",
+      "label": "Ravito — Lillers",
+      "desc": "km 80",
+      "km": 54.2,
+      "lat": 50.52972,
+      "lng": 2.365
+    },
+    {
+      "id": "lil-5",
+      "type": "secteur",
+      "label": "Côte de Fauquembergues",
+      "desc": "1,5 km · 4,8 % moyen",
+      "km": 70.7,
+      "lat": 50.51667,
+      "lng": 2.13333
+    },
+    {
+      "id": "lil-6",
+      "type": "ravito",
+      "label": "Ravito — Saint-Omer",
+      "desc": "Place Foch · km 110",
+      "km": 79.9,
+      "lat": 50.59417,
+      "lng": 2.0875
+    },
+    {
+      "id": "lil-7",
+      "type": "secteur",
+      "label": "Côte d'Hardinghen",
+      "desc": "2 km · 5,4 % moyen",
+      "km": 99.1,
+      "lat": 50.65,
+      "lng": 1.83
+    },
+    {
+      "id": "lil-8",
+      "type": "ravito",
+      "label": "Ravito — Marquise",
+      "desc": "km 160",
+      "km": 108.3,
+      "lat": 50.65,
+      "lng": 1.7
+    },
+    {
+      "id": "lil-9",
+      "type": "danger",
+      "label": "Danger — Descente Boulogne",
+      "desc": "Trafic urbain",
+      "km": 122.3,
+      "lat": 50.55,
+      "lng": 1.58611
+    },
+    {
+      "id": "lil-10",
+      "type": "arrivee",
+      "label": "Arrivée — Hardelot-Plage",
+      "desc": "Front de mer · plage",
+      "km": 123,
+      "lat": 50.54917,
+      "lng": 1.59694
+    }
+  ],
+  "picarde-amienoise": [
+    {
+      "id": "pic-1",
+      "type": "depart",
+      "label": "Départ — Hortillonnages",
+      "desc": "Maison des Hortillonnages · 8h00",
+      "km": 0,
+      "lat": 49.89944,
+      "lng": 2.30222
+    },
+    {
+      "id": "pic-2",
+      "type": "ravito",
+      "label": "Ravito — Picquigny",
+      "desc": "Place du marché · km 18",
+      "km": 8.3,
+      "lat": 49.94167,
+      "lng": 2.20833
+    },
+    {
+      "id": "pic-3",
+      "type": "secteur",
+      "label": "Côte d'Hangest",
+      "desc": "1,3 km · 5,1 % moyen",
+      "km": 19.6,
+      "lat": 49.975,
+      "lng": 2.05833
+    },
+    {
+      "id": "pic-4",
+      "type": "ravito",
+      "label": "Ravito — Hangest",
+      "desc": "km 35",
+      "km": 28.2,
+      "lat": 50.00833,
+      "lng": 1.95
+    },
+    {
+      "id": "pic-5",
+      "type": "ravito",
+      "label": "Ravito — Saint-Valery",
+      "desc": "Quai Romerel · km 65",
+      "km": 58.3,
+      "lat": 50.18472,
+      "lng": 1.63333
+    },
+    {
+      "id": "pic-6",
+      "type": "secteur",
+      "label": "Le Hourdel",
+      "desc": "Pointe · phoques · vue baie",
+      "km": 64.8,
+      "lat": 50.20833,
+      "lng": 1.55
+    },
+    {
+      "id": "pic-7",
+      "type": "danger",
+      "label": "Danger — Vent baie",
+      "desc": "Vent latéral en bord de baie",
+      "km": 70.8,
+      "lat": 50.18333,
+      "lng": 1.625
+    },
+    {
+      "id": "pic-8",
+      "type": "ravito",
+      "label": "Ravito — Pont-Rémy",
+      "desc": "km 88",
+      "km": 82.1,
+      "lat": 50.1,
+      "lng": 1.71667
+    },
+    {
+      "id": "pic-9",
+      "type": "arrivee",
+      "label": "Arrivée — Hortillonnages",
+      "desc": "Retour Maison des Hortillonnages",
+      "km": 129.7,
+      "lat": 49.89944,
+      "lng": 2.30222
+    }
+  ],
+  "gp-fourmies-amateur": [
+    {
+      "id": "gp-1",
+      "type": "depart",
+      "label": "Départ — Fourmies",
+      "desc": "Place Émile-Coppeaux · 13h00",
+      "km": 0,
+      "lat": 50.01806,
+      "lng": 4.05
+    },
+    {
+      "id": "gp-2",
+      "type": "secteur",
+      "label": "Côte de Trélon",
+      "desc": "1,1 km · 5,4 % moyen",
+      "km": 141.3,
+      "lat": 50.03889,
+      "lng": 4.1025
+    },
+    {
+      "id": "gp-3",
+      "type": "signaleur",
+      "label": "Signaleur — Wignehies",
+      "desc": "Traversée centre",
+      "km": 144.9,
+      "lat": 50.04917,
+      "lng": 4.06667
+    },
+    {
+      "id": "gp-4",
+      "type": "arrivee",
+      "label": "Arrivée — Fourmies",
+      "desc": "12 tours · sprint final",
+      "km": 149.2,
+      "lat": 50.01806,
+      "lng": 4.05
+    }
+  ],
+  "cyclo-baie-de-somme": [
+    {
+      "id": "cyc-1",
+      "type": "depart",
+      "label": "Départ — Saint-Valery",
+      "desc": "Quai Romerel · 8h30",
+      "km": 0,
+      "lat": 50.18472,
+      "lng": 1.63333
+    },
+    {
+      "id": "cyc-2",
+      "type": "secteur",
+      "label": "Le Hourdel",
+      "desc": "Pointe · phoques",
+      "km": 6.5,
+      "lat": 50.20833,
+      "lng": 1.55
+    },
+    {
+      "id": "cyc-3",
+      "type": "ravito",
+      "label": "Ravito — Cayeux",
+      "desc": "Esplanade · vue mer",
+      "km": 9.6,
+      "lat": 50.18056,
+      "lng": 1.55833
+    },
+    {
+      "id": "cyc-4",
+      "type": "ravito",
+      "label": "Ravito — Pont-Rémy",
+      "desc": "km 40",
+      "km": 31.3,
+      "lat": 50.1,
+      "lng": 1.83333
+    },
+    {
+      "id": "cyc-5",
+      "type": "secteur",
+      "label": "Côte d'Abbeville",
+      "desc": "1,2 km · 4,2 % moyen",
+      "km": 39.7,
+      "lat": 50.16667,
+      "lng": 1.79167
+    },
+    {
+      "id": "cyc-6",
+      "type": "ravito",
+      "label": "Ravito — Abbeville",
+      "desc": "Place Saint-Pierre · km 65",
+      "km": 42.7,
+      "lat": 50.16944,
+      "lng": 1.83333
+    },
+    {
+      "id": "cyc-7",
+      "type": "arrivee",
+      "label": "Arrivée — Saint-Valery",
+      "desc": "Retour Quai Romerel",
+      "km": 60,
+      "lat": 50.18472,
+      "lng": 1.63333
+    }
+  ],
+  "6h-velo-pas-de-calais": [
+    {
+      "id": "6h-1",
+      "type": "depart",
+      "label": "Départ/Arrivée — Circuit",
+      "desc": "Stand de la Bayard · 9h00",
+      "km": 0,
+      "lat": 50.40639,
+      "lng": 2.21833
+    },
+    {
+      "id": "6h-2",
+      "type": "danger",
+      "label": "Danger — Chicane",
+      "desc": "Virage technique",
+      "km": 83,
+      "lat": 50.40972,
+      "lng": 2.21389
+    },
+    {
+      "id": "6h-3",
+      "type": "arrivee",
+      "label": "Ligne Arrivée 6 h",
+      "desc": "Maximum tours sur 6 h",
+      "km": 83.5,
+      "lat": 50.40639,
+      "lng": 2.21833
+    }
+  ],
+  "open-gravel-eperlecques": [
+    {
+      "id": "ope-1",
+      "type": "depart",
+      "label": "Départ — Éperlecques",
+      "desc": "Forêt domaniale · 8h30",
+      "km": 0,
+      "lat": 50.79361,
+      "lng": 2.16278
+    },
+    {
+      "id": "ope-2",
+      "type": "secteur",
+      "label": "Forêt d'Éperlecques",
+      "desc": "Sentier forestier · 4 km",
+      "km": 2.6,
+      "lat": 50.81389,
+      "lng": 2.18056
+    },
+    {
+      "id": "ope-3",
+      "type": "secteur",
+      "label": "Côte de Mentque",
+      "desc": "900 m · 4,8 % gravel",
+      "km": 5.4,
+      "lat": 50.83056,
+      "lng": 2.21111
+    },
+    {
+      "id": "ope-4",
+      "type": "ravito",
+      "label": "Ravito — Audrehem",
+      "desc": "km 22",
+      "km": 7.1,
+      "lat": 50.84583,
+      "lng": 2.20833
+    },
+    {
+      "id": "ope-5",
+      "type": "secteur",
+      "label": "Mont d'Hardinghen",
+      "desc": "1,4 km · 5,1 % chemin",
+      "km": 15.5,
+      "lat": 50.79722,
+      "lng": 2.3
+    },
+    {
+      "id": "ope-6",
+      "type": "ravito",
+      "label": "Ravito — Tournehem",
+      "desc": "km 50",
+      "km": 21.4,
+      "lat": 50.74722,
+      "lng": 2.275
+    },
+    {
+      "id": "ope-7",
+      "type": "danger",
+      "label": "Danger — Descente boueuse",
+      "desc": "Sentier glissant par temps humide",
+      "km": 27.8,
+      "lat": 50.78056,
+      "lng": 2.2
+    },
+    {
+      "id": "ope-8",
+      "type": "arrivee",
+      "label": "Arrivée — Éperlecques",
+      "desc": "Retour forêt domaniale",
+      "km": 30.8,
+      "lat": 50.79361,
+      "lng": 2.16278
+    }
+  ],
+  "rando-muguet-choisy": [
+    {
+      "id": "ran-1",
+      "type": "depart",
+      "label": "Départ — Choisy-au-Bac",
+      "desc": "Place de la Mairie · 8h00",
+      "km": 0,
+      "lat": 49.43,
+      "lng": 2.85806
+    },
+    {
+      "id": "ran-2",
+      "type": "secteur",
+      "label": "Forêt de Compiègne",
+      "desc": "8 km en sous-bois",
+      "km": 12,
+      "lat": 49.5,
+      "lng": 2.93333
+    },
+    {
+      "id": "ran-3",
+      "type": "ravito",
+      "label": "Ravito — Pierrefonds",
+      "desc": "Château · km 28",
+      "km": 20,
+      "lat": 49.55833,
+      "lng": 3
+    },
+    {
+      "id": "ran-4",
+      "type": "secteur",
+      "label": "Côte de Cuise-la-Motte",
+      "desc": "1,1 km · 4,5 % moyen",
+      "km": 36.4,
+      "lat": 49.45,
+      "lng": 3.06667
+    },
+    {
+      "id": "ran-5",
+      "type": "ravito",
+      "label": "Ravito — Compiègne",
+      "desc": "Place Hôtel de Ville · km 65",
+      "km": 42.5,
+      "lat": 49.41667,
+      "lng": 3
+    },
+    {
+      "id": "ran-6",
+      "type": "arrivee",
+      "label": "Arrivée — Choisy-au-Bac",
+      "desc": "Retour Place de la Mairie",
+      "km": 54.5,
+      "lat": 49.43,
+      "lng": 2.85806
+    }
+  ]
+}

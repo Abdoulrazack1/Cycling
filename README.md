@@ -1,88 +1,139 @@
-# Cercle Cycliste de Sarouel — Site web
+# Club de Cyclisme de Salouel — Application web
 
-Site web du Cercle Cycliste de Sarouel. Direction artistique : **club privé luxe** (inspiration Conceptzilla "Luxury Golf Club") transposée à l'univers cycliste du Nord. Statique (HTML/CSS/JS pur, zero build), conçu pour évoluer vers un backend Firebase ou Supabase sans réécriture majeure.
+Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL.
 
-## Direction artistique
+## Stack technique
 
-Palette : émeraude sombre + crème parchemin + laiton, accents oxblood pour le pavé. Typographie : **Playfair Display** (titres serif italique), **EB Garamond** (corps de texte), **Archivo** (labels capitales tracées). Numérotation par chapitres (№ 01, № 02…), filets de laiton, encadrements estampillés, photos en cinemascope traitées chaudes.
+- **Frontend** : HTML/CSS/JS vanille · Leaflet · Google Street View · Mapillary
+- **Backend** : Node.js + Express · MySQL 2 · JWT · Bcrypt · Nodemailer · Multer
+- **Base de données** : MySQL 8+ / MariaDB 10.6+
 
-## Pages
+---
 
-| Fichier | Rôle |
-|---------|------|
-| `index.html` | Accueil — hero cinémascope, sortie en cours, sorties récentes, stats, parcours signatures, manifeste, formules d'adhésion, CTA |
-| `sorties.html` | Catalogue filtrable des sorties |
-| `sortie.html` | **Page phare** — explorateur carte + street view + POIs + profil altimétrique + tableau des secteurs pavés |
-| `parcours.html` | Les parcours signatures du Cercle |
-| `evenements.html` | Calendrier événementiel |
-| `club.html` | Le bureau (7 membres) |
-| `profil.html` | Profil sociétaire — équipement + zones de puissance |
-| `palmares.html` | Résultats par saison avec médailles or/argent/bronze |
-| `contact.html` | Formulaire + cartes info coordonnées |
-| `mentions-legales.html` | RGPD, éditeur, hébergeur |
-| `404.html` | Page d'erreur |
+## Installation rapide
 
-## Stack
+### 1. Prérequis
+- Node.js 18+
+- MySQL 8+ ou MariaDB 10.6+
+- HeidiSQL (ou DBeaver) pour gérer la base
 
-- **HTML/CSS/JS** purs (zero framework, zero build step)
-- **Leaflet 1.9.4** pour la cartographie
-- **Mapillary JS 4.1.2** pour le street view communautaire (fallback satellite + plan si token absent)
-- Typographies servies par Google Fonts : Playfair Display, EB Garamond, Archivo
+### 2. Base de données (HeidiSQL)
 
-## Street view Mapillary
-
-Le fichier `asset/js/sortie.js` contient une constante `MAPILLARY_TOKEN` vide par défaut. Sans token → fallback automatique en split **vue satellite Esri + vue cartographique OSM**.
-
-Pour activer le street view :
-
-1. Créer un compte développeur sur https://www.mapillary.com/dashboard/developers
-2. Générer un *client token*
-3. Coller la valeur dans `asset/js/sortie.js` :
-
-```javascript
-const MAPILLARY_TOKEN = 'MLY|votre-token-ici';
+```sql
+-- Créer l'utilisateur MySQL
+CREATE USER 'ccs_user'@'localhost' IDENTIFIED BY 'CCS_Salouel_2025!';
+CREATE DATABASE IF NOT EXISTS ccs_salouel CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON ccs_salouel.* TO 'ccs_user'@'localhost';
+FLUSH PRIVILEGES;
 ```
 
-Le viewer 360° Mapillary se chargera alors automatiquement à la position du curseur sur la frise temporelle, avec recherche de la photo la plus proche via l'API Graph.
+Puis dans HeidiSQL, ouvrir et exécuter `schema.sql` sur la base `ccs_salouel`.
 
-## Couche de données
+### 3. Configuration
 
-`asset/js/data.js` expose `window.CCS_DATA` avec 3 adaptateurs interchangeables :
+Le fichier `.env` est déjà créé et pré-configuré. Modifiez si besoin :
 
-- `StaticAdapter` (actif par défaut) — données SEED + `localStorage` pour les POIs ajoutés
-- `FirebaseAdapter` (stub) — à brancher avec le SDK Firebase
-- `SupabaseAdapter` (stub) — à brancher avec le SDK Supabase
+```env
+DB_PASSWORD=CCS_Salouel_2025!   # Doit correspondre au CREATE USER ci-dessus
+GOOGLE_MAPS_KEY=                 # Optionnel : activer Street View API
+MAPILLARY_TOKEN=                 # Optionnel : Street View communautaire
+SMTP_PASS=                       # Gmail app password pour les emails contact
+```
 
-Pour migrer vers Firebase/Supabase, changer `DATA_BACKEND = 'firebase'` ou `'supabase'` en haut du fichier et implémenter les méthodes `listSorties`, `getSortie`, `listPois`, `addPoi`, `deletePoi` dans la classe correspondante. L'interface est identique.
-
-## Page sortie — fonctionnalités clés
-
-- **Explorateur immersif** : street view Mapillary en surface principale OU split satellite Esri + plan OSM (mode fallback automatique sans token)
-- **Minimap flottante** expandable (bouton en haut à droite de la scène)
-- **Frise temporelle** avec ticks couleur par type de POI — clic ou drag pour naviguer
-- **Lecture automatique** (bouton play, touche Espace) — avance progressive sur le tracé
-- **Raccourcis clavier** : ←/→ pour naviguer, Espace pour play/pause
-- **Profil altimétrique** interactif avec curseur synchronisé et tooltip
-- **Ajout de POI** : activez le mode, cliquez sur le plan OSM pour définir la position, puis remplissez le formulaire (type, libellé, description, contact signaleur)
-- **Filtres** par type de point d'intérêt
-- **Export GPX** du tracé
-- **Tableau des secteurs pavés** avec performances comparées et classement interne
-
-## Déploiement
-
-Site 100 % statique. Déposer le dossier sur n'importe quel hébergeur (OVH, Netlify, Vercel, GitHub Pages, serveur perso).
-
-## Test local
+### 4. Démarrage
 
 ```bash
-# Python 3
-python3 -m http.server 8000
-# → http://localhost:8000
-
-# Node
-npx serve .
+npm install          # Installer les dépendances Node
+node seed.js         # Peupler la base avec les données de démo
+npm run dev          # Démarrer le serveur en mode développement (nodemon)
 ```
 
-## Licence
+Le serveur démarre sur **http://localhost:3000**
 
-© 1978–2026 Cercle Cycliste de Sarouel · Code propre à l'association.
+### 5. Frontend
+
+Ouvrir `index.html` avec Live Server (VS Code) sur le port 5500, ou tout serveur HTTP local.
+
+L'API est configurée sur `http://localhost:3000/api` dans toutes les pages HTML.
+
+---
+
+## Comptes de démonstration
+
+| Rôle | Login | Mot de passe |
+|------|-------|--------------|
+| Admin | `admin` ou `admin@club-salouel.fr` | `Admin@Salouel2025` |
+| Membre | `membre1` | `Membre@Salouel2025` |
+
+---
+
+## Pages disponibles
+
+| Page | Description |
+|------|-------------|
+| `index.html` | Accueil dynamique (dernière sortie, sorties récentes) |
+| `sorties.html` | Catalogue complet des sorties (chargement API + filtres) |
+| `sortie.html?id=XXX` | Explorateur : Street View, satellite, GPX, POIs, altimétrie |
+| `club.html` | Histoire, bureau, informations pratiques |
+| `evenements.html` | Calendrier 2025 |
+| `parcours.html` | Catalogue des tracés GPX |
+| `palmares.html` | Résultats par saison |
+| `segments.html` | Classements KOM et zones d'entraînement |
+| `contact.html` | Formulaire de contact (email vers admin) |
+| `profil.html` | Profil sociétaire + puissance |
+| `login.html` | Connexion / inscription |
+| `admin.html` | Panneau d'administration (admin uniquement) |
+
+---
+
+## API REST
+
+Base URL : `http://localhost:3000/api`
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| GET | `/sorties` | Liste des sorties |
+| GET | `/sorties/:id` | Détail d'une sortie |
+| POST | `/sorties` | Créer (modo+) |
+| PUT | `/sorties/:id` | Modifier (modo+) |
+| DELETE | `/sorties/:id` | Supprimer (admin) |
+| GET | `/sorties/:id/pois` | POIs d'une sortie |
+| POST | `/sorties/:id/pois` | Ajouter un POI |
+| DELETE | `/sorties/:id/pois/:poiId` | Supprimer un POI |
+| GET | `/evenements` | Calendrier |
+| GET | `/membres` | Liste membres |
+| POST | `/auth/login` | Connexion |
+| POST | `/auth/register` | Inscription |
+| POST | `/auth/refresh` | Renouveler token |
+| POST | `/auth/logout` | Déconnexion |
+| POST | `/contact` | Envoyer un message |
+| POST | `/gpx/upload` | Upload GPX (admin) |
+| GET | `/gpx` | Lister GPX (admin) |
+| GET | `/health` | Health check |
+
+---
+
+## Street View
+
+La page `sortie.html` propose 3 modes de vue :
+1. **Google Street View** (via iframe embed + pano ID récupéré automatiquement)
+2. **Vue satellite** (Esri World Imagery via Leaflet)
+3. **Carte OSM** (OpenStreetMap via Leaflet)
+
+Pour activer le Street View API Google (panoramas + heading précis) :
+- Obtenir une clé sur https://console.cloud.google.com
+- Activer "Maps JavaScript API" et "Street View Static API"
+- Renseigner `GOOGLE_MAPS_KEY=` dans `.env`
+- Dans `sortie.html`, décommenter la ligne `const GOOGLE_MAPS_KEY`
+
+---
+
+## Déploiement production
+
+```bash
+NODE_ENV=production npm start
+```
+
+En production, ajouter un reverse proxy Nginx et un certificat SSL.
+Remplacer les URLs `localhost` dans les HTML par l'URL de production.
+

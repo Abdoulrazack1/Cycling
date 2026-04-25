@@ -11,8 +11,35 @@
   <link rel="stylesheet" href="asset/css/style.css">
   <link rel="stylesheet" href="asset/css/polish.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+
+  <style>
+    .profile-security {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .profile-security-card {
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      padding: 28px;
+    }
+    .ps-card-title {
+      font-family: var(--f-disp);
+      font-size: 20px;
+      color: var(--t-cream);
+      margin-bottom: 8px;
+    }
+    .ps-card-desc {
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--t-cream-2);
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+    .ps-card-desc b { color: var(--brass); font-weight: 500; }
+  </style>
 </head>
-<body>
+<body data-requires-auth="true">
   <main id="main">
 
   <section class="profile-head">
@@ -23,23 +50,23 @@
         <span>Mon profil</span>
       </nav>
       <div class="profile-head-inner">
-        <div class="profile-avatar-xl">A</div>
+        <div class="profile-avatar-xl" id="profile-avatar">?</div>
         <div>
-          <div class="profile-chapter"><em>Sociétaire № 003 · président</em></div>
-          <h1 class="d-m profile-name">Antoine <span class="it">Lemaire</span></h1>
-          <p class="profile-bio">Quarante-deux ans, président du Club depuis 2019. Routier paveophile convaincu, FTP 310 W, spécialiste des sorties longues en toutes conditions. Licence FFC depuis 1997.</p>
+          <div class="profile-chapter"><em id="profile-chapter">Chargement…</em></div>
+          <h1 class="d-m profile-name" id="profile-name">—</h1>
+          <p class="profile-bio" id="profile-bio"></p>
         </div>
         <div class="profile-head-stats">
           <div class="ps-stat">
-            <div class="ps-stat-v">4218<span class="unit">km</span></div>
+            <div class="ps-stat-v" id="profile-km">—<span class="unit">km</span></div>
             <div class="ps-stat-l">Saison 2025</div>
           </div>
           <div class="ps-stat">
-            <div class="ps-stat-v">310<span class="unit">w</span></div>
+            <div class="ps-stat-v" id="profile-ftp">—<span class="unit">w</span></div>
             <div class="ps-stat-l">FTP actuel</div>
           </div>
           <div class="ps-stat">
-            <div class="ps-stat-v">52640<span class="unit">m</span></div>
+            <div class="ps-stat-v" id="profile-elev">—<span class="unit">m</span></div>
             <div class="ps-stat-l">D+ saison</div>
           </div>
         </div>
@@ -59,7 +86,7 @@
           <p class="sec-head-desc">Matériel actuel — vélos, cockpit, GPS, home trainer. Mis à jour après chaque acquisition significative.</p>
         </div>
       </div>
-      <div class="equip-grid" data-reveal data-delay="100">
+      <div class="equip-grid" id="equip-grid" data-reveal data-delay="100">
         <div class="equip-card">
           <div class="equip-card-num">01</div>
           <div class="equip-card-title">Canyon <span class="it">Ultimate</span> CF SLX</div>
@@ -143,8 +170,212 @@
     </div>
   </section>
 
+  <!-- ── Section : Sécurité du compte ─────────────────────── -->
+  <section class="section-sm">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <div class="sec-head-number">
+          <div class="sec-head-chapter"><em>Chapitre III.</em></div>
+          <div class="sec-head-marker">№ 03</div>
+        </div>
+        <div class="sec-head-right">
+          <h2 class="d-l sec-head-title">Sécurité <span class="it">du</span> compte</h2>
+          <p class="sec-head-desc">Mot de passe et déconnexion. Pour modifier votre email ou licence FFC, contactez le bureau.</p>
+        </div>
+      </div>
+
+      <div class="profile-security" data-reveal data-delay="100">
+        <div class="profile-security-card">
+          <div class="ps-card-title">Changer mon mot de passe</div>
+          <div class="ps-card-desc">Vous serez déconnecté après le changement et invité à vous reconnecter.</div>
+
+          <div id="pw-error"   class="auth-error"   role="alert"  hidden></div>
+          <div id="pw-success" class="auth-success" role="status" hidden></div>
+
+          <div class="field" style="margin-top:14px;">
+            <label for="pw-current">Mot de passe actuel</label>
+            <input id="pw-current" type="password" autocomplete="current-password">
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label for="pw-new">Nouveau mot de passe (8 caractères min.)</label>
+            <input id="pw-new" type="password" autocomplete="new-password" minlength="8">
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label for="pw-confirm">Confirmer le nouveau mot de passe</label>
+            <input id="pw-confirm" type="password" autocomplete="new-password" minlength="8">
+          </div>
+
+          <button class="btn btn-brass btn-sm" id="pw-btn" type="button" style="margin-top:18px;">
+            Modifier le mot de passe
+          </button>
+        </div>
+
+        <div class="profile-security-card">
+          <div class="ps-card-title">Session</div>
+          <div class="ps-card-desc">
+            Vous êtes connecté en tant que <b id="ps-user-label">—</b>.
+            Vous pouvez vous déconnecter sur tous les appareils en changeant votre mot de passe.
+          </div>
+          <button class="btn btn-ghost btn-sm" id="ps-logout-btn" type="button" style="margin-top:18px;">
+            ↗ Se déconnecter
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   </main>
+  <script>
+    /* Activer le backend REST — modifier l'URL si nécessaire */
+    window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };
+    
+  </script>
   <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
   <script src="asset/js/main.js"></script>
+  <script>
+  /* ── Chargement dynamique du profil connecté ── */
+  (async function loadProfile() {
+    // Attendre l'init complet de CCS_AUTH (qui inclut le refresh)
+    const waitFor = (cond, max = 50) => new Promise(resolve => {
+      const tick = (n) => {
+        if (cond()) return resolve(true);
+        if (n >= max) return resolve(false);
+        setTimeout(() => tick(n + 1), 60);
+      };
+      tick(0);
+    });
+    await waitFor(() => !!window.CCS_AUTH);
+    await window.CCS_AUTH.ready();
+
+    // À ce point, soit on est connecté, soit auth.js nous a déjà
+    // redirigés vers login.html (data-requires-auth="true")
+    const user = window.CCS_AUTH?.getUser();
+    if (!user) return;
+
+    // Récupérer le profil complet depuis l'API
+    let profile = user;
+    try {
+      const API = window.CCS_CONFIG?.apiBase || 'http://localhost:3000/api';
+      const token = window.CCS_AUTH.getToken();
+      const res = await fetch(`${API}/membres/${user.id}`, {
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      });
+      if (res.ok) profile = await res.json();
+    } catch {}
+
+    // ── Mise à jour du header ────────────────────────────────
+    document.title = `Profil — ${profile.prenom} ${profile.nom} · C.C. Salouel`;
+
+    const avatar = document.getElementById('profile-avatar');
+    if (avatar) avatar.textContent = (profile.prenom?.[0] || '?').toUpperCase();
+
+    const chapter = document.getElementById('profile-chapter');
+    if (chapter) {
+      const role = { admin: 'administrateur', moderateur: 'modérateur', membre: 'membre' }[profile.role] || profile.role;
+      chapter.textContent = `Sociétaire ${profile.numero ? '№ ' + String(profile.numero).padStart(3,'0') : ''} · ${role}${profile.licence_ffc ? ' · FFC ' + profile.licence_ffc : ''}`;
+    }
+
+    const nameEl = document.getElementById('profile-name');
+    if (nameEl) nameEl.innerHTML = `${profile.prenom} <span class="it">${profile.nom}</span>`;
+
+    const bioEl = document.getElementById('profile-bio');
+    if (bioEl) bioEl.textContent = profile.bio || '';
+
+    const kmEl = document.getElementById('profile-km');
+    if (kmEl) kmEl.innerHTML = `${(profile.km_saison || 0).toLocaleString('fr-FR')}<span class="unit">km</span>`;
+
+    const ftpEl = document.getElementById('profile-ftp');
+    if (ftpEl) ftpEl.innerHTML = `${profile.ftp_w || '—'}<span class="unit">w</span>`;
+
+    const elevEl = document.getElementById('profile-elev');
+    if (elevEl) elevEl.innerHTML = `${(profile.elevation_saison || 0).toLocaleString('fr-FR')}<span class="unit">m</span>`;
+
+    // ── Zones de puissance dynamiques ───────────────────────
+    const ftp = profile.ftp_w || 0;
+    if (ftp > 0) {
+      const poids = 70; // approximation si non stocké
+      const zones = [
+        { label: 'Récupération',  sub: 'Z1 · <55 % FTP',       pct: [0,   55],  w: Math.round(ftp * 0.55), bar: 55 },
+        { label: 'Endurance',     sub: 'Z2 · 55–75 % FTP',      pct: [55,  75],  w: Math.round(ftp * 0.68), bar: 68 },
+        { label: 'Tempo',         sub: 'Z3 · 76–90 % FTP',      pct: [76,  90],  w: Math.round(ftp * 0.83), bar: 78 },
+        { label: 'Seuil',         sub: 'Z4 · 91–105 % FTP',     pct: [91,  105], w: ftp,                    bar: 95 },
+        { label: 'VO2 max',       sub: 'Z5 · 106–120 % FTP',    pct: [106, 120], w: Math.round(ftp * 1.12), bar: 90 },
+        { label: 'Anaérobie',     sub: 'Z6 · >120 % FTP',       pct: [121, 150], w: Math.round(ftp * 1.35), bar: 72 },
+        { label: 'Sprint 5 s',    sub: 'PPO — pic de puissance', pct: [0,   0],   w: Math.round(ftp * 4),    bar: 85 },
+      ];
+      const powerRows = document.querySelector('.power-rows');
+      if (powerRows) {
+        powerRows.innerHTML = zones.map(z => `
+          <div class="power-row">
+            <div class="power-label">${z.label}<span class="power-label-sub">${z.sub}</span></div>
+            <div class="power-bar-wrap"><div class="power-bar" data-w="${z.bar}" style="width:${z.bar}%"></div></div>
+            <div class="power-v">${z.w}<span class="unit">w</span></div>
+            <div class="power-r">${(z.w / poids).toFixed(1)} w/kg</div>
+          </div>`).join('');
+
+        // Mettre à jour le sous-titre zones
+        const powerDesc = document.querySelector('.power-rows')?.closest('section')?.querySelector('.sec-head-desc');
+        if (powerDesc) powerDesc.textContent = `Calculées sur FTP ${ftp} W — mis à jour depuis votre profil.`;
+      }
+    }
+
+    // ── Équipement depuis l'API ──────────────────────────────
+    if (profile.equipment?.length) {
+      const grid = document.getElementById('equip-grid');
+      if (grid) {
+        grid.innerHTML = profile.equipment.map((e, i) => `
+          <div class="equip-card">
+            <div class="equip-card-num">${String(i + 1).padStart(2, '0')}</div>
+            <div class="equip-card-title">${e.titre}</div>
+            <div class="equip-card-body">${e.description || ''}</div>
+          </div>`).join('');
+      }
+    }
+
+    // ── Section Sécurité : label + handlers ──────────────────
+    const userLabel = document.getElementById('ps-user-label');
+    if (userLabel) userLabel.textContent = `${profile.prenom} ${profile.nom} (${profile.email || profile.username})`;
+
+    document.getElementById('ps-logout-btn')?.addEventListener('click', async () => {
+      if (!confirm('Confirmer la déconnexion ?')) return;
+      await window.CCS_AUTH.logout();
+    });
+
+    document.getElementById('pw-btn')?.addEventListener('click', async () => {
+      const cur     = document.getElementById('pw-current').value;
+      const nw      = document.getElementById('pw-new').value;
+      const confirm = document.getElementById('pw-confirm').value;
+      const errEl   = document.getElementById('pw-error');
+      const sucEl   = document.getElementById('pw-success');
+      const btn     = document.getElementById('pw-btn');
+      errEl.hidden = true; sucEl.hidden = true;
+
+      if (!cur || !nw || !confirm) {
+        errEl.textContent = 'Remplissez tous les champs'; errEl.hidden = false; return;
+      }
+      if (nw.length < 8) {
+        errEl.textContent = 'Le nouveau mot de passe doit faire au moins 8 caractères'; errEl.hidden = false; return;
+      }
+      if (nw !== confirm) {
+        errEl.textContent = 'Les deux nouveaux mots de passe ne correspondent pas'; errEl.hidden = false; return;
+      }
+      if (nw === cur) {
+        errEl.textContent = 'Le nouveau mot de passe doit être différent de l\'ancien'; errEl.hidden = false; return;
+      }
+
+      btn.textContent = 'Modification…'; btn.disabled = true;
+      try {
+        await window.CCS_AUTH.changePassword(cur, nw);
+        sucEl.textContent = 'Mot de passe modifié — vous allez être redirigé vers la connexion…';
+        sucEl.hidden = false;
+        setTimeout(() => window.location.href = 'login.html', 2000);
+      } catch (err) {
+        errEl.textContent = err.message || 'Erreur lors de la modification'; errEl.hidden = false;
+        btn.textContent = 'Modifier le mot de passe'; btn.disabled = false;
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

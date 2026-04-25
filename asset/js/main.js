@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Club de Cyclisme de Salouel — main.js — v12 · LE CERCLE
+   Club de Cyclisme de Salouel — main.js — v12 · C.C. Salouel
    ═══════════════════════════════════════════════════════════════ */
 (() => {
   'use strict';
@@ -28,7 +28,7 @@
         <li><a href="contact.html"    class="nl" data-page="contact.html">Contact</a></li>
       </ul>
       <div class="nav-right">
-        <a href="sortie.html" class="nav-cta">
+        <a href="sortie.html" class="nav-cta" data-nav-sortie>
           <span class="nav-cta-dot" aria-hidden="true"></span>
           <span>Dernière sortie</span>
         </a>
@@ -45,12 +45,14 @@
         <li><a href="sortie.html"     class="mn-link" data-page="sortie.html"><span>Dernière sortie</span><span class="mn-num">04</span></a></li>
         <li><a href="evenements.html" class="mn-link" data-page="evenements.html"><span>Événements</span><span class="mn-num">05</span></a></li>
         <li><a href="club.html"       class="mn-link" data-page="club.html"><span>Le Club</span><span class="mn-num">06</span></a></li>
-        <li><a href="profil.html"     class="mn-link" data-page="profil.html"><span>Mon profil</span><span class="mn-num">07</span></a></li>
+        <li><a href="membres.html"    class="mn-link" data-page="membres.html"><span>Les sociétaires</span><span class="mn-num">07</span></a></li>
         <li><a href="palmares.html"   class="mn-link" data-page="palmares.html"><span>Palmarès</span><span class="mn-num">08</span></a></li>
-        <li><a href="contact.html"    class="mn-link" data-page="contact.html"><span>Contact</span><span class="mn-num">09</span></a></li>
+        <li><a href="segments.html"   class="mn-link" data-page="segments.html"><span>Segments · KOM</span><span class="mn-num">09</span></a></li>
+        <li><a href="profil.html"     class="mn-link" data-page="profil.html"><span>Mon profil</span><span class="mn-num">10</span></a></li>
+        <li><a href="contact.html"    class="mn-link" data-page="contact.html"><span>Contact</span><span class="mn-num">11</span></a></li>
       </ul>
       <div class="mn-meta">
-        <span>Salouel · Nord · 1978</span>
+        <span>Salouel · Somme · 1978</span>
         <span id="live-time-mobile">--:--</span>
       </div>
     </div>
@@ -77,12 +79,14 @@
             <a href="sortie.html">Dernière sortie</a>
             <a href="evenements.html">Événements</a>
             <a href="palmares.html">Palmarès</a>
+            <a href="segments.html">Segments · KOM</a>
           </nav>
         </div>
         <div>
           <div class="footer-col-title">Le club</div>
           <nav class="footer-nav" aria-label="Le club">
             <a href="club.html">Qui sommes-nous</a>
+            <a href="membres.html">Les sociétaires</a>
             <a href="profil.html">Mon profil</a>
             <a href="contact.html">Nous rejoindre</a>
             <a href="mentions-legales.html">Mentions légales</a>
@@ -93,7 +97,7 @@
           <div class="footer-meta">
             <div>
               <span class="footer-meta-l">Clubhouse</span>
-              <span class="footer-meta-v">14 rue de l'Église<br>59500 Salouel</span>
+              <span class="footer-meta-v">14 rue de l'Église<br>80480 Salouel</span>
             </div>
             <div>
               <span class="footer-meta-l">Contact</span>
@@ -124,6 +128,30 @@
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');
     });
+    // Mettre à jour le lien "Dernière sortie" avec la dernière sortie passée
+    initNavCta();
+  }
+
+  function initNavCta() {
+    // Attendre CCS_DATA avec un polling (data.js peut être chargé après main.js)
+    const waitAndUpdate = (attempt = 0) => {
+      if (typeof window.CCS_DATA === 'undefined') {
+        if (attempt < 40) setTimeout(() => waitAndUpdate(attempt + 1), 100);
+        return;
+      }
+      window.CCS_DATA.sorties({ statut: 'passee', limit: 1 })
+        .then(sorties => {
+          const derniere = Array.isArray(sorties) ? sorties[0] : null;
+          if (!derniere) return;
+          const url = 'sortie.html?id=' + encodeURIComponent(derniere.id);
+          // data-nav-sortie est posé sur le lien dans NAV_HTML — jamais sur le bouton auth
+          document.querySelectorAll('[data-nav-sortie]').forEach(a => {
+            if (!a.href.includes('?id=')) a.href = url;
+          });
+        })
+        .catch(() => { /* fallback silencieux : on garde sortie.html */ });
+    };
+    waitAndUpdate();
   }
 
   function initNavScroll() {
@@ -237,4 +265,19 @@
   } else {
     boot();
   }
+})();
+
+/* ─── Scroll to top ──────────────────────────────────────── */
+(function initScrollTop() {
+  const btn = document.createElement('button');
+  btn.className = 'scroll-top';
+  btn.setAttribute('aria-label', 'Retour en haut');
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>';
+  document.body.appendChild(btn);
+
+  const toggle = () => btn.classList.toggle('visible', window.scrollY > 400);
+  window.addEventListener('scroll', toggle, { passive: true });
+  toggle();
+
+  btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 })();
