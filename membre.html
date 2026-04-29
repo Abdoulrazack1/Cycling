@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sociétaire · Club de Cyclisme de Salouel</title>
+  <meta name="description" content="Profil public d'un sociétaire du C.C. Salouel.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <main id="main">
+
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb">
+        <a href="index.html">Accueil</a><span class="sep">/</span>
+        <a href="membres.html">Sociétaires</a><span class="sep">/</span>
+        <span id="bc-title">…</span>
+      </nav>
+      <div class="page-head-chapter"><em id="m-role">Sociétaire</em></div>
+      <h1 class="d-l page-head-title" id="m-name">Chargement…</h1>
+      <p class="page-head-sub" id="m-bio"></p>
+      <div class="page-head-meta" id="m-meta"></div>
+    </div>
+  </section>
+
+  <section class="section-sm">
+    <div class="wrap" style="display:grid; grid-template-columns: 320px 1fr; gap:64px; align-items:start;">
+
+      <aside data-reveal>
+        <div style="background:var(--ink-2); border:1px solid var(--line); padding:32px; text-align:center;">
+          <div id="m-avatar" style="width:120px;height:120px;border-radius:50%;background:var(--brass);color:var(--ink);font-family:var(--f-disp);font-size:48px;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">?</div>
+          <div style="font-family:var(--f-sans); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--parch-3); margin-bottom:8px;" id="m-num">№ —</div>
+          <div style="font-family:var(--f-disp); font-size:22px; line-height:1.2; color:var(--parch); margin-bottom:8px;" id="m-fullname">—</div>
+          <div id="m-username-wrap" style="font-family:var(--f-sans); font-size:13px; color:var(--parch-3); margin-bottom:24px;" hidden>
+            <span style="opacity:.6;">@</span><span id="m-username"></span>
+          </div>
+
+          <div style="font-family:var(--f-sans); font-size:13px; color:var(--parch-2); line-height:1.7; text-align:left; border-top:1px solid var(--line-soft); padding-top:24px;">
+            <div id="m-info-licence"  hidden style="display:flex; justify-content:space-between; padding:6px 0;"><span style="color:var(--parch-3);">Licence FFC</span><span></span></div>
+            <div id="m-info-adhesion" hidden style="display:flex; justify-content:space-between; padding:6px 0;"><span style="color:var(--parch-3);">Adhérent depuis</span><span></span></div>
+            <div id="m-info-ftp"      hidden style="display:flex; justify-content:space-between; padding:6px 0;"><span style="color:var(--parch-3);">FTP</span><span></span></div>
+            <div id="m-info-role"              style="display:flex; justify-content:space-between; padding:6px 0;"><span style="color:var(--parch-3);">Rôle</span><span></span></div>
+          </div>
+        </div>
+      </aside>
+
+      <article data-reveal data-delay="80">
+        <h2 class="d-m" style="margin-bottom:24px;">Saison <span class="it" id="m-year"></span></h2>
+        <div class="page-head-meta" id="m-stats" style="margin-top:0;"></div>
+
+        <div id="m-equipment-block" hidden style="margin-top:48px;">
+          <h2 class="d-m" style="margin-bottom:24px;">Équipement</h2>
+          <div id="m-equipment-list"></div>
+        </div>
+
+        <div id="m-palmares-block" hidden style="margin-top:48px;">
+          <h2 class="d-m" style="margin-bottom:24px;">Palmarès</h2>
+          <div id="m-palmares-list"></div>
+        </div>
+
+        <div style="margin-top:48px;">
+          <a href="membres.html" class="btn btn-ghost">← Tous les sociétaires</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  </main>
+
+  <script>window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };</script>
+  <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script>
+  (async () => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    if (!id) {
+      document.getElementById('m-name').textContent = 'Membre non spécifié';
+      return;
+    }
+
+    const wait = () => new Promise(r => {
+      const tick = () => window.CCS_DATA ? r() : setTimeout(tick, 50);
+      tick();
+    });
+    await wait();
+
+    let m;
+    try {
+      m = await window.CCS_DATA.getMembre(id);
+    } catch (err) {
+      document.getElementById('m-name').textContent = 'Sociétaire introuvable';
+      document.getElementById('m-bio').textContent = err.message || '';
+      return;
+    }
+
+    const ROLE_LABELS = { admin: 'Bureau', moderateur: 'Modérateur', membre: 'Sociétaire' };
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const initials = (m.prenom?.[0] || '?').toUpperCase();
+    const fullname = `${m.prenom || ''} ${m.nom || ''}`.trim();
+    const role = m.role || 'membre';
+
+    document.title = `${fullname} · C.C. Salouel`;
+    document.getElementById('bc-title').textContent = fullname;
+    document.getElementById('m-role').textContent = (ROLE_LABELS[role] || role).toUpperCase();
+    document.getElementById('m-name').innerHTML = esc(m.prenom) + ' <span class="it">' + esc(m.nom) + '</span>';
+    document.getElementById('m-bio').textContent = m.bio || '';
+
+    // Aside
+    document.getElementById('m-avatar').textContent = initials;
+    document.getElementById('m-num').textContent = '№ ' + String(m.numero || '—').padStart(3, '0');
+    document.getElementById('m-fullname').textContent = fullname;
+    if (m.username) {
+      document.getElementById('m-username-wrap').hidden = false;
+      document.getElementById('m-username').textContent = m.username;
+    }
+    if (m.licence_ffc)    { const el = document.getElementById('m-info-licence');  el.hidden = false; el.querySelector('span:last-child').textContent = m.licence_ffc; }
+    if (m.annee_adhesion) { const el = document.getElementById('m-info-adhesion'); el.hidden = false; el.querySelector('span:last-child').textContent = m.annee_adhesion; }
+    if (m.ftp_w)          { const el = document.getElementById('m-info-ftp');      el.hidden = false; el.querySelector('span:last-child').textContent = m.ftp_w + ' W'; }
+    document.getElementById('m-info-role').querySelector('span:last-child').textContent = ROLE_LABELS[role] || role;
+
+    // Stats saison
+    const year = new Date().getFullYear();
+    document.getElementById('m-year').textContent = year;
+    const stats = [];
+    if (m.km_saison)        stats.push({ l: 'Kilomètres', v: Number(m.km_saison).toLocaleString('fr-FR') });
+    if (m.elevation_saison) stats.push({ l: 'Dénivelé +', v: Number(m.elevation_saison).toLocaleString('fr-FR') + ' m' });
+    if (m.ftp_w)            stats.push({ l: 'FTP',        v: m.ftp_w + ' W' });
+    if (stats.length === 0) stats.push({ l: 'Saison',     v: 'Pas de données' });
+    document.getElementById('m-stats').innerHTML = stats.map(s =>
+      `<div class="page-head-meta-item"><div class="page-head-meta-l">${s.l}</div><div class="page-head-meta-v">${s.v}</div></div>`
+    ).join('');
+
+    // Équipement
+    if (m.equipment?.length) {
+      document.getElementById('m-equipment-block').hidden = false;
+      document.getElementById('m-equipment-list').innerHTML = m.equipment.map(e => `
+        <div style="border:1px solid var(--line); padding:18px 24px; margin-bottom:12px; font-family:var(--f-sans); font-size:13px;">
+          <div style="font-family:var(--f-disp); font-size:18px; color:var(--brass); margin-bottom:6px;">${esc(e.titre)}</div>
+          ${e.description ? `<div style="color:var(--parch-2); line-height:1.6;">${esc(e.description)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // Palmarès
+    try {
+      const palm = await window.CCS_DATA.palmares({ membre_id: id });
+      if (Array.isArray(palm) && palm.length) {
+        document.getElementById('m-palmares-block').hidden = false;
+        const items = palm.filter(p => (p.coureur || '').toLowerCase().includes((m.prenom || '').toLowerCase()) || p.user_id === m.id);
+        document.getElementById('m-palmares-list').innerHTML = (items.length ? items : palm).slice(0, 10).map(p => `
+          <div class="palm-item">
+            <div class="palm-medal ${p.medaille || ''}">${p.rang || '—'}</div>
+            <div>
+              <div class="palm-t">${esc(p.titre || p.evenement)}</div>
+              <div class="palm-s">${esc(p.evenement || '')}${p.categorie ? ' · ' + esc(p.categorie) : ''}</div>
+            </div>
+            <div class="palm-date">${p.annee || ''}</div>
+            <div class="palm-cat">${esc(p.equipe || '')}</div>
+          </div>
+        `).join('');
+      }
+    } catch {}
+  })();
+  </script>
+</body>
+</html>

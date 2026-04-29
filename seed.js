@@ -372,7 +372,20 @@ const PALMARES_DATA = [
 // ═══════════════════════════════════════════════════════════════
 
 async function seed() {
-  console.log('🌱 Démarrage du seed...\n');
+  // Mode --reset : TRUNCATE complet (efface TOUT, y compris vos imports)
+  // Mode défaut : INSERT IGNORE / ON DUPLICATE KEY UPDATE — préserve
+  // les courses importées via /api/sorties/import-gpx, les comptes
+  // utilisateurs, les contacts, etc.
+  const RESET = process.argv.includes('--reset') || process.argv.includes('-r');
+
+  if (RESET) {
+    console.log('🔥 Mode --reset : TOUTES les données vont être effacées.');
+    console.log('   (y compris les courses importées et les comptes créés)');
+  } else {
+    console.log('🌱 Mode safe (par défaut) : seed des données initiales sans toucher');
+    console.log('   aux courses importées ni aux comptes utilisateurs existants.');
+    console.log('   Pour tout ré-initialiser, utilisez : node seed.js --reset\n');
+  }
 
   try {
     // ── Admin par défaut ────────────────────────────────────────
@@ -380,15 +393,17 @@ async function seed() {
     const adminHash = await bcrypt.hash('Admin@Salouel2025', 12);
     const membreHash = await bcrypt.hash('Membre@Salouel2025', 12);
 
-    // Supprimer les données existantes (ordre FK)
-    await query('SET FOREIGN_KEY_CHECKS = 0');
-    for (const t of ['refresh_tokens','user_equipment','pois','sortie_segments',
-                     'sortie_stats_extra','sortie_tags','evenement_inscriptions',
-                     'evenements','palmares','segments_global','contacts','sorties',
-                     'club_settings','users']) {
-      await query(`TRUNCATE TABLE ${t}`);
+    if (RESET) {
+      // Supprimer les données existantes (ordre FK)
+      await query('SET FOREIGN_KEY_CHECKS = 0');
+      for (const t of ['refresh_tokens','user_equipment','pois','sortie_segments',
+                       'sortie_stats_extra','sortie_tags','evenement_inscriptions',
+                       'evenements','palmares','segments_global','contacts','sorties',
+                       'club_settings','users']) {
+        await query(`TRUNCATE TABLE ${t}`);
+      }
+      await query('SET FOREIGN_KEY_CHECKS = 1');
     }
-    await query('SET FOREIGN_KEY_CHECKS = 1');
 
     // Paramètres club par défaut
     const CLUB_SETTINGS = {
@@ -404,25 +419,25 @@ async function seed() {
       strava:     'clubs/cc-salouel'
     };
     for (const [cle, valeur] of Object.entries(CLUB_SETTINGS)) {
-      await query('INSERT INTO club_settings (cle, valeur) VALUES (?, ?)', [cle, valeur]);
+      await query('INSERT IGNORE INTO club_settings (cle, valeur) VALUES (?, ?)', [cle, valeur]);
     }
     console.log(`  ✅ ${Object.keys(CLUB_SETTINGS).length} paramètres club initialisés`);
 
     // Utilisateurs
     await query(
-      `INSERT INTO users (numero, username, email, password_hash, prenom, nom, role, bio, ftp_w, km_saison, elevation_saison, licence_ffc, annee_adhesion)
+      `INSERT IGNORE INTO users (numero, username, email, password_hash, prenom, nom, role, bio, ftp_w, km_saison, elevation_saison, licence_ffc, annee_adhesion)
        VALUES (1, 'admin', 'admin@club-salouel.fr', ?, 'Antoine', 'Lemaire', 'admin',
                'Président du Club depuis 2019. Routier paveophile convaincu.', 310, 4218, 52640, 'FFC2024001', 1997)`,
       [adminHash]
     );
     await query(
-      `INSERT INTO users (numero, username, email, password_hash, prenom, nom, role, ftp_w, km_saison, annee_adhesion)
+      `INSERT IGNORE INTO users (numero, username, email, password_hash, prenom, nom, role, ftp_w, km_saison, annee_adhesion)
        VALUES (2, 'membre1', 'membre@club-salouel.fr', ?, 'Thomas', 'Dubois', 'membre', 265, 3120, 2018)`,
       [membreHash]
     );
 
     // Équipement admin
-    await query(`INSERT INTO user_equipment (user_id, num, titre, description, sort_order) VALUES
+    await query(`INSERT IGNORE INTO user_equipment (user_id, num, titre, description, sort_order) VALUES
       (1, 1, 'Canyon Ultimate CF SLX', 'Cadre carbone · 7,2 kg · Shimano Dura-Ace Di2 12v · roues Zipp 303', 1),
       (1, 2, 'Canyon Grail CF SL', 'Gravel carbone · 8,6 kg · GRX Di2 · pneus Gravelking 40c', 2),
       (1, 3, 'Garmin Edge 840 Solar', 'GPS · 32h autonomie · capteur de puissance 4iiii', 3),
@@ -436,7 +451,7 @@ async function seed() {
     console.log('🚴 Import des sorties...');
     for (const s of SORTIES) {
       await query(
-        `INSERT INTO sorties (id,slug,title,title_html,subtitle,chapter,description,date,date_label,
+        `INSERT IGNORE INTO sorties (id,slug,title,title_html,subtitle,chapter,description,date,date_label,
           distance_km,duration_label,elevation_gain,elevation_loss,elevation_max,elevation_min,
           tss,np_w,pave_km,secteurs,hero_img,card_img,location_name,location_lat,location_lng,
           gpx_filename,number,featured,statut,created_by)
@@ -454,14 +469,14 @@ async function seed() {
       );
       for (let i = 0; i < (s.tags||[]).length; i++) {
         const t = s.tags[i];
-        await query('INSERT INTO sortie_tags (sortie_id,type,label,sort_order) VALUES (?,?,?,?)', [s.id, t.type, t.label, i]);
+        await query('INSERT IGNORE INTO sortie_tags (sortie_id,type,label,sort_order) VALUES (?,?,?,?)', [s.id, t.type, t.label, i]);
       }
       for (let i = 0; i < (s.stats_extra||[]).length; i++) {
         const st = s.stats_extra[i];
-        await query('INSERT INTO sortie_stats_extra (sortie_id,label,value,unit,cls,sort_order) VALUES (?,?,?,?,?,?)', [s.id, st.label, st.value, st.unit||null, st.cls||null, i]);
+        await query('INSERT IGNORE INTO sortie_stats_extra (sortie_id,label,value,unit,cls,sort_order) VALUES (?,?,?,?,?,?)', [s.id, st.label, st.value, st.unit||null, st.cls||null, i]);
       }
       for (const seg of (s.segments||[])) {
-        await query('INSERT INTO sortie_segments (sortie_id,idx,name,sub,stars,length_m,`time`,delta,delta_cls,`rank`) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        await query('INSERT IGNORE INTO sortie_segments (sortie_id,idx,name,sub,stars,length_m,`time`,delta,delta_cls,`rank`) VALUES (?,?,?,?,?,?,?,?,?,?)',
           [s.id, seg.idx, seg.name, seg.sub||null, seg.stars||3, seg.length_m||null, seg.time||null, seg.delta||null, seg.delta_cls||null, seg.rank||null]);
       }
     }
@@ -473,7 +488,7 @@ async function seed() {
     for (const [sortieId, pois] of Object.entries(POIS_MAP)) {
       for (const p of pois) {
         await query(
-          `INSERT INTO pois (id,sortie_id,type,label,description,km,lat,lng,contact_name,contact_phone,user_added,created_by)
+          `INSERT IGNORE INTO pois (id,sortie_id,type,label,description,km,lat,lng,contact_name,contact_phone,user_added,created_by)
            VALUES (?,?,?,?,?,?,?,?,?,?,0,1)`,
           [p.id, sortieId, p.type, p.label, p.desc||null, p.km??null, p.lat, p.lng, p.contact?.name||null, p.contact?.phone||null]
         );
@@ -486,7 +501,7 @@ async function seed() {
     console.log('📅 Import des événements...');
     for (const e of EVENEMENTS) {
       await query(
-        `INSERT INTO evenements (slug,title,type,date,heure,lieu,region,distance_km,description,inscrits,max_inscrits,engagement_eur,sortie_id,hero_img,statut)
+        `INSERT IGNORE INTO evenements (slug,title,type,date,heure,lieu,region,distance_km,description,inscrits,max_inscrits,engagement_eur,sortie_id,hero_img,statut)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [e.slug, e.title, e.type, e.date, e.heure||null, e.lieu||null, e.region||null,
          e.distance_km||null, e.description||null, e.inscrits||0, e.max_inscrits||null,
@@ -499,7 +514,7 @@ async function seed() {
     console.log('⏱️  Import des segments...');
     for (const s of SEGMENTS_GLOBAL) {
       await query(
-        `INSERT INTO segments_global (name,location,stars,length_m,meilleur_temps,delta_moyenne,rang,rang_cls,kom,sortie_id)
+        `INSERT IGNORE INTO segments_global (name,location,stars,length_m,meilleur_temps,delta_moyenne,rang,rang_cls,kom,sortie_id)
          VALUES (?,?,?,?,?,?,?,?,?,?)`,
         [s.name, s.location||null, s.stars||3, s.length_m||null, s.meilleur_temps||null,
          s.delta_moyenne||null, s.rang||null, s.rang_cls||null, s.kom?1:0, s.sortie_id||null]
@@ -511,7 +526,7 @@ async function seed() {
     console.log('🏆 Import du palmarès...');
     for (const p of PALMARES_DATA) {
       await query(
-        `INSERT INTO palmares (annee,titre,evenement,categorie,rang,medaille,equipe,sortie_id)
+        `INSERT IGNORE INTO palmares (annee,titre,evenement,categorie,rang,medaille,equipe,sortie_id)
          VALUES (?,?,?,?,?,?,?,?)`,
         [p.annee, p.titre, p.evenement||null, p.categorie||null, p.rang||null, p.medaille||null, p.equipe?1:0, p.sortie_id||null]
       );

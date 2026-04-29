@@ -189,13 +189,13 @@
       const km = m.km_saison ? `<div><b>Km saison</b><br>${Number(m.km_saison).toLocaleString('fr-FR')} km</div>` : '';
       const metaContent = [licence, adhesion, km].filter(Boolean).join('');
       return `
-        <div class="member-card" data-role="${role}">
+        <a href="membre.html?id=${m.id}" class="member-card" data-role="${role}" style="text-decoration:none; color:inherit; display:block;">
           <div class="member-avatar">${initials}</div>
           <div class="member-num">№ ${String(m.numero || '—').padStart(3, '0')}</div>
           <div class="member-name">${escHtml(m.prenom)} <span class="it">${escHtml(m.nom)}</span></div>
           <span class="member-role ${role}">${ROLE_LABELS[role] || role}</span>
           ${metaContent ? `<div class="member-meta">${metaContent}</div>` : ''}
-        </div>`;
+        </a>`;
     }
 
     let allMembres = [];

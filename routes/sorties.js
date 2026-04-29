@@ -135,19 +135,26 @@ router.get('/:id', async (req, res) => {
 
 // ── POST /api/sorties ─────────────────────────────────────────
 router.post('/', requireAuth, requireModo, [
-  body('id').notEmpty().matches(/^[a-z0-9-]+$/),
-  body('title').notEmpty().trim(),
-  body('date').isDate(),
-  body('distance_km').isNumeric().optional({ nullable: true }),
+  body('id').notEmpty().matches(/^[a-z0-9-]+$/)
+    .withMessage("ID invalide : minuscules, chiffres et tirets uniquement (ex: 'tour-avesnois-2026')"),
+  body('title').notEmpty().trim().withMessage('Titre requis'),
+  body('date').isDate().withMessage('Date au format YYYY-MM-DD requise'),
+  body('distance_km').isNumeric().optional({ nullable: true }).withMessage('Distance doit être numérique'),
 ], async (req, res) => {
   const errs = validationResult(req);
-  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
+  if (!errs.isEmpty()) {
+    const arr = errs.array();
+    return res.status(400).json({
+      error: arr.map(e => `${e.path || e.param}: ${e.msg}`).join(' · '),
+      errors: arr
+    });
+  }
 
   const s = req.body;
   try {
     // Vérifier unicité de l'id
-    const [existing] = await query('SELECT id FROM sorties WHERE id = ?', [s.id]);
-    if (existing) return res.status(409).json({ error: 'ID déjà utilisé' });
+    const existingRows = await query('SELECT id FROM sorties WHERE id = ?', [s.id]);
+    if (existingRows.length > 0) return res.status(409).json({ error: `ID "${s.id}" déjà utilisé` });
 
     await withTransaction(async (conn) => {
       await conn.execute(
@@ -158,12 +165,12 @@ router.post('/', requireAuth, requireModo, [
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           s.id, s.slug || s.id, s.title, s.title_html || s.title,
-          s.subtitle || null, s.chapter || null, s.description || null,
+          s.subtitle || null, s.chapter || 'route', s.description || null,
           s.date, s.date_label || null, s.distance_km || null, s.duration_label || null,
           s.elevation_gain || null, s.elevation_loss || null,
           s.elevation_max || null, s.elevation_min || null,
           s.tss || null, s.np_w || null, s.pave_km || null, s.secteurs || null,
-          s.hero_img || null, s.card_img || null,
+          s.hero_img || `asset/img/hero-${s.chapter || 'route'}.svg`, s.card_img || null,
           s.location?.name || null, s.location?.lat || null, s.location?.lng || null,
           s.gpx_ref || null, s.number || null,
           s.featured ? 1 : 0, s.statut || 'passee', req.user.id
@@ -209,8 +216,11 @@ router.post('/', requireAuth, requireModo, [
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [s.id]))[0]);
     res.status(201).json(sortie);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[POST /sorties]', err.code, err.sqlMessage || err.message);
+    res.status(500).json({
+      error: 'Erreur lors de la création : ' + (err.sqlMessage || err.message),
+      code: err.code
+    });
   }
 });
 
