@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="skyM" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0a0a08"/>
+      <stop offset=".25" stop-color="#1a1612"/>
+      <stop offset=".7"  stop-color="#3a2820"/>
+      <stop offset="1"   stop-color="#5a3e2c"/>
+    </linearGradient>
+    <linearGradient id="mistM" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a3e2c" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#5a3e2c" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="moonM" cx=".7" cy=".25" r=".12">
+      <stop offset="0"  stop-color="#fff5e0" stop-opacity=".7"/>
+      <stop offset=".4" stop-color="#e0b878" stop-opacity=".3"/>
+      <stop offset="1"  stop-color="#5a3a1c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hill1M" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1f18"/>
+      <stop offset="1" stop-color="#1a1410"/>
+    </linearGradient>
+    <linearGradient id="hill2M" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1410"/>
+      <stop offset="1" stop-color="#0a0806"/>
+    </linearGradient>
+    <linearGradient id="hill3M" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a0806"/>
+      <stop offset="1" stop-color="#000"/>
+    </linearGradient>
+    <radialGradient id="vignetteM" cx=".5" cy=".55" r=".8">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1"  stop-color="#000" stop-opacity=".65"/>
+    </radialGradient>
+    <filter id="grainM">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0"/>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="900" fill="url(#skyM)"/>
+  <rect width="1400" height="900" fill="url(#moonM)"/>
+
+  <!-- Far hill: Mont des Cats with abbey silhouette on top -->
+  <path d="M0 600
+           C 100 580, 220 565, 340 555
+           Q 430 528, 540 540
+           L 580 510 L 595 510 L 600 500 L 605 510 L 620 510 L 622 540
+           Q 730 526, 830 545
+           C 950 555, 1080 552, 1200 538
+           Q 1320 528, 1400 540
+           L 1400 900 L 0 900 Z" fill="url(#hill1M)" opacity=".85"/>
+
+  <!-- Mist between far and mid hills -->
+  <rect x="0" y="540" width="1400" height="120" fill="url(#mistM)"/>
+
+  <!-- Mid hill: Mont Cassel rolling -->
+  <path d="M0 700
+           Q 180 660, 360 678
+           C 480 690, 580 656, 700 670
+           Q 850 686, 1000 658
+           C 1140 644, 1280 668, 1400 660
+           L 1400 900 L 0 900 Z" fill="url(#hill2M)"/>
+
+  <!-- Closest hill: Kemmelberg shape, with subtle texture lines for trees -->
+  <path d="M0 820
+           Q 200 780, 380 800
+           C 520 818, 620 770, 760 790
+           Q 920 814, 1080 776
+           C 1220 758, 1340 794, 1400 786
+           L 1400 900 L 0 900 Z" fill="url(#hill3M)"/>
+
+  <!-- Tree texture on closest hill (suggested only) -->
+  <g stroke="#0a0806" stroke-width=".8" opacity=".55" fill="none">
+    <path d="M120 815 Q 125 808 130 814"/>
+    <path d="M180 805 Q 188 796 196 803"/>
+    <path d="M270 808 Q 278 798 286 805"/>
+    <path d="M380 800 Q 388 791 398 798"/>
+    <path d="M480 808 Q 490 798 500 805"/>
+    <path d="M600 798 Q 610 788 620 795"/>
+    <path d="M720 798 Q 730 788 740 795"/>
+    <path d="M850 800 Q 858 791 868 798"/>
+    <path d="M970 786 Q 980 776 990 783"/>
+    <path d="M1090 776 Q 1100 766 1112 773"/>
+    <path d="M1210 786 Q 1218 776 1230 783"/>
+    <path d="M1320 790 Q 1330 780 1340 787"/>
+  </g>
+
+  <!-- Editorial mark -->
+  <g transform="translate(80, 800)" font-family="Georgia, serif" fill="#9a7048" opacity=".55">
+    <text font-size="13" letter-spacing="6">— MONTS —</text>
+  </g>
+
+  <rect width="1400" height="900" fill="url(#vignetteM)"/>
+  <rect width="1400" height="900" filter="url(#grainM)" opacity=".5"/>
+</svg>

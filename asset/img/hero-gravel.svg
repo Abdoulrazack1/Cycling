@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0e0c08"/>
+      <stop offset=".4"  stop-color="#1a1410"/>
+      <stop offset="1"   stop-color="#3a2818"/>
+    </linearGradient>
+    <linearGradient id="canopyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#080604"/>
+      <stop offset=".55" stop-color="#1a1208"/>
+      <stop offset="1"   stop-color="#2a1e10"/>
+    </linearGradient>
+    <linearGradient id="trailG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#5a3e26"/>
+      <stop offset=".5"  stop-color="#3a2818"/>
+      <stop offset="1"   stop-color="#1a1208"/>
+    </linearGradient>
+    <radialGradient id="lightShaftG" cx=".55" cy=".25" r=".4">
+      <stop offset="0"   stop-color="#ffd6a3" stop-opacity=".22"/>
+      <stop offset=".5"  stop-color="#cc7733" stop-opacity=".08"/>
+      <stop offset="1"   stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignetteG" cx=".5" cy=".55" r=".75">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1"  stop-color="#000" stop-opacity=".75"/>
+    </radialGradient>
+    <pattern id="dirtG" x="0" y="0" width="14" height="9" patternUnits="userSpaceOnUse">
+      <rect width="14" height="9" fill="#3a2818"/>
+      <circle cx="3" cy="2" r="1.4" fill="#5a3e26"/>
+      <circle cx="9" cy="6" r="1.0" fill="#2a1e10"/>
+      <circle cx="11" cy="2" r=".7" fill="#7a5a36"/>
+      <circle cx="6" cy="7" r=".7" fill="#5a3e26"/>
+    </pattern>
+    <filter id="grainG">
+      <feTurbulence type="fractalNoise" baseFrequency="1" numOctaves="2" seed="13"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .14 0"/>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="900" fill="#0a0806"/>
+  <!-- Sky breaking through canopy -->
+  <rect width="1400" height="500" fill="url(#skyG)"/>
+  <rect width="1400" height="500" fill="url(#lightShaftG)"/>
+
+  <!-- Tree canopy / forest darkness -->
+  <path d="M0 0 L 1400 0 L 1400 380
+           Q 1320 400 1260 386
+           Q 1180 372 1100 392
+           Q 1020 410 940 388
+           Q 860 366 780 396
+           Q 700 420 620 392
+           Q 540 366 460 396
+           Q 380 420 300 392
+           Q 220 370 140 398
+           Q 70 416 0 396 Z" fill="url(#canopyG)"/>
+
+  <!-- Forest floor — fills both sides of the trail -->
+  <rect y="380" width="1400" height="520" fill="#0e0a06"/>
+
+  <!-- Tree trunks vertical lines -->
+  <g stroke="#0e0a06" stroke-width="9" opacity=".7">
+    <line x1="80"   y1="380" x2="55"   y2="900"/>
+    <line x1="220"  y1="396" x2="190"  y2="900"/>
+    <line x1="380"  y1="392" x2="350"  y2="900"/>
+    <line x1="540"  y1="396" x2="510"  y2="900"/>
+    <line x1="1100" y1="392" x2="1140" y2="900"/>
+    <line x1="1240" y1="386" x2="1280" y2="900"/>
+    <line x1="1340" y1="396" x2="1370" y2="900"/>
+  </g>
+  <g stroke="#1a1208" stroke-width="3" opacity=".75">
+    <line x1="80"   y1="380" x2="55"   y2="900"/>
+    <line x1="220"  y1="396" x2="190"  y2="900"/>
+    <line x1="380"  y1="392" x2="350"  y2="900"/>
+    <line x1="540"  y1="396" x2="510"  y2="900"/>
+    <line x1="1100" y1="392" x2="1140" y2="900"/>
+    <line x1="1240" y1="386" x2="1280" y2="900"/>
+    <line x1="1340" y1="396" x2="1370" y2="900"/>
+  </g>
+
+  <!-- Trail -->
+  <path d="M580 400 L820 400 L1100 900 L300 900 Z" fill="url(#dirtG)"/>
+  <path d="M580 400 L820 400 L1100 900 L300 900 Z" fill="url(#trailG)" opacity=".5"/>
+
+  <!-- Trail edges -->
+  <line x1="580" y1="400" x2="300"  y2="900" stroke="#1a1208" stroke-width="3" opacity=".7"/>
+  <line x1="820" y1="400" x2="1100" y2="900" stroke="#1a1208" stroke-width="3" opacity=".7"/>
+
+  <!-- Tire tracks -->
+  <line x1="660" y1="420" x2="500"  y2="900" stroke="#241812" stroke-width="6" opacity=".4"/>
+  <line x1="740" y1="420" x2="900"  y2="900" stroke="#241812" stroke-width="6" opacity=".4"/>
+
+  <!-- Faint grass tufts beside trail -->
+  <g stroke="#3a2818" stroke-width="1" opacity=".4">
+    <path d="M180 730 Q 184 720 188 730"/>
+    <path d="M250 770 Q 254 760 258 770"/>
+    <path d="M120 690 Q 124 680 128 690"/>
+    <path d="M1180 750 Q 1184 740 1188 750"/>
+    <path d="M1240 700 Q 1244 690 1248 700"/>
+    <path d="M1300 730 Q 1304 720 1308 730"/>
+  </g>
+
+  <!-- Editorial mark -->
+  <g transform="translate(80, 820)" font-family="Georgia, serif" fill="#9a7048" opacity=".55">
+    <text font-size="13" letter-spacing="6">— GRAVEL —</text>
+  </g>
+
+  <rect width="1400" height="900" fill="url(#vignetteG)"/>
+  <rect width="1400" height="900" filter="url(#grainG)" opacity=".5"/>
+</svg>

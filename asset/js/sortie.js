@@ -73,8 +73,13 @@
         if (!isNaN(lat) && !isNaN(lng)) raw.push({ lat, lng, ele });
       });
       if (!raw.length) return [];
-      // Essaie de router sur les vraies routes via OSRM (appelé depuis le navigateur)
-      const routed = await routeOnRealRoads(raw);
+      // Tente OSRM pour lisser le tracé sur les routes réelles, mais ne
+      // bloque jamais le rendu : si OSRM échoue, on prend les points GPX bruts.
+      let routed = raw;
+      try {
+        routed = await routeOnRealRoads(raw);
+        if (!Array.isArray(routed) || routed.length < 2) routed = raw;
+      } catch { routed = raw; }
       const arr = [];
       let accumM = 0, prev = null;
       routed.forEach(pt => {
@@ -90,8 +95,17 @@
    * Prend les waypoints clés du GPX et les route sur les vraies routes cyclables
    * via l'API OSRM publique (appelée depuis le navigateur de l'utilisateur).
    * Sous-échantillonne à ~15 waypoints pour rester dans les limites de l'API.
+   *
+   * Optionnel : si OSRM échoue ou met trop de temps, on retourne les
+   * points bruts du GPX. Le profil altimétrique reste affichable dans tous
+   * les cas — c'est le fix principal du bug "profil en cours de finalisation".
+   *
+   * Timeout court (3 s) : OSRM est souvent lent et ce n'est qu'un nice-to-have.
+   * AbortController classique (pas AbortSignal.timeout) pour compatibilité Safari < 16.
    */
   async function routeOnRealRoads(rawPoints) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
     try {
       // Sous-échantillonner : garder ~15 points répartis uniformément
       const MAX_WP = 15;
@@ -103,9 +117,8 @@
       if (sampled[sampled.length - 1] !== last) sampled.push(last);
 
       const coords = sampled.map(p => `${p.lng},${p.lat}`).join(';');
-      // OSRM public routing — profil cycling, tracé complet
       const osrmUrl = `https://router.project-osrm.org/route/v1/cycling/${coords}?overview=full&geometries=geojson&steps=false`;
-      const resp = await fetch(osrmUrl, { signal: AbortSignal.timeout(8000) });
+      const resp = await fetch(osrmUrl, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('OSRM ' + resp.status);
       const data = await resp.json();
       if (data.code !== 'Ok' || !data.routes?.[0]) throw new Error('OSRM no route');
@@ -113,7 +126,6 @@
       const routeCoords = data.routes[0].geometry.coordinates; // [lng, lat]
       // Reconstruire avec élévation interpolée depuis les points GPX d'origine
       return routeCoords.map(([lng, lat]) => {
-        // Trouver l'élévation la plus proche dans le GPX d'origine
         let minD = Infinity, ele = 50;
         for (const p of rawPoints) {
           const d = Math.abs(p.lat - lat) + Math.abs(p.lng - lng);
@@ -122,8 +134,10 @@
         return { lat, lng, ele };
       });
     } catch (err) {
-      console.info('Routage OSRM indisponible, tracé GPX utilisé:', err.message);
+      console.info('Routage OSRM indisponible, tracé GPX brut utilisé:', err.message);
       return rawPoints; // Fallback : GPX brut
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -242,15 +256,27 @@
   function updatePosMarkers(frac) {
     const pt = pointAt(frac) || state._noGpxLoc || null;
     if (!pt) return null;
-    const icon = L.divIcon({ className: 'map-marker', html: '<div class="pos-marker"></div>', iconSize: [20, 20], iconAnchor: [10, 10] });
+
+    // Calculer le cap (heading) au point courant pour orienter la flèche
+    const heading = state.routePoints.length ? _estimateHeading(pt.lat, pt.lng) : 0;
+
+    // Marker en flèche directionnelle (rotation selon heading)
+    const icon = L.divIcon({
+      className: 'map-marker',
+      html: `<div class="pos-marker" style="transform:rotate(${heading}deg)"><div class="pos-marker-arrow"></div></div>`,
+      iconSize: [24, 24], iconAnchor: [12, 12]
+    });
+
     [
       { map: state.mapFallback, which: 'posMarkerFb' },
       { map: state.mapMini,     which: 'posMarkerMini' },
       { map: state.satMap,      which: 'posMarkerSat' }
     ].forEach(({ map, which }) => {
       if (!map) return;
-      if (state[which]) state[which].setLatLng([pt.lat, pt.lng]);
-      else {
+      if (state[which]) {
+        state[which].setLatLng([pt.lat, pt.lng]);
+        state[which].setIcon(icon);
+      } else {
         state[which] = L.marker([pt.lat, pt.lng], { icon, interactive: false, zIndexOffset: 1000 }).addTo(map);
         state[which]._isPosMarker = true;
       }
@@ -482,23 +508,53 @@
     return `https://maps.google.com/maps?q=&layer=c&cbll=50.4351,3.2481&cbp=12,0,0,0,0&output=svembed&hl=fr`;
   }
 
-  /** Estime le cap (heading) depuis la position sur le tracé GPX */
+  /**
+   * Estime le cap (heading) en degrés depuis la position sur le tracé GPX.
+   * Utilise la formule du rhumb line : heading = atan2(sin(Δλ)·cos(φ₂), cos(φ₁)·sin(φ₂) - sin(φ₁)·cos(φ₂)·cos(Δλ))
+   * Look-ahead de ~50 m (ou plusieurs points) pour stabiliser le cap.
+   */
   function _estimateHeading(lat, lng) {
     if (!state.routePoints.length) return 0;
-    // Trouver le point le plus proche sur le tracé
+
+    // 1) Trouver l'index du point le plus proche sur le tracé
     let minD = Infinity, idx = 0;
-    state.routePoints.forEach((p, i) => {
-      const d = Math.abs(p.lat - lat) + Math.abs(p.lng - lng);
+    for (let i = 0; i < state.routePoints.length; i++) {
+      const p = state.routePoints[i];
+      const dLat = p.lat - lat;
+      const dLng = p.lng - lng;
+      const d = dLat*dLat + dLng*dLng;  // distance² (pas besoin de sqrt pour comparer)
       if (d < minD) { minD = d; idx = i; }
-    });
-    // Cap vers le point suivant
+    }
+
+    // 2) Look-ahead progressif : trouver un point ~50 m plus loin pour stabiliser
     const a = state.routePoints[idx];
-    const b = state.routePoints[Math.min(idx + 3, state.routePoints.length - 1)];
-    if (!a || !b || (a.lat === b.lat && a.lng === b.lng)) return 0;
-    const dLng = b.lng - a.lng;
-    const dLat = b.lat - a.lat;
-    const deg = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
-    return Math.round(deg);
+    let b = null;
+    let accumDist = 0;
+    for (let i = idx + 1; i < state.routePoints.length && accumDist < 50; i++) {
+      const seg = haversine(state.routePoints[i-1], state.routePoints[i]);
+      accumDist += seg;
+      b = state.routePoints[i];
+    }
+    if (!b) {
+      // Fin du tracé : prendre la direction depuis le point précédent
+      if (idx > 0) {
+        const prev = state.routePoints[idx - 1];
+        return _bearingDeg(prev, a);
+      }
+      return 0;
+    }
+    return _bearingDeg(a, b);
+  }
+
+  /** Bearing initial entre deux points (formule grand cercle) */
+  function _bearingDeg(p1, p2) {
+    const toRad = d => d * Math.PI / 180;
+    const φ1 = toRad(p1.lat), φ2 = toRad(p2.lat);
+    const Δλ = toRad(p2.lng - p1.lng);
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    const θ = Math.atan2(y, x);
+    return Math.round(((θ * 180 / Math.PI) + 360) % 360);
   }
 
   /* ─── Liste POI ──────────────────────────────────────────── */
@@ -801,13 +857,14 @@
       if (state.cursorFrac >= 1) state.cursorFrac = 0;
       if (btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
       // state.playSpeed = multiplicateur (0.25 = très lent → 4 = très rapide)
-      // Step de base 0.003 toutes les 80 ms (≈ 27 s pour parcourir 100 %)
-      const speed = state.playSpeed || 1;
-      const step = 0.003 * speed;
+      // Step de base 0.0008 toutes les 100 ms ≈ 125 s à 1× (2 min) pour parcourir 100 %
+      // À 0.5× (par défaut), 4 minutes ; à 4×, 30 secondes.
+      const speed = state.playSpeed || 0.5;
+      const step = 0.0008 * speed;
       state.playTimer = setInterval(() => {
         setCursor(state.cursorFrac + step);
         if (state.cursorFrac >= 1) togglePlay();
-      }, 80);
+      }, 100);
     }
   }
 
@@ -816,26 +873,36 @@
     const slider = document.getElementById('scrub-speed');
     const label  = document.getElementById('scrub-speed-label');
     if (!slider) return;
-    state.playSpeed = parseFloat(slider.value) || 1;
+    // Vitesse par défaut : 0.5× (plus lente, plus immersive)
+    if (slider.value === '1' || !slider.value) slider.value = '0.5';
+    state.playSpeed = parseFloat(slider.value) || 0.5;
 
     const update = () => {
-      state.playSpeed = parseFloat(slider.value) || 1;
+      state.playSpeed = parseFloat(slider.value) || 0.5;
       if (label) label.textContent = state.playSpeed + '×';
       // Si en cours de lecture, redémarrer avec la nouvelle vitesse
       if (state.playing) {
         clearInterval(state.playTimer);
-        const step = 0.003 * state.playSpeed;
+        const step = 0.0008 * state.playSpeed;
         state.playTimer = setInterval(() => {
           setCursor(state.cursorFrac + step);
           if (state.cursorFrac >= 1) togglePlay();
-        }, 80);
+        }, 100);
       }
     };
     slider.addEventListener('input', update);
     if (label) label.textContent = state.playSpeed + '×';
   }
 
-  /* ─── Profil altimétrique ─────────────────────────────────── */
+  /* ─── Profil altimétrique amélioré ─────────────────────────
+     Affiche :
+       - Surface remplie avec gradient vertical
+       - Trait principal du profil
+       - Marquages de pente (couleur selon pourcentage)
+       - Grille horizontale + verticale
+       - Échelle altitude (gauche) + distance (bas)
+       - Indicateurs min/max + D+ total
+     ──────────────────────────────────────────────────────── */
   function drawElevation() {
     const canvas = document.getElementById('elev-canvas');
     if (!canvas || !state.routePoints.length) return;
@@ -843,8 +910,6 @@
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
 
-    // Si le canvas n'a pas encore de dimensions (page en cours de layout),
-    // réessayer au prochain frame. Évite un canvas 0×0 qui ne dessine rien.
     if (rect.width < 50 || rect.height < 50) {
       requestAnimationFrame(() => drawElevation());
       return;
@@ -858,50 +923,141 @@
     const pts = state.routePoints;
     const eles = pts.map(p => p.ele);
     const minE = Math.min(...eles), maxE = Math.max(...eles);
-    const rangeE = (maxE - minE) || 1;
-    const totalM = pts[pts.length - 1].distAccum || 1;
-    const padTop = 18, padBot = 26, padX = 16;
-    const W = rect.width - padX * 2, H = rect.height - padTop - padBot;
-    const xFor = m => padX + (m / totalM) * W;
-    const yFor = e => padTop + H - ((e - minE) / rangeE) * H;
+    // Padding altitudes (10% du range haut & bas)
+    const eleRange = (maxE - minE) || 1;
+    const ePad = eleRange * 0.1;
+    const yMinE = minE - ePad;
+    const yMaxE = maxE + ePad;
+    const yRange = (yMaxE - yMinE) || 1;
 
+    const totalM = pts[pts.length - 1].distAccum || 1;
+    const padTop = 28, padBot = 30, padL = 42, padR = 12;
+    const W = rect.width - padL - padR;
+    const H = rect.height - padTop - padBot;
+    const xFor = m => padL + (m / totalM) * W;
+    const yFor = e => padTop + H - ((e - yMinE) / yRange) * H;
+
+    // Calculer D+ et D−
+    let dPlus = 0, dMinus = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const d = (pts[i].ele || 0) - (pts[i - 1].ele || 0);
+      if (d > 0) dPlus += d; else dMinus -= d;
+    }
+
+    // ── 1) GRILLE HORIZONTALE (lignes altitude) ──
+    ctx.strokeStyle = 'rgba(176,142,74,0.08)';
+    ctx.lineWidth = 1;
+    const eleSteps = 4; // 5 lignes (0 à 4)
+    for (let i = 0; i <= eleSteps; i++) {
+      const e = yMinE + (yRange * i / eleSteps);
+      const y = yFor(e);
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + W, y);
+      ctx.stroke();
+      // Label altitude à gauche
+      ctx.fillStyle = 'rgba(199,188,158,0.55)';
+      ctx.font = '10px "Archivo", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(Math.round(e) + ' m', padL - 6, y + 3);
+    }
+
+    // ── 2) GRILLE VERTICALE (lignes distance) ──
+    const km = totalM / 1000;
+    const step = km < 30 ? 5 : km < 80 ? 10 : km < 150 ? 20 : 30;
+    for (let k = 0; k <= km; k += step) {
+      const x = xFor(k * 1000);
+      ctx.strokeStyle = 'rgba(176,142,74,0.05)';
+      ctx.beginPath();
+      ctx.moveTo(x, padTop);
+      ctx.lineTo(x, padTop + H);
+      ctx.stroke();
+      // Label km en bas
+      ctx.fillStyle = 'rgba(199,188,158,0.55)';
+      ctx.font = '10px "Archivo", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(k + ' km', x, padTop + H + 16);
+    }
+
+    // ── 3) SURFACE REMPLIE (gradient brass) ──
     ctx.beginPath();
-    ctx.moveTo(xFor(0), yFor(minE));
+    ctx.moveTo(xFor(0), padTop + H);
     pts.forEach(p => ctx.lineTo(xFor(p.distAccum), yFor(p.ele)));
-    ctx.lineTo(xFor(totalM), yFor(minE));
+    ctx.lineTo(xFor(totalM), padTop + H);
     ctx.closePath();
     const grad = ctx.createLinearGradient(0, padTop, 0, padTop + H);
-    grad.addColorStop(0, 'rgba(176,142,74,0.32)');
-    grad.addColorStop(1, 'rgba(176,142,74,0.02)');
+    grad.addColorStop(0, 'rgba(176,142,74,0.45)');
+    grad.addColorStop(0.6, 'rgba(176,142,74,0.18)');
+    grad.addColorStop(1, 'rgba(176,142,74,0.04)');
     ctx.fillStyle = grad;
     ctx.fill();
 
-    ctx.beginPath();
-    pts.forEach((p, i) => {
-      const x = xFor(p.distAccum), y = yFor(p.ele);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.strokeStyle = '#B08E4A';
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(237,230,211,0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padX, padTop + H);
-    ctx.lineTo(padX + W, padTop + H);
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(237,230,211,0.4)';
-    ctx.font = '10px "Archivo", sans-serif';
-    const km = totalM / 1000;
-    const step = km < 50 ? 10 : km < 120 ? 20 : 30;
-    for (let k = 0; k <= km; k += step) {
-      ctx.fillText(k + ' km', xFor(k * 1000) - 12, padTop + H + 16);
+    // ── 4) SEGMENTS COLORÉS PAR PENTE (par tranche) ──
+    // Couleur selon le grade : flat (laiton), moyen (orange), raide (rouge)
+    function colorForGrade(g) {
+      const ag = Math.abs(g);
+      if (ag < 3) return '#B08E4A';      // plat / faible
+      if (ag < 6) return '#D49B3C';      // doux
+      if (ag < 9) return '#E27E2C';      // moyen
+      return '#D9543E';                   // raide
     }
-    [minE, (minE + maxE) / 2, maxE].forEach(e => {
-      ctx.fillText(Math.round(e) + ' m', padX + W - 36, yFor(e) + 3);
+
+    // Calculer pente entre points consécutifs et dessiner segments
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = 'round';
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const dDist = b.distAccum - a.distAccum;
+      const dEle = (b.ele || 0) - (a.ele || 0);
+      const grade = dDist > 0 ? (dEle / dDist) * 100 : 0;
+      ctx.strokeStyle = colorForGrade(grade);
+      ctx.beginPath();
+      ctx.moveTo(xFor(a.distAccum), yFor(a.ele));
+      ctx.lineTo(xFor(b.distAccum), yFor(b.ele));
+      ctx.stroke();
+    }
+
+    // ── 5) STATS EN HAUT (Min, Max, D+, D−) ──
+    ctx.fillStyle = 'rgba(199,188,158,0.85)';
+    ctx.font = 'bold 11px "Archivo", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`D+ ${Math.round(dPlus)} m`, padL, padTop - 12);
+    ctx.fillStyle = 'rgba(199,188,158,0.55)';
+    ctx.font = '10px "Archivo", sans-serif';
+    ctx.fillText(`D− ${Math.round(dMinus)} m`, padL + 70, padTop - 12);
+    ctx.textAlign = 'right';
+    ctx.fillText(`min ${Math.round(minE)} m · max ${Math.round(maxE)} m`, padL + W, padTop - 12);
+
+    // ── 6) LÉGENDE COULEURS PENTE (en bas à droite) ──
+    const legendY = padTop + H + 16;
+    const legendX = padL + W - 200;
+    ctx.fillStyle = 'rgba(199,188,158,0.45)';
+    ctx.font = '9px "Archivo", sans-serif';
+    ctx.textAlign = 'left';
+    const legend = [
+      { label: '< 3 %', color: '#B08E4A' },
+      { label: '3-6 %', color: '#D49B3C' },
+      { label: '6-9 %', color: '#E27E2C' },
+      { label: '> 9 %', color: '#D9543E' },
+    ];
+    let lx = legendX;
+    legend.forEach(l => {
+      ctx.fillStyle = l.color;
+      ctx.fillRect(lx, legendY - 6, 8, 8);
+      ctx.fillStyle = 'rgba(199,188,158,0.5)';
+      ctx.fillText(l.label, lx + 12, legendY);
+      lx += 50;
     });
+
+    // Mettre à jour les stats du panneau head
+    const headStats = document.getElementById('elev-head-stats');
+    if (headStats) {
+      headStats.innerHTML = `
+        <span class="elev-stat"><span class="elev-stat-l">D+</span> <span class="elev-stat-v">${Math.round(dPlus)}</span> m</span>
+        <span class="elev-stat"><span class="elev-stat-l">Max</span> <span class="elev-stat-v">${Math.round(maxE)}</span> m</span>
+        <span class="elev-stat"><span class="elev-stat-l">Min</span> <span class="elev-stat-v">${Math.round(minE)}</span> m</span>
+      `;
+    }
   }
 
   function updateElevCursor() {
@@ -1061,9 +1217,10 @@
     if (!window.CCS_DATA) return;
 
     state.sortie = await window.CCS_DATA.sortie(SORTIE_ID);
+    // Exposer le state minimal pour les autres scripts (météo, etc.)
+    window.CCS_SORTIE_STATE = state;
     if (!state.sortie) {
       console.warn('Sortie introuvable:', SORTIE_ID);
-      // Affiche un message d'erreur lisible
       const body = document.querySelector('.sortie-head-title');
       if (body) body.textContent = 'Sortie introuvable';
       return;

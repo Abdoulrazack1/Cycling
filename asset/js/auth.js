@@ -12,8 +12,9 @@
   'use strict';
 
   const API_BASE = window.CCS_CONFIG?.apiBase || 'http://localhost:3000/api';
-  const REMEMBER_KEY = 'ccs_remember';
-  const USER_KEY     = 'ccs_user';
+  const REMEMBER_KEY    = 'ccs_remember';
+  const USER_KEY        = 'ccs_user';
+  const ACCESS_KEY      = 'ccs_at';   // sessionStorage : access token (durée de l'onglet)
 
   // ── État interne ─────────────────────────────────────────────
   let _accessToken  = null;
@@ -32,6 +33,13 @@
       const b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
       return JSON.parse(atob(b64));
     } catch { return null; }
+  }
+
+  // Vérifier qu'un token a encore de la marge avant expiration (≥ 30 s)
+  function _isTokenFresh(token) {
+    const payload = _decodeJwt(token);
+    if (!payload?.exp) return false;
+    return (payload.exp * 1000 - Date.now()) > 30_000;
   }
 
   // Choisit le storage selon le choix "se souvenir de moi" persisté
@@ -67,6 +75,54 @@
     } catch {}
   }
 
+  // Persistance de l'access token en sessionStorage uniquement.
+  //
+  // Pourquoi sessionStorage et pas en mémoire pure ?
+  //  - En mémoire seule, le token est perdu à chaque navigation entre pages.
+  //  - Le refresh cookie qui devait restaurer l'auth ne fonctionne pas
+  //    toujours en cross-port (Live Server 5500 → API 3000).
+  //  - Résultat : boucle de redirection vers login.html après login OK.
+  //
+  // sessionStorage offre :
+  //  - Survit à la navigation entre pages (même onglet)
+  //  - Disparaît à la fermeture de l'onglet (pas de fuite long-terme)
+  //  - Inaccessible aux autres origines (isolation par origin)
+  //
+  // Compromis XSS : un attaquant qui exécute du JS dans la page peut lire
+  // sessionStorage. C'est un compromis acceptable en dev. En prod, mieux
+  // vaut servir frontend + API depuis la même origin (localhost:3000 ici)
+  // pour que le refresh cookie httpOnly suffise.
+  function _readPersistedAccessToken() {
+    try {
+      // Cohérent avec _userStorage : si l'utilisateur a coché "se souvenir",
+      // on lit le token depuis localStorage (persiste fermeture navigateur),
+      // sinon depuis sessionStorage (durée de l'onglet seulement).
+      const fromLocal = localStorage.getItem(ACCESS_KEY);
+      if (fromLocal) return fromLocal;
+      return sessionStorage.getItem(ACCESS_KEY);
+    } catch { return null; }
+  }
+
+  function _persistAccessToken(token) {
+    try {
+      // Si remember=1, stocker dans localStorage (persiste navigateur).
+      // Sinon dans sessionStorage (onglet seulement).
+      const remember = localStorage.getItem(REMEMBER_KEY) === '1';
+      if (token) {
+        if (remember) {
+          localStorage.setItem(ACCESS_KEY, token);
+          sessionStorage.removeItem(ACCESS_KEY);
+        } else {
+          sessionStorage.setItem(ACCESS_KEY, token);
+          localStorage.removeItem(ACCESS_KEY);
+        }
+      } else {
+        localStorage.removeItem(ACCESS_KEY);
+        sessionStorage.removeItem(ACCESS_KEY);
+      }
+    } catch {}
+  }
+
   // Planifier le refresh 60 s avant expiration de l'access token
   function _scheduleRefresh(token) {
     if (_refreshTimer) clearTimeout(_refreshTimer);
@@ -82,6 +138,7 @@
     _user        = user;
     _scheduleRefresh(accessToken);
     _persistUser(user);
+    _persistAccessToken(accessToken);
     _notify();
   }
 
@@ -91,6 +148,7 @@
     if (_refreshTimer) clearTimeout(_refreshTimer);
     _refreshTimer = null;
     _clearPersistedUser();
+    _persistAccessToken(null);
     _notify();
   }
 
@@ -230,11 +288,22 @@
       if (_initPromise) return _initPromise;
 
       _initPromise = (async () => {
-        // 1) Restaurer le user persisté pour un affichage immédiat
+        // 1) Restaurer immédiatement le user persisté pour un affichage
+        //    sans flash. Si on a aussi un access token frais en
+        //    sessionStorage, on est techniquement déjà connectés.
         const stored = _readPersistedUser();
         if (stored) _user = stored;
 
-        // 2) Tenter un refresh pour récupérer un access token frais
+        const storedToken = _readPersistedAccessToken();
+        if (storedToken && _isTokenFresh(storedToken)) {
+          // Token encore valide — restaurer la session sans attendre le refresh.
+          _accessToken = storedToken;
+          _scheduleRefresh(storedToken);
+        }
+
+        // 2) Tenter un refresh pour récupérer un token frais (best-effort).
+        //    Si on a déjà un token en mémoire, l'échec n'est pas fatal :
+        //    on garde la session active jusqu'à expiration du token actuel.
         try {
           const res = await fetch(`${API_BASE}/auth/refresh`, {
             method: 'POST', credentials: 'include'
@@ -242,12 +311,18 @@
           if (res.ok) {
             const data = await res.json();
             _setSession(data.accessToken, data.user);
-          } else {
+          } else if (!_accessToken) {
+            // Refresh refusé ET pas de token en mémoire → vraiment déconnecté
             _clearSession();
           }
+          // Sinon : refresh a échoué (cookie cross-port ?) MAIS on a un
+          // token frais en sessionStorage → on reste connecté localement.
         } catch {
-          _user = stored;
-          _accessToken = null;
+          // Réseau coupé / API down. Ne pas casser la session si le token
+          // local est encore valide ; sinon on ne peut rien faire de plus.
+          if (!_accessToken) {
+            _user = stored;
+          }
         }
 
         // 3) Protéger la page si nécessaire (après tentative de refresh)
@@ -328,10 +403,24 @@
 
   window.CCS_AUTH = CCS_AUTH;
 
-  // ── Auto-init dès que le DOM est prêt ────────────────────────
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => CCS_AUTH.init());
-  } else {
-    CCS_AUTH.init();
-  }
+  // ── Bootstrap synchrone : restaurer la session AVANT toute autre code ───
+  // Sans ça, un `await CCS_AUTH.ready()` qui s'exécute avant DOMContentLoaded
+  // verrait _initPromise=undefined et résoudrait sur Promise.resolve(), donc
+  // isLoggedIn()=false → redirection vers login alors que le token est en storage.
+  // Ici on restaure le token et le user de manière synchrone, dès le chargement
+  // du script. La suite (refresh API + nav UI) se fait via init() en async.
+  try {
+    const bootUser  = _readPersistedUser();
+    const bootToken = _readPersistedAccessToken();
+    if (bootUser)  _user        = bootUser;
+    if (bootToken && _isTokenFresh(bootToken)) {
+      _accessToken = bootToken;
+      _scheduleRefresh(bootToken);
+    }
+  } catch {}
+
+  // ── Lancer init() immédiatement (pas besoin du DOM) ─────────
+  // init() ne touche pas au DOM, juste à fetch + storage. La mise à jour
+  // de la nav (DOM-dépendante) a déjà sa propre logique de retry.
+  CCS_AUTH.init();
 })();

@@ -1,10 +1,48 @@
 // routes/sorties.js — CRUD complet des sorties
 const express = require('express');
+const path    = require('path');
+const fs      = require('fs');
+const multer  = require('multer');
 const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, param, query: qv, validationResult } = require('express-validator');
+const { parseGpx } = require('../services/gpx-parser');
 
 const router = express.Router();
+
+// Stockage en mémoire pour l'import GPX (le fichier final est écrit dans asset/gpx/)
+const ASSET_GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+if (!fs.existsSync(ASSET_GPX_DIR)) fs.mkdirSync(ASSET_GPX_DIR, { recursive: true });
+
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: (parseInt(process.env.MAX_GPX_SIZE_MB) || 10) * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = path.extname(file.originalname).toLowerCase() === '.gpx';
+    cb(ok ? null : new Error('Seuls les fichiers .gpx sont acceptés'), ok);
+  }
+});
+
+// Slugifier un titre en kebab-case ASCII
+function slugify(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')      // accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
+// Format dur. à partir de la distance et d'une vitesse moyenne (heuristique)
+function suggestDurationLabel(distance_km) {
+  if (!distance_km) return null;
+  // Hypothèse 25 km/h moyen, ajustable côté admin
+  const totalMin = Math.round((distance_km / 25) * 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}h${String(m).padStart(2, '0')}`;
+}
+
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -266,5 +304,166 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
+
+// ── POST /api/sorties/import-gpx ────────────────────────────────
+// Upload d'un GPX + métadonnées de formulaire → crée la sortie.
+// Le serveur parse le GPX, calcule distance/D+/D-/coords départ
+// automatiquement, et écrit le fichier dans asset/gpx/{slug}.gpx.
+router.post('/import-gpx',
+  requireAuth, requireAdmin,
+  (req, res, next) => {
+    importUpload.single('gpx')(req, res, (err) => {
+      if (err) {
+        console.error('[import-gpx] multer error:', err.message);
+        return res.status(400).json({ error: 'Upload GPX échoué : ' + err.message });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    console.log('[import-gpx] Démarrage import par user', req.user?.id, req.user?.username);
+    console.log('[import-gpx] Fields reçus:', Object.keys(req.body || {}));
+    console.log('[import-gpx] Fichier:', req.file ? `${req.file.originalname} (${req.file.size} octets)` : 'AUCUN');
+
+    try {
+      // 1. Validation de base
+      if (!req.file) return res.status(400).json({ error: 'Fichier GPX manquant (champ "gpx" du formulaire)' });
+      if (!req.file.buffer || req.file.buffer.length === 0) {
+        return res.status(400).json({ error: 'Fichier GPX vide' });
+      }
+      const title = req.body.title?.trim();
+      const date  = req.body.date;
+      if (!title)            return res.status(400).json({ error: 'Titre requis' });
+      if (!date)             return res.status(400).json({ error: 'Date requise (YYYY-MM-DD)' });
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: `Date au mauvais format : "${date}". Attendu YYYY-MM-DD.` });
+      }
+
+      // 2. Parser le GPX
+      const xml = req.file.buffer.toString('utf8');
+      let metrics;
+      try {
+        metrics = parseGpx(xml);
+        console.log(`[import-gpx] GPX parsé : ${metrics.points.length} points, ${metrics.distance_km} km, D+${metrics.elevation_gain} m`);
+      } catch (err) {
+        console.error('[import-gpx] parse error:', err.message);
+        return res.status(400).json({ error: `GPX invalide : ${err.message}` });
+      }
+
+      // 3. Slug et id
+      const slug = (req.body.slug?.trim() || slugify(title));
+      if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+        return res.status(400).json({ error: `Slug invalide : "${slug}". Attendu : lettres minuscules, chiffres, tirets.` });
+      }
+      const id = `${slug}-${date}`;
+      console.log(`[import-gpx] id="${id}", slug="${slug}"`);
+
+      // Vérifier unicité
+      const existingRows = await query('SELECT id FROM sorties WHERE id = ? OR slug = ?', [id, slug]);
+      if (existingRows.length > 0) {
+        return res.status(409).json({
+          error: `Une sortie avec ce slug ou cet id existe déjà (${existingRows[0].id}). Changez le titre, la date ou le slug.`
+        });
+      }
+
+      // 4. Écrire le GPX dans asset/gpx/{slug}.gpx
+      const gpxFilename = `${slug}.gpx`;
+      const gpxPath     = path.join(ASSET_GPX_DIR, gpxFilename);
+      try {
+        fs.writeFileSync(gpxPath, req.file.buffer);
+        console.log(`[import-gpx] GPX écrit dans ${gpxPath}`);
+      } catch (err) {
+        console.error('[import-gpx] fs.writeFileSync error:', err);
+        return res.status(500).json({ error: `Impossible d'écrire le fichier GPX : ${err.message}` });
+      }
+
+      // 5. Construire l'objet sortie
+      const chapter = req.body.chapter || 'route';
+      const heroMap = {
+        route:   'asset/img/hero-route.svg',
+        gravel:  'asset/img/hero-gravel.svg',
+        cote:    'asset/img/hero-cote.svg',
+        monts:   'asset/img/hero-monts.svg',
+        pave:    'asset/img/hero-pave.svg',
+        peloton: 'asset/img/hero-peloton.svg',
+      };
+      const sortieData = {
+        id, slug,
+        title,
+        title_html:      title,
+        subtitle:        req.body.subtitle?.trim() || null,
+        chapter,
+        description:     req.body.description?.trim() || null,
+        date,
+        date_label:      null,
+        distance_km:     metrics.distance_km,
+        duration_label:  req.body.duration_label?.trim() || suggestDurationLabel(metrics.distance_km),
+        elevation_gain:  metrics.elevation_gain,
+        elevation_loss:  metrics.elevation_loss,
+        elevation_max:   metrics.elevation_max,
+        elevation_min:   metrics.elevation_min,
+        hero_img:        req.body.hero_img || heroMap[chapter] || heroMap.route,
+        card_img:        null,
+        location_name:   req.body.location_name?.trim() || null,
+        location_lat:    metrics.start.lat,
+        location_lng:    metrics.start.lng,
+        gpx_filename:    gpxFilename,
+        number:          parseInt(req.body.number) || null,
+        featured:        req.body.featured === 'true' || req.body.featured === true ? 1 : 0,
+        statut:          req.body.statut === 'future' ? 'future' : 'passee',
+      };
+
+      // 6. INSERT
+      try {
+        await query(
+          `INSERT INTO sorties (id, slug, title, title_html, subtitle, chapter, description,
+            date, date_label, distance_km, duration_label, elevation_gain, elevation_loss,
+            elevation_max, elevation_min, hero_img, card_img,
+            location_name, location_lat, location_lng, gpx_filename, number, featured, statut, created_by)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [
+            sortieData.id, sortieData.slug, sortieData.title, sortieData.title_html,
+            sortieData.subtitle, sortieData.chapter, sortieData.description,
+            sortieData.date, sortieData.date_label, sortieData.distance_km,
+            sortieData.duration_label, sortieData.elevation_gain, sortieData.elevation_loss,
+            sortieData.elevation_max, sortieData.elevation_min,
+            sortieData.hero_img, sortieData.card_img,
+            sortieData.location_name, sortieData.location_lat, sortieData.location_lng,
+            sortieData.gpx_filename, sortieData.number,
+            sortieData.featured, sortieData.statut, req.user.id
+          ]
+        );
+        console.log(`[import-gpx] INSERT OK : sortie ${id} créée`);
+      } catch (err) {
+        console.error('[import-gpx] INSERT error:', err.code, err.sqlMessage || err.message);
+        // En cas d'échec INSERT, supprimer le fichier GPX écrit
+        try { fs.unlinkSync(gpxPath); } catch {}
+        return res.status(500).json({
+          error: `Insertion en base échouée : ${err.sqlMessage || err.message}`,
+          code: err.code
+        });
+      }
+
+      // 7. Retourner la sortie créée
+      const [row] = await query('SELECT * FROM sorties WHERE id = ?', [id]);
+      const sortie = await buildSortie(row);
+      res.status(201).json({
+        sortie,
+        gpx_metrics: {
+          points_count:   metrics.points.length,
+          distance_km:    metrics.distance_km,
+          elevation_gain: metrics.elevation_gain,
+          elevation_loss: metrics.elevation_loss,
+          start:          metrics.start,
+          end:            metrics.end,
+          bbox:           metrics.bbox,
+        }
+      });
+    } catch (err) {
+      console.error('[import-gpx] erreur inattendue:', err);
+      res.status(500).json({ error: 'Erreur serveur : ' + (err.message || 'inconnue') });
+    }
+  }
+);
 
 module.exports = router;

@@ -30,45 +30,184 @@ const path = require('path');
 
 const PRESETS = {
 
-  // ─────────────────────────────────────────────────────────────
-  // Critérium de Salouel — circuit fermé Z.I. Nord, 40 km
-  // 8 tours d'un circuit de 5 km dans la zone industrielle
-  // Circuit reconnu par la commission FFC Hauts-de-France
-  // ─────────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════
+  // ROUTES — parcours linéaires (départ ≠ arrivée ou boucle multi-villes)
+  // ═════════════════════════════════════════════════════════════════
+  // Pour chaque sortie : waypoints = points-clés vérifiables (villes,
+  // monuments, secteurs pavés iconiques). OSRM trace les routes cyclables
+  // entre eux. Coordonnées sourcées depuis Wikipédia / OpenStreetMap.
+  // ═════════════════════════════════════════════════════════════════
+
+  // Reconnaissance Paris-Roubaix : Compiègne → Vélodrome de Roubaix
+  // via les pavés mythiques. ~190 km via OSRM (proche du tracé officiel).
+  // Trouée d'Arenberg : 50.399, 3.4125 (Wikipédia, secteur 19).
+  'arenberg-2025': {
+    name: 'Reconnaissance Paris-Roubaix 2025',
+    desc: 'Compiègne → Vélodrome de Roubaix · pavés mythiques',
+    laps: 1,
+    lap: [
+      { lat: 49.4179, lng: 2.8262, name: 'Départ — Compiègne, place du Général de Gaulle' },
+      { lat: 49.8480, lng: 3.2876, name: 'Saint-Quentin' },
+      { lat: 50.1083, lng: 3.4250, name: 'Troisvilles à Inchy (secteur 30, km 95)' },
+      { lat: 50.0764, lng: 3.4636, name: 'Quiévy à Saint-Python (secteur 28)' },
+      { lat: 50.1764, lng: 3.2350, name: 'Cambrai' },
+      { lat: 50.3083, lng: 3.4889, name: 'Quérénaing à Maing (secteur 22)' },
+      { lat: 50.3856, lng: 3.4356, name: 'Haveluy à Wallers (secteur 20)' },
+      { lat: 50.3990, lng: 3.4125, name: "Trouée d'Arenberg (secteur 19, ★★★★★)" },
+      { lat: 50.4053, lng: 3.3958, name: 'Wallers à Hélesmes (secteur 18)' },
+      { lat: 50.4861, lng: 3.1058, name: 'Mons-en-Pévèle (secteur 11, ★★★★★)' },
+      { lat: 50.5814, lng: 3.1742, name: "Carrefour de l'Arbre (secteur 4, ★★★★★)" },
+      { lat: 50.6857, lng: 3.1786, name: 'Arrivée — Vélodrome de Roubaix' },
+    ]
+  },
+
+  // Monts des Flandres : Cassel → Mont des Cats → Mont Noir → Kemmelberg
+  // Coordonnées Wikipédia : Mont des Cats (50.7806, 2.7286), Kemmelberg (50.7878, 2.8255).
+  'monts-flandres': {
+    name: 'Monts des Flandres',
+    desc: 'Cassel · Mont des Cats · Mont Noir · Kemmelberg · 95 km',
+    laps: 1,
+    lap: [
+      { lat: 50.8012, lng: 2.4854, name: 'Départ — Cassel, place du Général de Gaulle' },
+      { lat: 50.7944, lng: 2.5742, name: 'Mont des Récollets' },
+      { lat: 50.7806, lng: 2.7286, name: 'Mont des Cats (abbaye)' },
+      { lat: 50.7700, lng: 2.7158, name: 'Mont Noir' },
+      { lat: 50.7878, lng: 2.8255, name: 'Kemmelberg (sommet, BE)' },
+      { lat: 50.7717, lng: 2.8508, name: 'Monteberg' },
+      { lat: 50.7825, lng: 2.7611, name: 'Baneberg (descente)' },
+      { lat: 50.7972, lng: 2.6817, name: 'Steenvoorde (passage)' },
+      { lat: 50.8211, lng: 2.5511, name: 'Watou (passage)' },
+      { lat: 50.8012, lng: 2.4854, name: 'Arrivée — Cassel' },
+    ]
+  },
+
+  // Tour de l'Avesnois : Maroilles → Avesnes → Solre-le-Château → Sars-Poteries
+  'avesnois': {
+    name: "Tour de l'Avesnois",
+    desc: 'Maroilles · Avesnes · Solre-le-Château · Sars-Poteries · 112 km',
+    laps: 1,
+    lap: [
+      { lat: 50.1268, lng: 3.7641, name: 'Départ — Maroilles, place de la Mairie' },
+      { lat: 50.1389, lng: 3.8078, name: 'Landrecies (passage)' },
+      { lat: 50.1242, lng: 3.9314, name: 'Avesnes-sur-Helpe (ravito)' },
+      { lat: 50.0844, lng: 4.0681, name: 'Mur de Liessies' },
+      { lat: 50.1989, lng: 4.0850, name: 'Solre-le-Château' },
+      { lat: 50.2589, lng: 4.0250, name: 'Sars-Poteries' },
+      { lat: 50.2086, lng: 3.9264, name: 'Beaufort (descente)' },
+      { lat: 50.1483, lng: 3.8736, name: 'Marbaix' },
+      { lat: 50.1268, lng: 3.7641, name: 'Arrivée — Maroilles' },
+    ]
+  },
+
+  // Gravel de la Scarpe : forêt domaniale de Saint-Amand-Raismes
+  // Boucle dans la forêt avec gravel/sentiers. OSRM cycling routera sur
+  // les chemins forestiers cartographiés OpenStreetMap.
+  'scarpe-gravel': {
+    name: 'Gravel de la Scarpe',
+    desc: 'Saint-Amand-les-Eaux · Forêt de Raismes · 68-82 km',
+    laps: 1,
+    lap: [
+      { lat: 50.4461, lng: 3.4278, name: 'Départ — Saint-Amand, Tour Abbatiale' },
+      { lat: 50.4319, lng: 3.4561, name: 'Étang de la Mare-à-Goriaux' },
+      { lat: 50.4156, lng: 3.4982, name: 'Traverse du Mortier' },
+      { lat: 50.4080, lng: 3.5180, name: 'Mont des Bruyères' },
+      { lat: 50.3961, lng: 3.4986, name: 'Raismes (centre)' },
+      { lat: 50.4136, lng: 3.4181, name: 'Hasnon (lisière)' },
+      { lat: 50.4400, lng: 3.4036, name: 'Vicoigne' },
+      { lat: 50.4461, lng: 3.4278, name: 'Arrivée — Saint-Amand' },
+    ]
+  },
+
+  // Côte d'Opale : Boulogne → Cap Gris-Nez → Cap Blanc-Nez
+  // Cap Gris-Nez (50.8722, 1.5856) et Cap Blanc-Nez (50.9264, 1.7203) :
+  // coordonnées IGN officielles. Ce parcours longe la D940 cyclable.
+  'cote-opale': {
+    name: "Côte d'Opale",
+    desc: 'Boulogne · Cap Gris-Nez · Cap Blanc-Nez · 104 km',
+    laps: 1,
+    lap: [
+      { lat: 50.7264, lng: 1.6068, name: 'Départ — Boulogne-sur-Mer, port' },
+      { lat: 50.7656, lng: 1.6094, name: 'Wimereux (côte de Wimereux)' },
+      { lat: 50.7861, lng: 1.5917, name: 'Ambleteuse' },
+      { lat: 50.8550, lng: 1.6128, name: 'Audinghen (ravito)' },
+      { lat: 50.8722, lng: 1.5856, name: 'Cap Gris-Nez (phare)' },
+      { lat: 50.8866, lng: 1.6675, name: 'Wissant (baie)' },
+      { lat: 50.9264, lng: 1.7203, name: 'Cap Blanc-Nez (sommet)' },
+      { lat: 50.9286, lng: 1.7625, name: 'Sangatte' },
+      { lat: 50.7969, lng: 1.6358, name: 'Wimille (retour)' },
+      { lat: 50.7264, lng: 1.6068, name: 'Arrivée — Boulogne-sur-Mer' },
+    ]
+  },
+
+  // Boucle du Cambrésis : Cambrai · Caudry · Boussières
+  'cambresis': {
+    name: 'Boucle du Cambrésis',
+    desc: 'Cambrai · Caudry · Boussières · 100 km',
+    laps: 1,
+    lap: [
+      { lat: 50.1762, lng: 3.2350, name: 'Départ — Cambrai, place Aristide-Briand' },
+      { lat: 50.1278, lng: 3.4036, name: 'Caudry' },
+      { lat: 50.0833, lng: 3.4111, name: 'Beauvois-en-Cambrésis' },
+      { lat: 50.1818, lng: 3.4986, name: 'Solesmes (ravito)' },
+      { lat: 50.2658, lng: 3.4339, name: 'Vendegies-sur-Écaillon' },
+      { lat: 50.2467, lng: 3.3147, name: 'Bouchain' },
+      { lat: 50.2097, lng: 3.2289, name: 'Iwuy' },
+      { lat: 50.1762, lng: 3.2350, name: 'Arrivée — Cambrai' },
+    ]
+  },
+
+  // Pavé de la Pévèle : Orchies · Mons-en-Pévèle · Templeuve
+  // Mons-en-Pévèle est le secteur pavé 5 étoiles à 50.4861, 3.1058.
+  'pevele': {
+    name: 'Boucle du Pévèle',
+    desc: 'Orchies · Mons-en-Pévèle · Templeuve · 84 km',
+    laps: 1,
+    lap: [
+      { lat: 50.4719, lng: 3.2419, name: 'Départ — Orchies, place de la République' },
+      { lat: 50.4892, lng: 3.0972, name: 'Mons-en-Pévèle (★★★★★)' },
+      { lat: 50.5189, lng: 3.1064, name: 'Pont-à-Marcq (ravito)' },
+      { lat: 50.5403, lng: 3.1697, name: 'Templeuve' },
+      { lat: 50.5269, lng: 3.2406, name: 'Cysoing' },
+      { lat: 50.5036, lng: 3.2606, name: 'Bourghelles' },
+      { lat: 50.4778, lng: 3.2367, name: 'Beuvry-la-Forêt' },
+      { lat: 50.4719, lng: 3.2419, name: 'Arrivée — Orchies' },
+    ]
+  },
+
+  // ═════════════════════════════════════════════════════════════════
+  // CIRCUITS — boucles fermées répétées (critériums, courses sur circuit)
+  // ═════════════════════════════════════════════════════════════════
+
+  // Critérium de Salouel — circuit fermé Z.I. Nord, 8 tours x 5 km = 40 km
   'criterium-salouel': {
     name: 'Critérium de Salouel — Z.I. Nord',
     desc: 'Critérium FFC sur circuit fermé · 8 tours x 5 km',
     laps: 8,
-    // Un seul tour décrit ; sera répété pour atteindre 40 km
     lap: [
-      { lat: 49.86440, lng: 2.22650, name: 'Départ — av. de l\'Étoile' },
+      { lat: 49.86440, lng: 2.22650, name: "Départ — av. de l'Étoile" },
       { lat: 49.86570, lng: 2.23120, name: 'Carrefour rue de la Paix' },
       { lat: 49.86250, lng: 2.23450, name: 'Rond-point ZI Nord' },
       { lat: 49.85890, lng: 2.23250, name: 'Intersection D210' },
       { lat: 49.85780, lng: 2.22810, name: 'Virage chicane' },
       { lat: 49.86120, lng: 2.22480, name: 'Retour parcours' },
-      { lat: 49.86440, lng: 2.22650, name: 'Ligne d\'arrivée' },
+      { lat: 49.86440, lng: 2.22650, name: "Ligne d'arrivée" },
     ]
   },
 
-  // ─────────────────────────────────────────────────────────────
-  // Grand Prix de Salouel — circuit ville centre, 65 km
-  // 10 tours d'un circuit de 6,5 km dans le centre-ville
-  // Course FSGT 1re/2e/3e cat
-  // ─────────────────────────────────────────────────────────────
+  // Grand Prix de Salouel — circuit ville centre, 10 tours x 6,5 km = 65 km
   'grand-prix-salouel': {
     name: 'Grand Prix de Salouel — Centre-ville',
     desc: 'Course FSGT · 10 tours x 6,5 km',
     laps: 10,
     lap: [
-      { lat: 49.85770, lng: 2.23470, name: 'Départ — Place de l\'Église' },
+      { lat: 49.85770, lng: 2.23470, name: "Départ — Place de l'Église" },
       { lat: 49.86010, lng: 2.23950, name: 'Rue de la République' },
       { lat: 49.85850, lng: 2.24500, name: 'Carrefour Pont-de-Metz' },
-      { lat: 49.85410, lng: 2.24320, name: 'Avenue de l\'Europe' },
+      { lat: 49.85410, lng: 2.24320, name: "Avenue de l'Europe" },
       { lat: 49.85130, lng: 2.23720, name: 'Boulevard du Sud' },
       { lat: 49.85320, lng: 2.23080, name: 'Rond-point Bel-Air' },
       { lat: 49.85610, lng: 2.23280, name: 'Retour Centre' },
-      { lat: 49.85770, lng: 2.23470, name: 'Ligne d\'arrivée' },
+      { lat: 49.85770, lng: 2.23470, name: "Ligne d'arrivée" },
     ]
   },
 };

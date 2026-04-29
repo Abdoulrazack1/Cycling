@@ -12,6 +12,10 @@ const pool = mysql.createPool({
   queueLimit:         0,
   charset:            'utf8mb4',
   timezone:           '+00:00',
+  // IMPORTANT : retourner les colonnes DATE/DATETIME comme STRINGS
+  // (sinon JSON.stringify produit "2025-04-05T22:00:00.000Z" au lieu de
+  //  "2025-04-05" — ce qui casse Open-Meteo et toute comparaison de date côté frontend).
+  dateStrings:        ['DATE', 'DATETIME'],
   // Reconnexion automatique
   enableKeepAlive:    true,
   keepAliveInitialDelay: 0,

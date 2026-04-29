@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bgPel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0"   stop-color="#0a0805"/>
+      <stop offset=".5"  stop-color="#1f1612"/>
+      <stop offset="1"   stop-color="#3a2818"/>
+    </linearGradient>
+    <linearGradient id="motionPel" x1="0" y1=".5" x2="1" y2=".5">
+      <stop offset="0"   stop-color="#ff5c00" stop-opacity="0"/>
+      <stop offset=".4"  stop-color="#ff5c00" stop-opacity=".22"/>
+      <stop offset=".7"  stop-color="#ffaa55" stop-opacity=".5"/>
+      <stop offset="1"   stop-color="#ffe2b3" stop-opacity=".75"/>
+    </linearGradient>
+    <linearGradient id="motionDimPel" x1="0" y1=".5" x2="1" y2=".5">
+      <stop offset="0"   stop-color="#ff5c00" stop-opacity="0"/>
+      <stop offset=".5"  stop-color="#ff5c00" stop-opacity=".1"/>
+      <stop offset="1"   stop-color="#ffaa55" stop-opacity=".25"/>
+    </linearGradient>
+    <linearGradient id="asphaltPel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#241e18"/>
+      <stop offset="1"   stop-color="#0a0806"/>
+    </linearGradient>
+    <radialGradient id="vignettePel" cx=".55" cy=".55" r=".7">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1"  stop-color="#000" stop-opacity=".7"/>
+    </radialGradient>
+    <filter id="grainPel">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="19"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0"/>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="900" fill="url(#bgPel)"/>
+
+  <!-- Asphalt floor -->
+  <rect y="600" width="1400" height="300" fill="url(#asphaltPel)"/>
+
+  <!-- Dramatic motion streaks across center band -->
+  <g>
+    <rect x="0" y="350" width="1400" height="2" fill="url(#motionDimPel)" opacity=".6"/>
+    <rect x="0" y="380" width="1400" height="3" fill="url(#motionPel)"/>
+    <rect x="0" y="395" width="1400" height="1" fill="url(#motionDimPel)" opacity=".5"/>
+    <rect x="0" y="420" width="1400" height="4" fill="url(#motionPel)"/>
+    <rect x="0" y="438" width="1400" height="2" fill="url(#motionDimPel)"/>
+    <rect x="0" y="465" width="1400" height="2" fill="url(#motionPel)" opacity=".7"/>
+    <rect x="0" y="488" width="1400" height="3" fill="url(#motionPel)"/>
+    <rect x="0" y="510" width="1400" height="1" fill="url(#motionDimPel)" opacity=".4"/>
+    <rect x="0" y="528" width="1400" height="2" fill="url(#motionPel)" opacity=".6"/>
+    <rect x="0" y="552" width="1400" height="3" fill="url(#motionPel)" opacity=".5"/>
+    <rect x="0" y="572" width="1400" height="1" fill="url(#motionDimPel)" opacity=".3"/>
+  </g>
+
+  <!-- Suggestive blurred peloton silhouette band - abstract, no figures -->
+  <g transform="translate(0, 460)" opacity=".55">
+    <ellipse cx="220"  cy="0"  rx="60"  ry="14" fill="#1a0e08"/>
+    <ellipse cx="350"  cy="0"  rx="50"  ry="12" fill="#1a0e08"/>
+    <ellipse cx="470"  cy="0"  rx="56"  ry="13" fill="#1a0e08"/>
+    <ellipse cx="610"  cy="0"  rx="48"  ry="12" fill="#1a0e08"/>
+    <ellipse cx="740"  cy="0"  rx="60"  ry="14" fill="#1a0e08"/>
+    <ellipse cx="880"  cy="0"  rx="44"  ry="11" fill="#1a0e08"/>
+    <ellipse cx="1010" cy="0"  rx="52"  ry="13" fill="#1a0e08"/>
+    <ellipse cx="1130" cy="0"  rx="46"  ry="11" fill="#1a0e08"/>
+    <ellipse cx="1260" cy="0"  rx="40"  ry="10" fill="#1a0e08"/>
+  </g>
+
+  <!-- Speed streaks emanating left-to-right -->
+  <g stroke="#ffaa55" stroke-width=".5" opacity=".4">
+    <line x1="0" y1="380" x2="200" y2="378"/>
+    <line x1="0" y1="420" x2="280" y2="416"/>
+    <line x1="0" y1="465" x2="240" y2="462"/>
+    <line x1="0" y1="488" x2="160" y2="488"/>
+    <line x1="0" y1="528" x2="200" y2="525"/>
+    <line x1="0" y1="552" x2="100" y2="552"/>
+  </g>
+
+  <!-- Ground reflection of motion bands (subtle) -->
+  <g opacity=".25">
+    <rect x="0" y="640" width="1400" height="2" fill="#ff5c00"/>
+    <rect x="0" y="680" width="1400" height="1" fill="#ffaa55"/>
+    <rect x="0" y="720" width="1400" height="2" fill="#ff5c00"/>
+  </g>
+
+  <!-- Minimal road markings on ground -->
+  <g fill="#9a7048" opacity=".35">
+    <rect x="100"  y="800" width="80" height="3"/>
+    <rect x="320"  y="810" width="80" height="3"/>
+    <rect x="540"  y="820" width="80" height="3"/>
+    <rect x="760"  y="830" width="80" height="3"/>
+    <rect x="980"  y="840" width="80" height="3"/>
+    <rect x="1200" y="850" width="80" height="3"/>
+  </g>
+
+  <!-- Editorial mark -->
+  <g transform="translate(80, 820)" font-family="Georgia, serif" fill="#ff8a3d" opacity=".7">
+    <text font-size="13" letter-spacing="6">— PELOTON —</text>
+  </g>
+
+  <rect width="1400" height="900" fill="url(#vignettePel)"/>
+  <rect width="1400" height="900" filter="url(#grainPel)" opacity=".5"/>
+</svg>

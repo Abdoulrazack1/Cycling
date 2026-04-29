@@ -267,6 +267,223 @@ const COURSES = [
       { lat: 49.43000, lng: 2.85806, ele: 35,  type: 'arrivee', label: 'Arrivée — Choisy-au-Bac', desc: 'Retour Place de la Mairie' },
     ]
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // RACE ACROSS PARIS (Ultra-distance, 22-26 avril 2026, Chantilly)
+  // 1000/500/300/200 km · départ Chantilly · format ultra non-stop
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'race-across-paris',
+    name: 'Race Across Paris',
+    region: 'Oise (60)',
+    distanceKm: 200,
+    waypoints: [
+      { lat: 49.19389, lng: 2.46500, ele: 50,  type: 'depart',  label: 'Départ — Hippodrome Chantilly', desc: 'Aire de départ · 18h00' },
+      { lat: 49.21000, lng: 2.42000, ele: 70,  type: null,      label: '', desc: '' },
+      { lat: 49.27500, lng: 2.36000, ele: 100, type: 'ravito',  label: 'Ravito — Senlis',               desc: 'Place Henri-IV · km 22' },
+      { lat: 49.32500, lng: 2.40000, ele: 95,  type: null,      label: '', desc: '' },
+      { lat: 49.38500, lng: 2.50000, ele: 65,  type: 'secteur', label: 'Forêt de Halatte',              desc: 'Sous-bois sur 6 km' },
+      { lat: 49.41667, lng: 2.81667, ele: 35,  type: 'ravito',  label: 'Ravito — Compiègne',            desc: 'Place HV · km 65' },
+      { lat: 49.45000, lng: 3.10000, ele: 65,  type: 'secteur', label: 'Forêt de Compiègne',            desc: 'Traversée intégrale' },
+      { lat: 49.41000, lng: 3.32000, ele: 90,  type: 'ravito',  label: 'Ravito — Soissons',             desc: 'Place Fernand-Marquigny · km 110' },
+      { lat: 49.32500, lng: 3.20000, ele: 110, type: null,      label: '', desc: '' },
+      { lat: 49.20000, lng: 3.10000, ele: 130, type: 'secteur', label: 'Côte de Crépy',                 desc: '1,8 km · 4,2 %' },
+      { lat: 49.15000, lng: 2.80000, ele: 75,  type: 'ravito',  label: 'Ravito — Crépy-en-Valois',      desc: 'km 165' },
+      { lat: 49.19389, lng: 2.46500, ele: 50,  type: 'arrivee', label: 'Arrivée — Hippodrome',          desc: 'Retour Chantilly · feu à l\'aube' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ROC D'OPALE (Calais, juin 2026, 111 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'roc-d-opale',
+    name: 'Roc d\'Opale',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 111,
+    waypoints: [
+      { lat: 50.95130, lng: 1.85870, ele: 5,   type: 'depart',  label: 'Départ — Calais',          desc: 'Place d\'Armes · 8h00' },
+      { lat: 50.93000, lng: 1.79000, ele: 35,  type: null,      label: '', desc: '' },
+      { lat: 50.86670, lng: 1.59440, ele: 130, type: 'secteur', label: 'Cap Blanc-Nez',            desc: '2 km · 6,2 % · vue mer' },
+      { lat: 50.85000, lng: 1.58000, ele: 90,  type: 'ravito',  label: 'Ravito — Wissant',         desc: 'Front de mer · km 22' },
+      { lat: 50.87000, lng: 1.62000, ele: 110, type: 'secteur', label: 'Cap Gris-Nez',             desc: '900 m · 4,8 %' },
+      { lat: 50.78000, lng: 1.67000, ele: 80,  type: null,      label: '', desc: '' },
+      { lat: 50.76130, lng: 1.61610, ele: 25,  type: 'ravito',  label: 'Ravito — Wimereux',        desc: 'Esplanade · km 48' },
+      { lat: 50.72500, lng: 1.62000, ele: 35,  type: 'secteur', label: 'Côte de Wimereux',         desc: '900 m · 6,1 %' },
+      { lat: 50.78000, lng: 1.78000, ele: 45,  type: null,      label: '', desc: '' },
+      { lat: 50.83330, lng: 1.95000, ele: 95,  type: 'ravito',  label: 'Ravito — Guînes',          desc: 'Place Foch · km 80' },
+      { lat: 50.91000, lng: 1.95000, ele: 65,  type: null,      label: '', desc: '' },
+      { lat: 50.95130, lng: 1.85870, ele: 5,   type: 'arrivee', label: 'Arrivée — Calais',         desc: 'Retour Place d\'Armes' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CAL'LYS GRAVEL (Sangatte, avril 2026, 80 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'callys-gravel',
+    name: 'La Cal\'lys Gravel',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 80,
+    waypoints: [
+      { lat: 50.94360, lng: 1.74810, ele: 10,  type: 'depart',  label: 'Départ — Sangatte',         desc: 'Plage · 7h30' },
+      { lat: 50.92500, lng: 1.78000, ele: 35,  type: 'secteur', label: 'Sentier des Falaises',      desc: 'Sentier littoral · 4 km' },
+      { lat: 50.86670, lng: 1.59440, ele: 130, type: 'secteur', label: 'Mont du Cap Blanc-Nez',     desc: '1,4 km · 7,1 % gravel' },
+      { lat: 50.85000, lng: 1.58000, ele: 90,  type: 'ravito',  label: 'Ravito — Wissant',          desc: 'km 22 · barres + eau' },
+      { lat: 50.86000, lng: 1.66000, ele: 65,  type: 'secteur', label: 'Forêt de Guînes',           desc: 'Traverse forestière · 6 km' },
+      { lat: 50.91000, lng: 1.83000, ele: 55,  type: 'ravito',  label: 'Ravito — Marquise',         desc: 'km 50' },
+      { lat: 50.93000, lng: 1.78000, ele: 30,  type: 'danger',  label: 'Danger — Descente sablonneuse', desc: 'Sortie de forêt' },
+      { lat: 50.94360, lng: 1.74810, ele: 10,  type: 'arrivee', label: 'Arrivée — Sangatte',        desc: 'Retour plage' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // RIVES DE L'AUTHIE (Berck, mai 2026, 90 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'rives-authie',
+    name: 'Les Rives de l\'Authie',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 90,
+    waypoints: [
+      { lat: 50.40500, lng: 1.55810, ele: 5,   type: 'depart',  label: 'Départ — Berck-sur-Mer',     desc: 'Esplanade · 8h00' },
+      { lat: 50.39000, lng: 1.65000, ele: 15,  type: 'ravito',  label: 'Ravito — Rang-du-Fliers',    desc: 'km 12' },
+      { lat: 50.34000, lng: 1.78000, ele: 35,  type: 'secteur', label: 'Vallée de l\'Authie',        desc: 'Bord de rivière · 8 km' },
+      { lat: 50.34780, lng: 1.93780, ele: 25,  type: 'ravito',  label: 'Ravito — Auxi-le-Château',   desc: 'Place du marché · km 38' },
+      { lat: 50.30000, lng: 1.85000, ele: 50,  type: 'secteur', label: 'Côte d\'Auxi',               desc: '1,2 km · 4,8 %' },
+      { lat: 50.32000, lng: 1.70000, ele: 20,  type: 'ravito',  label: 'Ravito — Maintenay',         desc: 'km 65' },
+      { lat: 50.36000, lng: 1.60000, ele: 8,   type: null,      label: '', desc: '' },
+      { lat: 50.40500, lng: 1.55810, ele: 5,   type: 'arrivee', label: 'Arrivée — Berck',            desc: 'Retour esplanade' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // ARDRÉSIENNE (Ardres, mai 2026, 70 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'ardresienne',
+    name: 'L\'Ardrésienne',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 70,
+    waypoints: [
+      { lat: 50.85630, lng: 1.97500, ele: 35,  type: 'depart',  label: 'Départ — Ardres',           desc: 'Place du Centre · 9h00' },
+      { lat: 50.82000, lng: 2.02000, ele: 55,  type: null,      label: '', desc: '' },
+      { lat: 50.80060, lng: 2.10940, ele: 20,  type: 'ravito',  label: 'Ravito — Saint-Omer',       desc: 'Place Foch · km 18' },
+      { lat: 50.83000, lng: 2.16000, ele: 60,  type: 'secteur', label: 'Côte de Lumbres',           desc: '1,6 km · 5,3 %' },
+      { lat: 50.87000, lng: 2.05000, ele: 80,  type: 'ravito',  label: 'Ravito — Tournehem',        desc: 'km 42' },
+      { lat: 50.89000, lng: 1.95000, ele: 45,  type: null,      label: '', desc: '' },
+      { lat: 50.88000, lng: 1.88000, ele: 20,  type: 'secteur', label: 'Marais de l\'Aa',           desc: 'Bordure de canal · 3 km' },
+      { lat: 50.85630, lng: 1.97500, ele: 35,  type: 'arrivee', label: 'Arrivée — Ardres',          desc: 'Retour Place du Centre' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // FÊTE DU VÉLO 7 VALLÉES (Beaurainville, mai 2026, 80 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'fete-velo-7-vallees',
+    name: 'Fête du Vélo en 7 Vallées',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 80,
+    waypoints: [
+      { lat: 50.43830, lng: 1.89610, ele: 25,  type: 'depart',  label: 'Départ — Beaurainville',     desc: 'Place Verte · 8h30' },
+      { lat: 50.45000, lng: 1.95000, ele: 40,  type: null,      label: '', desc: '' },
+      { lat: 50.41000, lng: 2.05000, ele: 60,  type: 'ravito',  label: 'Ravito — Hesdin',            desc: 'Grand Place · km 18' },
+      { lat: 50.37000, lng: 2.08000, ele: 90,  type: 'secteur', label: 'Côte de Sains-lès-Fressin',  desc: '1,8 km · 5,8 %' },
+      { lat: 50.43000, lng: 2.10000, ele: 80,  type: 'secteur', label: 'Vallée de la Canche',        desc: 'Bord de rivière · 5 km' },
+      { lat: 50.47000, lng: 2.04000, ele: 50,  type: 'ravito',  label: 'Ravito — Auchy-lès-Hesdin',  desc: 'km 48' },
+      { lat: 50.46000, lng: 1.95000, ele: 30,  type: null,      label: '', desc: '' },
+      { lat: 50.43830, lng: 1.89610, ele: 25,  type: 'arrivee', label: 'Arrivée — Beaurainville',    desc: 'Retour Place Verte' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CAP GRIS-NEZ (Saint-Omer, août 2026, 150 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'cap-gris-nez',
+    name: 'Sur la Route du Cap Gris-Nez',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 150,
+    waypoints: [
+      { lat: 50.75000, lng: 2.25000, ele: 20,  type: 'depart',  label: 'Départ — Saint-Omer',        desc: 'Place Foch · 7h00' },
+      { lat: 50.79000, lng: 2.10000, ele: 35,  type: null,      label: '', desc: '' },
+      { lat: 50.83000, lng: 1.95000, ele: 60,  type: 'ravito',  label: 'Ravito — Guînes',            desc: 'km 28' },
+      { lat: 50.95000, lng: 1.85000, ele: 8,   type: null,      label: '', desc: '' },
+      { lat: 50.86670, lng: 1.59440, ele: 130, type: 'secteur', label: 'Cap Gris-Nez',               desc: 'Le point culminant · vue Angleterre' },
+      { lat: 50.85000, lng: 1.58000, ele: 90,  type: 'ravito',  label: 'Ravito — Wissant',           desc: 'Plage · km 70' },
+      { lat: 50.78000, lng: 1.65000, ele: 75,  type: 'secteur', label: 'Côte d\'Audinghen',          desc: '1,4 km · 5,2 %' },
+      { lat: 50.72500, lng: 1.62000, ele: 35,  type: null,      label: '', desc: '' },
+      { lat: 50.66670, lng: 1.65000, ele: 20,  type: 'ravito',  label: 'Ravito — Boulogne',          desc: 'Place Dalton · km 100' },
+      { lat: 50.70000, lng: 1.85000, ele: 80,  type: null,      label: '', desc: '' },
+      { lat: 50.72000, lng: 2.05000, ele: 50,  type: 'ravito',  label: 'Ravito — Lumbres',           desc: 'km 130' },
+      { lat: 50.75000, lng: 2.25000, ele: 20,  type: 'arrivee', label: 'Arrivée — Saint-Omer',       desc: 'Retour Place Foch' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // RANDONNÉE ORÉE DU BOIS (Rang-du-Fliers, août 2026, 87 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'oree-du-bois',
+    name: 'Randonnée de l\'Orée du Bois',
+    region: 'Pas-de-Calais (62)',
+    distanceKm: 87,
+    waypoints: [
+      { lat: 50.39000, lng: 1.65000, ele: 12,  type: 'depart',  label: 'Départ — Rang-du-Fliers',    desc: 'Salle des Fêtes · 8h00' },
+      { lat: 50.41000, lng: 1.69000, ele: 15,  type: null,      label: '', desc: '' },
+      { lat: 50.43000, lng: 1.79000, ele: 40,  type: 'secteur', label: 'Forêt de Crécy',             desc: 'Sentier 6 km' },
+      { lat: 50.45630, lng: 1.86810, ele: 30,  type: 'ravito',  label: 'Ravito — Rue',               desc: 'Place du marché · km 28' },
+      { lat: 50.42000, lng: 1.95000, ele: 55,  type: 'secteur', label: 'Côte de Forest',             desc: '1,1 km · 4,8 %' },
+      { lat: 50.34780, lng: 1.93780, ele: 25,  type: 'ravito',  label: 'Ravito — Auxi-le-Château',   desc: 'km 56' },
+      { lat: 50.32000, lng: 1.78000, ele: 18,  type: null,      label: '', desc: '' },
+      { lat: 50.36000, lng: 1.65000, ele: 10,  type: null,      label: '', desc: '' },
+      { lat: 50.39000, lng: 1.65000, ele: 12,  type: 'arrivee', label: 'Arrivée — Rang-du-Fliers',   desc: 'Retour salle des fêtes' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // RANDO NACRÉE (Esches, mai 2026, 50 km)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'rando-nacree',
+    name: 'La Rando Nacrée',
+    region: 'Oise (60)',
+    distanceKm: 50,
+    waypoints: [
+      { lat: 49.21670, lng: 2.13330, ele: 50,  type: 'depart',  label: 'Départ — Esches',            desc: 'Mairie · 9h00' },
+      { lat: 49.20000, lng: 2.20000, ele: 80,  type: 'secteur', label: 'Forêt de Carnelle',          desc: 'Sous-bois · 4 km' },
+      { lat: 49.18000, lng: 2.10000, ele: 100, type: 'ravito',  label: 'Ravito — Méru',              desc: 'Centre · km 18' },
+      { lat: 49.22000, lng: 2.05000, ele: 90,  type: null,      label: '', desc: '' },
+      { lat: 49.25000, lng: 2.10000, ele: 70,  type: 'secteur', label: 'Côte de Chambly',            desc: '900 m · 4,5 %' },
+      { lat: 49.23000, lng: 2.15000, ele: 60,  type: null,      label: '', desc: '' },
+      { lat: 49.21670, lng: 2.13330, ele: 50,  type: 'arrivee', label: 'Arrivée — Esches',           desc: 'Retour Mairie' },
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // 4 JOURS DE DUNKERQUE (Dunkerque, mai 2026, 4 étapes — agrégé)
+  // Étape principale, ~150 km
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: '4-jours-dunkerque',
+    name: '4 Jours de Dunkerque',
+    region: 'Nord (59)',
+    distanceKm: 150,
+    waypoints: [
+      { lat: 51.04220, lng: 2.37700, ele: 5,   type: 'depart',  label: 'Départ — Dunkerque',         desc: 'Place Jean-Bart · 14h00' },
+      { lat: 51.00000, lng: 2.45000, ele: 10,  type: null,      label: '', desc: '' },
+      { lat: 50.95000, lng: 2.55000, ele: 15,  type: 'ravito',  label: 'Ravito — Bourbourg',         desc: 'km 22' },
+      { lat: 50.92000, lng: 2.40000, ele: 8,   type: null,      label: '', desc: '' },
+      { lat: 50.87000, lng: 2.43000, ele: 40,  type: 'secteur', label: 'Côte de Watten',             desc: '1,2 km · 5,8 %' },
+      { lat: 50.83000, lng: 2.55000, ele: 80,  type: 'ravito',  label: 'Ravito — Cassel',            desc: 'km 65' },
+      { lat: 50.78000, lng: 2.72000, ele: 110, type: 'secteur', label: 'Mont des Cats',              desc: '1,1 km · 7,2 %' },
+      { lat: 50.85000, lng: 2.80000, ele: 35,  type: null,      label: '', desc: '' },
+      { lat: 50.95000, lng: 2.65000, ele: 18,  type: 'ravito',  label: 'Ravito — Bergues',           desc: 'km 110' },
+      { lat: 51.00000, lng: 2.50000, ele: 8,   type: null,      label: '', desc: '' },
+      { lat: 51.04220, lng: 2.37700, ele: 5,   type: 'arrivee', label: 'Arrivée — Dunkerque',        desc: 'Sprint Digue de Mer' },
+    ]
+  },
 ];
 
 

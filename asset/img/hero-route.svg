@@ -1,89 +1,103 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="skyR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0a0a0a"/>
+      <stop offset=".25" stop-color="#1a1612"/>
+      <stop offset=".55" stop-color="#3a2820"/>
+      <stop offset="1"   stop-color="#7a4828"/>
+    </linearGradient>
+    <linearGradient id="fieldFarR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2018"/>
+      <stop offset="1" stop-color="#1a1410"/>
+    </linearGradient>
+    <linearGradient id="fieldNearR" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#1a1410"/>
-      <stop offset=".4" stop-color="#2a1a14"/>
-      <stop offset="1" stop-color="#3a2820"/>
+      <stop offset="1" stop-color="#0a0806"/>
     </linearGradient>
-    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2a2520"/>
-      <stop offset="1" stop-color="#1a1612"/>
+    <linearGradient id="roadR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#3a3228"/>
+      <stop offset=".5"  stop-color="#241e18"/>
+      <stop offset="1"   stop-color="#0a0806"/>
     </linearGradient>
-    <radialGradient id="sun" cx=".7" cy=".25" r=".4">
-      <stop offset="0" stop-color="#CAA35B" stop-opacity=".6"/>
-      <stop offset=".5" stop-color="#B08E4A" stop-opacity=".2"/>
-      <stop offset="1" stop-color="#CAA35B" stop-opacity="0"/>
+    <radialGradient id="sunR" cx=".5" cy=".55" r=".15">
+      <stop offset="0"   stop-color="#ffd6a3" stop-opacity=".7"/>
+      <stop offset=".4"  stop-color="#cc7733" stop-opacity=".3"/>
+      <stop offset="1"   stop-color="#000" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="vignetteR" cx=".5" cy=".55" r=".8">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1"  stop-color="#000" stop-opacity=".7"/>
+    </radialGradient>
+    <filter id="grainR">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="17"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0"/>
+    </filter>
   </defs>
 
-  <!-- Ciel & soleil -->
-  <rect width="1400" height="900" fill="url(#sky)"/>
-  <circle cx="980" cy="220" r="280" fill="url(#sun)"/>
+  <rect width="1400" height="900" fill="url(#skyR)"/>
+  <rect width="1400" height="900" fill="url(#sunR)"/>
 
-  <!-- Collines en arrière-plan -->
-  <path d="M0 580 Q200 520 400 560 T800 540 T1400 560 L1400 700 L0 700 Z" fill="#1a1410" opacity=".7"/>
-  <path d="M0 620 Q300 580 600 600 T1400 590 L1400 720 L0 720 Z" fill="#0f0c08" opacity=".8"/>
+  <!-- Far horizon hills -->
+  <path d="M0 540 Q 200 522 380 530 T 680 528 Q 880 520 1080 528 T 1400 526 L 1400 580 L 0 580 Z" fill="url(#fieldFarR)" opacity=".7"/>
 
-  <!-- Route -->
-  <path d="M0 720 L1400 720 L1400 900 L0 900 Z" fill="url(#road)"/>
+  <!-- Mid fields with subtle furrow texture -->
+  <rect y="560" width="1400" height="120" fill="url(#fieldFarR)"/>
 
-  <!-- Marquages au sol (pointillés perspective) -->
-  <g fill="#B08E4A" opacity=".55">
-    <rect x="660" y="740" width="80" height="6"/>
-    <rect x="650" y="765" width="100" height="7"/>
-    <rect x="635" y="795" width="130" height="8"/>
-    <rect x="615" y="830" width="170" height="10"/>
-    <rect x="585" y="865" width="230" height="12"/>
+  <!-- Near fields -->
+  <rect y="680" width="1400" height="220" fill="url(#fieldNearR)"/>
+
+  <!-- Road slicing through, perspective -->
+  <path d="M650 545 L750 545 L1100 900 L300 900 Z" fill="url(#roadR)"/>
+
+  <!-- Road centerline dashes -->
+  <g fill="#9a7048" opacity=".5">
+    <rect x="697" y="595" width="6" height="12"/>
+    <rect x="694" y="660" width="8" height="14"/>
+    <rect x="690" y="730" width="11" height="17"/>
+    <rect x="685" y="810" width="14" height="20"/>
   </g>
 
-  <!-- Cycliste silhouette -->
-  <g transform="translate(700, 440)">
-    <!-- Roues -->
-    <circle cx="-60" cy="160" r="55" fill="none" stroke="#1a1410" stroke-width="3"/>
-    <circle cx="-60" cy="160" r="50" fill="none" stroke="#CAA35B" stroke-width="2.5"/>
-    <circle cx="60"  cy="160" r="55" fill="none" stroke="#1a1410" stroke-width="3"/>
-    <circle cx="60"  cy="160" r="50" fill="none" stroke="#CAA35B" stroke-width="2.5"/>
-    <!-- Rayons -->
-    <g stroke="#CAA35B" stroke-width="1" opacity=".7">
-      <line x1="-60" y1="110" x2="-60" y2="210"/>
-      <line x1="-110" y1="160" x2="-10" y2="160"/>
-      <line x1="-95" y1="125" x2="-25" y2="195"/>
-      <line x1="-25" y1="125" x2="-95" y2="195"/>
-      <line x1="60" y1="110" x2="60" y2="210"/>
-      <line x1="10" y1="160" x2="110" y2="160"/>
-      <line x1="25" y1="125" x2="95" y2="195"/>
-      <line x1="95" y1="125" x2="25" y2="195"/>
-    </g>
-    <!-- Cadre -->
-    <g stroke="#CAA35B" stroke-width="3" fill="none" stroke-linecap="round">
-      <line x1="-60" y1="160" x2="0"   y2="80"/>
-      <line x1="0"   y1="80"  x2="60"  y2="160"/>
-      <line x1="0"   y1="80"  x2="40"  y2="40"/>
-      <line x1="-60" y1="160" x2="-30" y2="80"/>
-      <line x1="-30" y1="80"  x2="-15" y2="40"/>
-      <line x1="40"  y1="40"  x2="-15" y2="40"/>
-    </g>
-    <!-- Cycliste -->
-    <g fill="#1a1410" stroke="#CAA35B" stroke-width="2">
-      <!-- Tête -->
-      <circle cx="-5" cy="-30" r="14"/>
-      <!-- Casque -->
-      <path d="M-20 -35 Q-5 -50 10 -35 L10 -30 L-20 -30 Z" fill="#CAA35B" stroke="#CAA35B"/>
-      <!-- Buste -->
-      <path d="M-10 -15 Q5 -10 25 5 L40 40 L20 60 L-15 30 Z" fill="#3a2820" stroke="#CAA35B"/>
-      <!-- Bras -->
-      <path d="M20 0 Q35 20 45 35" stroke-width="6" fill="none" stroke-linecap="round"/>
-      <!-- Jambe avant -->
-      <path d="M15 55 Q35 90 60 160" stroke-width="6" fill="none" stroke-linecap="round"/>
-      <!-- Jambe arrière -->
-      <path d="M5 55 Q-15 100 -25 130" stroke-width="6" fill="none" stroke-linecap="round"/>
-    </g>
+  <!-- Road edges -->
+  <line x1="650" y1="545" x2="300"  y2="900" stroke="#0a0806" stroke-width="2" opacity=".7"/>
+  <line x1="750" y1="545" x2="1100" y2="900" stroke="#0a0806" stroke-width="2" opacity=".7"/>
+
+  <!-- Telephone poles -->
+  <g fill="#241812" opacity=".75">
+    <rect x="232" y="420" width="3" height="180"/>
+    <rect x="412" y="450" width="3" height="135"/>
+    <rect x="572" y="475" width="3" height="100"/>
+    <rect x="1158" y="420" width="3" height="180"/>
+    <rect x="978"  y="450" width="3" height="135"/>
+    <rect x="828"  y="475" width="3" height="100"/>
+  </g>
+  <!-- Crossbeams -->
+  <g stroke="#241812" stroke-width="1.5" opacity=".6">
+    <line x1="225" y1="430" x2="241" y2="430"/>
+    <line x1="408" y1="458" x2="419" y2="458"/>
+    <line x1="569" y1="481" x2="578" y2="481"/>
+    <line x1="1151" y1="430" x2="1167" y2="430"/>
+    <line x1="974"  y1="458" x2="985"  y2="458"/>
+    <line x1="825"  y1="481" x2="834"  y2="481"/>
+  </g>
+  <!-- Subtle wires -->
+  <g stroke="#241812" stroke-width=".5" opacity=".4" fill="none">
+    <path d="M232 432 Q 322 446 412 460"/>
+    <path d="M412 460 Q 492 472 572 478"/>
+    <path d="M828 478 Q 904 472 978 460"/>
+    <path d="M978 460 Q 1068 446 1158 432"/>
   </g>
 
-  <!-- Texture vignette -->
-  <radialGradient id="vignette" cx=".5" cy=".5" r=".75">
-    <stop offset=".7" stop-color="#000" stop-opacity="0"/>
-    <stop offset="1"  stop-color="#000" stop-opacity=".6"/>
-  </radialGradient>
-  <rect width="1400" height="900" fill="url(#vignette)"/>
+  <!-- Distant church steeple — flemish countryside marker -->
+  <g transform="translate(295, 520)" fill="#1a1410" opacity=".85">
+    <rect x="-4" y="0" width="8" height="20"/>
+    <polygon points="-6,0 6,0 0,-20"/>
+  </g>
+
+  <!-- Editorial mark -->
+  <g transform="translate(80, 820)" font-family="Georgia, serif" fill="#9a7048" opacity=".55">
+    <text font-size="13" letter-spacing="6">— ROUTE —</text>
+  </g>
+
+  <rect width="1400" height="900" fill="url(#vignetteR)"/>
+  <rect width="1400" height="900" filter="url(#grainR)" opacity=".5"/>
 </svg>

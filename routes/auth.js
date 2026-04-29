@@ -40,13 +40,18 @@ function hashToken(token) {
  *  - sameSite: 'lax'  fonctionne pour les requêtes top-level same-site
  *
  * En dev sans HTTPS, on utilise 'lax' pour permettre le développement
- * tout en restant raisonnable côté sécurité. Si le frontend tourne
- * sur un port différent du backend (cross-origin), le cookie suit.
+ * tout en restant raisonnable côté sécurité. localhost:5500 et localhost:3000
+ * sont considérés same-site (même registrable domain), donc lax suffit
+ * pour la plupart des navigateurs modernes.
+ *
+ * Le token d'accès étant aussi persisté en sessionStorage côté frontend
+ * (cf. asset/js/auth.js), une défaillance du cookie ne casse plus la
+ * navigation : seule la persistance long-terme (7 j) est affectée.
  */
 function cookieOpts(rememberMe = true) {
   const isProd = process.env.NODE_ENV === 'production';
   const useSecure = isProd || process.env.COOKIE_SECURE === 'true';
-  return {
+  const opts = {
     httpOnly: true,
     secure: useSecure,
     sameSite: useSecure ? 'none' : 'lax',
@@ -54,17 +59,23 @@ function cookieOpts(rememberMe = true) {
     // Si "se souvenir de moi" non coché : cookie de session (sans maxAge)
     ...(rememberMe ? { maxAge: 7 * 24 * 3600 * 1000 } : {})
   };
+  // Domaine explicite optionnel (rarement utile, parfois nécessaire si
+  // backend et frontend tournent sur sous-domaines différents en prod).
+  if (process.env.COOKIE_DOMAIN) opts.domain = process.env.COOKIE_DOMAIN;
+  return opts;
 }
 
 function clearCookieOpts() {
   const isProd = process.env.NODE_ENV === 'production';
   const useSecure = isProd || process.env.COOKIE_SECURE === 'true';
-  return {
+  const opts = {
     httpOnly: true,
     secure: useSecure,
     sameSite: useSecure ? 'none' : 'lax',
     path: '/'
   };
+  if (process.env.COOKIE_DOMAIN) opts.domain = process.env.COOKIE_DOMAIN;
+  return opts;
 }
 
 function userPublic(u) {
