@@ -1,0 +1,290 @@
+/**
+ * routes/auto-courses.js
+ * 
+ * API REST pour le scraping et la génération automatique de courses.
+ * 
+ * Endpoints (tous admin-only) :
+ * 
+ *   GET  /api/auto-courses/scrape
+ *        Lance le scraping et retourne les courses détectées (sans rien insérer).
+ *        Permet à l'admin de prévisualiser avant import.
+ * 
+ *   POST /api/auto-courses/generate
+ *        Body : { name, region?, distanceKm?, waypoints, laps?, kind?, date?, ... }
+ *        Lance la pipeline de génération complète (OSRM + élévation + GPX + POIs).
+ *        Insère la sortie en BDD si la table existe, sinon retourne les données.
+ *        Sauvegarde le GPX dans asset/gpx/.
+ * 
+ *   POST /api/auto-courses/import
+ *        Body : { events: [<eventNormalisé>], generateGpx: true }
+ *        Importe en masse plusieurs événements détectés par le scraping.
+ *        Pour chaque événement, génère le GPX (waypoints obligatoires) et insère
+ *        en BDD.
+ * 
+ *   GET  /api/auto-courses/sources
+ *        Liste les sources de scraping configurées.
+ */
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+const generator = require('../services/course-generator');
+const scraper   = require('../services/course-scraper');
+
+const router = express.Router();
+
+// Helpers d'auth — fallback si le middleware n'est pas exporté
+let requireAuth, requireAdmin;
+try {
+  ({ requireAuth, requireAdmin } = require('../middleware/auth'));
+} catch {
+  requireAuth = (req, res, next) => next();
+  requireAdmin = (req, res, next) => next();
+}
+
+// Charger query() seulement si la BDD est disponible
+let dbQuery = null;
+try {
+  ({ query: dbQuery } = require('../config/database'));
+} catch {
+  // OK : on tourne en mode fichier seul
+}
+
+// ════════════════════════════════════════════════════════════════
+//  GET /sources — liste les sources de scraping configurées
+// ════════════════════════════════════════════════════════════════
+router.get('/sources', requireAuth, requireAdmin, (req, res) => {
+  res.json({
+    sources: scraper.SOURCES.map(s => ({
+      name: s.name, label: s.label, url: s.url,
+    })),
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+//  GET /scrape — scrape sans insérer
+// ════════════════════════════════════════════════════════════════
+router.get('/scrape', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = await scraper.scrapeAll();
+    // Filtrer les events sans date ou avec date passée si demandé
+    const includePast = req.query.includePast === '1';
+    const today = new Date().toISOString().slice(0, 10);
+    const filtered = includePast ? result.events
+      : result.events.filter(e => !e.date || e.date >= today);
+
+    res.json({
+      total: filtered.length,
+      events: filtered,
+      log: result.log,
+      errors: result.errors,
+    });
+  } catch (err) {
+    console.error('[auto-courses scrape]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+//  POST /generate — génère une course complète depuis ses waypoints
+// ════════════════════════════════════════════════════════════════
+router.post('/generate', requireAuth, requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  if (!body.name || !Array.isArray(body.waypoints) || body.waypoints.length < 2) {
+    return res.status(400).json({
+      error: 'Champs requis : name (string), waypoints (array de ≥2 {lat,lng,...})',
+    });
+  }
+
+  const skipNet = body.skipNetwork === true; // mode test/offline
+
+  try {
+    const result = await generator.generate({
+      id:         body.id,
+      name:       body.name,
+      region:     body.region,
+      distanceKm: body.distanceKm,
+      waypoints:  body.waypoints,
+      laps:       body.laps,
+    }, {
+      skipRouting:   skipNet,
+      skipElevation: skipNet,
+    });
+
+    // Si la BDD est dispo et que `persist` est demandé, INSERT en sortie
+    let persisted = false;
+    if (dbQuery && body.persist !== false) {
+      try {
+        await _persistSortie(result, body);
+        persisted = true;
+      } catch (err) {
+        console.warn('[auto-courses persist]', err.message);
+        result.errors.push(`Persist: ${err.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      id: result.id,
+      gpxFilename: result.gpxFilename,
+      gpxUrl: '/asset/gpx/' + result.gpxFilename,
+      pois: result.pois,
+      stats: result.stats,
+      log: result.log,
+      errors: result.errors,
+      persisted,
+    });
+  } catch (err) {
+    console.error('[auto-courses generate]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+//  POST /import — import en masse depuis un scraping précédent
+// ════════════════════════════════════════════════════════════════
+router.post('/import', requireAuth, requireAdmin, async (req, res) => {
+  const events = req.body?.events;
+  if (!Array.isArray(events) || events.length === 0) {
+    return res.status(400).json({ error: 'events[] requis' });
+  }
+
+  const generateGpx = req.body?.generateGpx !== false;
+  const skipNet     = req.body?.skipNetwork === true;
+  const results = [];
+  const errors = [];
+
+  for (const ev of events) {
+    try {
+      // Sans waypoints, on ne peut pas générer le GPX → on insère juste l'event
+      if (!ev.waypoints || ev.waypoints.length < 2) {
+        if (dbQuery) await _persistEventOnly(ev);
+        results.push({ slug: ev.slug, name: ev.name, gpx: false, persisted: !!dbQuery });
+        continue;
+      }
+
+      const generated = generateGpx ? await generator.generate({
+        name:       ev.name,
+        id:         ev.slug,
+        region:     ev.region,
+        distanceKm: ev.distanceKm,
+        waypoints:  ev.waypoints,
+      }, { skipRouting: skipNet, skipElevation: skipNet }) : null;
+
+      if (dbQuery) {
+        await _persistSortie(generated || { id: ev.slug, name: ev.name, pois: [], stats: { distanceKm: ev.distanceKm, dPlus: null }, gpxFilename: null }, ev);
+      }
+      results.push({
+        slug: ev.slug, name: ev.name,
+        gpx: !!generated?.gpxFilename, gpxFilename: generated?.gpxFilename,
+        pois: generated?.pois?.length || 0,
+        persisted: !!dbQuery,
+      });
+    } catch (err) {
+      errors.push({ slug: ev.slug, name: ev.name, error: err.message });
+    }
+  }
+
+  res.json({ imported: results.length, results, errors });
+});
+
+// ════════════════════════════════════════════════════════════════
+//  GET /:id — récupérer une course auto-générée (depuis fichier ou BDD)
+// ════════════════════════════════════════════════════════════════
+router.get('/:id', async (req, res) => {
+  const id = String(req.params.id).replace(/[^a-z0-9_-]/gi, '-');
+
+  // Vérifier si le GPX existe sur disque
+  const gpxPath = path.join(__dirname, '..', 'asset', 'gpx', id + '.gpx');
+  const hasGpx = fs.existsSync(gpxPath);
+
+  // Tenter de récupérer depuis la BDD si dispo
+  let sortie = null;
+  if (dbQuery) {
+    try {
+      const rows = await dbQuery('SELECT * FROM sorties WHERE id = ? LIMIT 1', [id]);
+      sortie = rows?.[0] || null;
+    } catch {}
+  }
+
+  res.json({
+    id,
+    hasGpx,
+    gpxUrl: hasGpx ? '/asset/gpx/' + id + '.gpx' : null,
+    sortie,
+  });
+});
+
+// ────────────────────────────────────────────────────────────────
+//  Helpers de persistance BDD
+// ────────────────────────────────────────────────────────────────
+
+async function _persistSortie(generated, original) {
+  const stats = generated.stats || {};
+  const lat = original.waypoints?.[0]?.lat || original.lat || null;
+  const lng = original.waypoints?.[0]?.lng || original.lng || null;
+  // sorties.date est NOT NULL → si manquante, prendre la date du jour
+  const date = original.date || new Date().toISOString().slice(0, 10);
+  const title = original.name || generated.name || generated.id;
+  const region = original.region || generated.region || null;
+
+  await dbQuery(`
+    INSERT INTO sorties (
+      id, title, subtitle, date, distance_km, elevation_gain,
+      elevation_min, elevation_max, gpx_filename,
+      location_name, location_lat, location_lng, statut
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      title = VALUES(title),
+      subtitle = VALUES(subtitle),
+      date = VALUES(date),
+      distance_km = VALUES(distance_km),
+      elevation_gain = VALUES(elevation_gain),
+      elevation_min = VALUES(elevation_min),
+      elevation_max = VALUES(elevation_max),
+      gpx_filename = VALUES(gpx_filename),
+      location_name = VALUES(location_name),
+      location_lat = VALUES(location_lat),
+      location_lng = VALUES(location_lng)
+  `, [
+    generated.id, title, region, date,
+    stats.distanceKm || original.distanceKm || null,
+    stats.dPlus != null ? stats.dPlus : null,
+    stats.eleMin != null ? stats.eleMin : null,
+    stats.eleMax != null ? stats.eleMax : null,
+    generated.gpxFilename || null,
+    region, lat, lng,
+    'future',
+  ]);
+
+  // Persister les POIs (on supprime les anciens et on remet)
+  if (generated.pois?.length) {
+    await dbQuery('DELETE FROM pois WHERE sortie_id = ?', [generated.id]);
+    const validTypes = new Set(['signaleur','ravito','danger','secteur','depart','arrivee']);
+    for (const p of generated.pois) {
+      // Filtrer les types non reconnus (l'ENUM SQL refuserait l'INSERT)
+      const type = validTypes.has(p.type) ? p.type : 'signaleur';
+      // Garantir un ID unique (la PK pois.id est obligatoire)
+      const poiId = p.id || `${generated.id}-poi-${Math.random().toString(36).slice(2, 8)}`;
+      await dbQuery(`
+        INSERT INTO pois (id, sortie_id, type, label, description, km, lat, lng, contact_name, contact_phone)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        poiId.substring(0, 50), generated.id, type,
+        p.label, p.desc, p.km, p.lat, p.lng,
+        p.contact?.name || null, p.contact?.phone || null,
+      ]);
+    }
+  }
+}
+
+async function _persistEventOnly(ev) {
+  await dbQuery(`
+    INSERT IGNORE INTO evenements (slug, title, type, date, lieu, region, distance_km, statut)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `, [ev.slug, ev.name, ev.type || 'rando', ev.date, ev.lieu, ev.region, ev.distanceKm, 'ouvert']);
+}
+
+module.exports = router;

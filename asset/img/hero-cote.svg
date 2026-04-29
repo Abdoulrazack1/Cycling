@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="skyC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#0a0a0a"/>
+      <stop offset=".3"  stop-color="#1a1610"/>
+      <stop offset=".6"  stop-color="#3a2818"/>
+      <stop offset="1"   stop-color="#6a4828"/>
+    </linearGradient>
+    <linearGradient id="seaC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#1a2228"/>
+      <stop offset=".5"  stop-color="#0e1418"/>
+      <stop offset="1"   stop-color="#080a0c"/>
+    </linearGradient>
+    <linearGradient id="cliffC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"   stop-color="#3a2820"/>
+      <stop offset=".4"  stop-color="#241812"/>
+      <stop offset="1"   stop-color="#0e0a08"/>
+    </linearGradient>
+    <radialGradient id="sunC" cx=".25" cy=".55" r=".18">
+      <stop offset="0"   stop-color="#ffd6a3" stop-opacity=".6"/>
+      <stop offset=".5"  stop-color="#cc7733" stop-opacity=".25"/>
+      <stop offset="1"   stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignetteC" cx=".5" cy=".5" r=".8">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1"  stop-color="#000" stop-opacity=".7"/>
+    </radialGradient>
+    <filter id="grainC">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="11"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .12 0"/>
+    </filter>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1400" height="600" fill="url(#skyC)"/>
+  <rect width="1400" height="600" fill="url(#sunC)"/>
+
+  <!-- Sea -->
+  <rect y="500" width="1400" height="200" fill="url(#seaC)"/>
+
+  <!-- Sun reflection on sea -->
+  <ellipse cx="350" cy="535" rx="160" ry="6" fill="#cc7733" opacity=".22"/>
+  <ellipse cx="350" cy="555" rx="120" ry="5" fill="#cc7733" opacity=".15"/>
+  <ellipse cx="350" cy="575" rx="80"  ry="4" fill="#cc7733" opacity=".1"/>
+
+  <!-- Subtle horizon line -->
+  <line x1="0" y1="500" x2="1400" y2="500" stroke="#3a2820" stroke-width=".5" opacity=".4"/>
+
+  <!-- Distant headland silhouette (Cap Blanc-Nez seen from Cap Gris-Nez) -->
+  <path d="M850 502 Q 950 484 1050 488 T 1250 478 Q 1320 470 1400 472 L 1400 510 L 850 510 Z" fill="#0e0a08" opacity=".75"/>
+
+  <!-- Foreground cliff (Cap Gris-Nez) — dramatic rocky outcrop -->
+  <path d="M0 700
+           L 0 900 L 1400 900 L 1400 700
+           Q 1340 690 1280 696
+           Q 1230 702 1190 696
+           Q 1140 686 1090 700
+           Q 1040 712 980 706
+           Q 920 696 870 712
+           Q 810 728 760 720
+           Q 690 706 620 724
+           Q 560 740 490 728
+           Q 420 712 360 728
+           Q 300 742 230 724
+           Q 170 712 100 728
+           Q 50 738 0 720 Z" fill="url(#cliffC)"/>
+
+  <!-- Cliff highlight on the upper edge -->
+  <path d="M0 700
+           Q 50 738 100 728 Q 170 712 230 724 Q 300 742 360 728 Q 420 712 490 728
+           Q 560 740 620 724 Q 690 706 760 720 Q 810 728 870 712 Q 920 696 980 706
+           Q 1040 712 1090 700 Q 1140 686 1190 696 Q 1230 702 1280 696 Q 1340 690 1400 700"
+        stroke="#7a5a36" stroke-width="1.2" fill="none" opacity=".5"/>
+
+  <!-- Lighthouse silhouette on the cliff -->
+  <g transform="translate(1140, 600)">
+    <rect x="-9" y="0" width="18" height="86" fill="#1a1410"/>
+    <rect x="-12" y="78" width="24" height="6" fill="#1a1410"/>
+    <rect x="-13" y="84" width="26" height="4" fill="#241812"/>
+    <rect x="-11" y="62" width="22" height="14" fill="#241812"/>
+    <rect x="-7"  y="64" width="14" height="10" fill="#ffd6a3" opacity=".75"/>
+    <!-- Light cone -->
+    <path d="M0 70 L -180 38 L -180 102 Z" fill="#ffd6a3" opacity=".07"/>
+  </g>
+
+  <!-- Editorial mark -->
+  <g transform="translate(80, 820)" font-family="Georgia, serif" fill="#9a7048" opacity=".55">
+    <text font-size="13" letter-spacing="6">— CÔTE —</text>
+  </g>
+
+  <rect width="1400" height="900" fill="url(#vignetteC)"/>
+  <rect width="1400" height="900" filter="url(#grainC)" opacity=".5"/>
+</svg>
