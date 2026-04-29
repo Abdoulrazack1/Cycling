@@ -209,19 +209,33 @@
     },
 
     // ── Refresh ──────────────────────────────────────────────────
+    // Comportement défensif : si le refresh échoue (rate limit, cookie
+    // perdu, réseau coupé) MAIS qu'on a encore un access token valide en
+    // mémoire, on garde la session. La session ne se ferme que si on n'a
+    // plus aucun moyen d'authentifier l'utilisateur.
     async refresh() {
       try {
         const res = await fetch(`${API_BASE}/auth/refresh`, {
           method: 'POST', credentials: 'include'
         });
-        if (!res.ok) {
-          _clearSession();
-          return null;
+        if (res.ok) {
+          const data = await res.json();
+          _setSession(data.accessToken, data.user);
+          return data.user;
         }
-        const data = await res.json();
-        _setSession(data.accessToken, data.user);
-        return data.user;
-      } catch {
+        // Refresh refusé : ne pas tuer la session si on a un token frais
+        if (_accessToken && _isTokenFresh(_accessToken)) {
+          console.warn('[auth] refresh failed but local access token is still fresh, keeping session');
+          return _user;
+        }
+        _clearSession();
+        return null;
+      } catch (err) {
+        // Réseau coupé : pareil, on garde la session si possible
+        if (_accessToken && _isTokenFresh(_accessToken)) {
+          console.warn('[auth] refresh network error, keeping session with local token');
+          return _user;
+        }
         _clearSession();
         return null;
       }
@@ -288,22 +302,11 @@
       if (_initPromise) return _initPromise;
 
       _initPromise = (async () => {
-        // 1) Restaurer immédiatement le user persisté pour un affichage
-        //    sans flash. Si on a aussi un access token frais en
-        //    sessionStorage, on est techniquement déjà connectés.
-        const stored = _readPersistedUser();
-        if (stored) _user = stored;
-
-        const storedToken = _readPersistedAccessToken();
-        if (storedToken && _isTokenFresh(storedToken)) {
-          // Token encore valide — restaurer la session sans attendre le refresh.
-          _accessToken = storedToken;
-          _scheduleRefresh(storedToken);
-        }
+        // 1) Restauration synchrone déjà faite au bootstrap (cf. fin de l'IIFE).
+        //    Ici on tente d'obtenir un token à jour via le refresh cookie.
+        const stored = _user;
 
         // 2) Tenter un refresh pour récupérer un token frais (best-effort).
-        //    Si on a déjà un token en mémoire, l'échec n'est pas fatal :
-        //    on garde la session active jusqu'à expiration du token actuel.
         try {
           const res = await fetch(`${API_BASE}/auth/refresh`, {
             method: 'POST', credentials: 'include'
@@ -311,27 +314,42 @@
           if (res.ok) {
             const data = await res.json();
             _setSession(data.accessToken, data.user);
+          } else if (_accessToken && _isTokenFresh(_accessToken)) {
+            // Refresh refusé MAIS on a un token frais en storage : valider
+            // sa validité côté serveur via /auth/me. Si c'est OK, on
+            // continue avec ce token. Sinon clear.
+            try {
+              const meRes = await fetch(`${API_BASE}/auth/me`, {
+                headers: { Authorization: 'Bearer ' + _accessToken }
+              });
+              if (meRes.ok) {
+                const me = await meRes.json();
+                _user = me;
+                _persistUser(me);
+                _scheduleRefresh(_accessToken);
+                _notify();
+              } else if (meRes.status === 401) {
+                _clearSession();
+              }
+              // autre status : on garde la session local par tolérance
+            } catch {
+              // réseau : tolérance
+            }
           } else if (!_accessToken) {
-            // Refresh refusé ET pas de token en mémoire → vraiment déconnecté
             _clearSession();
           }
-          // Sinon : refresh a échoué (cookie cross-port ?) MAIS on a un
-          // token frais en sessionStorage → on reste connecté localement.
         } catch {
-          // Réseau coupé / API down. Ne pas casser la session si le token
-          // local est encore valide ; sinon on ne peut rien faire de plus.
-          if (!_accessToken) {
-            _user = stored;
-          }
+          // Réseau coupé
+          if (!_accessToken) _user = stored;
         }
 
         // 3) Protéger la page si nécessaire (après tentative de refresh)
-        if (document.body.dataset.requiresAuth && !CCS_AUTH.isLoggedIn()) {
+        if (document.body?.dataset?.requiresAuth && !CCS_AUTH.isLoggedIn()) {
           const here = location.pathname.split('/').pop() || 'index.html';
           window.location.href = 'login.html?redirect=' + encodeURIComponent(here + location.search);
           return;
         }
-        if (document.body.dataset.requiresAdmin && !CCS_AUTH.isAdmin()) {
+        if (document.body?.dataset?.requiresAdmin && !CCS_AUTH.isAdmin()) {
           window.location.href = 'index.html';
           return;
         }

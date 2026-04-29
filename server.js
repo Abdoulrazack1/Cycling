@@ -61,13 +61,24 @@ app.use(helmet({
 app.set('trust proxy', 1);
 
 // ── CORS ─────────────────────────────────────────────────────
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5500')
-  .split(',').map(o => o.trim());
+// En dev : autoriser n'importe quel port localhost / 127.0.0.1 (Live Server,
+// Vite, etc. sont en 5500/5173/3001…). En prod : whitelist via FRONTEND_URL.
+const isProdEnv = process.env.NODE_ENV === 'production';
+const explicitOrigins = (process.env.FRONTEND_URL || '')
+  .split(',').map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Autoriser les requêtes sans origin (mobile, curl, Postman)
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Autoriser les requêtes sans origin (mobile, curl, Postman, fetch same-origin)
+    if (!origin) return cb(null, true);
+
+    // Whitelist explicite via env
+    if (explicitOrigins.includes(origin)) return cb(null, true);
+
+    // En dev, tolérer tous les localhost / 127.0.0.1 sur n'importe quel port
+    if (!isProdEnv && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return cb(null, true);
+    }
     cb(new Error('CORS non autorisé pour : ' + origin));
   },
   credentials: true,
@@ -81,23 +92,40 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ── Rate limiting ─────────────────────────────────────────────
+// Le globalLimiter saute les requêtes authentifiées (header Authorization
+// présent) car elles passent déjà par requireAuth/requireAdmin qui valide
+// l'identité côté DB. Sans ça, un admin qui rafraîchit l'interface 5 fois
+// déclenche 50+ requêtes (sorties + GPX + POIs + segments + …) et se fait
+// jeter, y compris pour ses appels /auth/refresh — d'où des déconnexions
+// sauvages.
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 min
-  max: 300,
+  windowMs: 15 * 60 * 1000,
+  max: 1000,                                 // bumped from 300
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => !!req.headers.authorization, // skip if Bearer token present
   message: { error: 'Trop de requêtes, réessayez dans 15 minutes' }
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Trop de tentatives de connexion' }
+  max: 30,                                   // bumped slightly (was 20)
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Ne PAS limiter /refresh — il est appelé légitimement à chaque
+  // ouverture de page, et le hit limit casse la session. Limit only login/register.
+  skip: (req) => req.path === '/refresh' || req.path === '/me',
+  message: { error: 'Trop de tentatives de connexion, patientez 15 min' }
 });
 
+// contactLimiter : seulement sur POST /contact (formulaire public anti-spam),
+// pas sur GET (lecture admin) ni sur PATCH/DELETE (modération admin).
 const contactLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,  // 1h
+  windowMs: 60 * 60 * 1000,
   max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method !== 'POST' || !!req.headers.authorization,
   message: { error: 'Vous avez envoyé trop de messages récemment' }
 });
 

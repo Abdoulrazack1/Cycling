@@ -192,7 +192,7 @@
       const isOpen = ev.statut === 'ouvert' && new Date(ev.date) > new Date();
 
       return `
-        <a href="sortie.html?id=${escHtml(ev.sortie_id || ev.slug || ev.id)}" class="list-ornate-row">
+        <a href="evenement.html?id=${encodeURIComponent(ev.id)}" class="list-ornate-row">
           <div class="list-ornate-date">${isoDate}<span class="list-ornate-date-small">${dayName}</span></div>
           <div>
             <div class="list-ornate-title">${ev.title_html || escHtml(ev.title)}</div>

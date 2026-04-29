@@ -26,6 +26,33 @@ ou un organisateur).
 | Élévation    | Open-Meteo API publique                              |
 | Upload       | multer (fichiers GPX)                                |
 
+### Pages du site
+
+**Pages publiques :**
+- `index.html` — accueil
+- `sorties.html` — liste des sorties
+- `sortie.html?id=X` — détail d'une sortie (carte, profil, météo, POIs)
+- `parcours.html` — liste des parcours signatures
+- `evenements.html` — liste des événements
+- `evenement.html?id=X` — détail d'un événement avec inscription **(nouveau)**
+- `club.html` — présentation du club
+- `membres.html` — trombinoscope des sociétaires
+- `membre.html?id=X` — profil public d'un sociétaire **(nouveau)**
+- `palmares.html` — palmarès du club
+- `segments.html` — segments KOM chronométrés
+- `contact.html` — formulaire de contact
+- `mentions-legales.html`
+- `404.html`
+
+**Pages auth :**
+- `login.html` — connexion + inscription (deux onglets)
+- `mot-de-passe-oublie.html` — demande de reset (notifie l'admin)
+- `reset-password.html?token=X` — choisir un nouveau mot de passe **(nouveau)**
+
+**Pages connectées :**
+- `profil.html` — profil personnel + équipement + édition
+- `admin.html` — espace admin (sorties, événements, membres, GPX, contacts, palmarès…)
+
 ### Arborescence
 
 ```
@@ -525,6 +552,11 @@ mais toujours utilisable).
 | POST    | /api/auth/login                  | -      | Connexion                             |
 | POST    | /api/auth/refresh                | cookie | Rafraîchir l'access token             |
 | POST    | /api/auth/logout                 | -      | Déconnexion (clear cookie)            |
+| POST    | /api/auth/register               | -      | Inscription                           |
+| POST    | /api/auth/forgot-password        | -      | Demande de reset (notifie admin)      |
+| POST    | /api/auth/admin-reset/:userId    | admin  | Génère un lien de reset (24h)         |
+| POST    | /api/auth/reset-password         | -      | Reset via token reçu par email        |
+| GET     | /api/auth/me                     | bearer | Profil de l'utilisateur connecté      |
 | GET     | /api/sorties                     | -      | Liste paginée des sorties             |
 | GET     | /api/sorties/:slug               | -      | Détail d'une sortie                   |
 | POST    | /api/sorties                     | admin  | Créer une sortie                      |
@@ -602,24 +634,71 @@ git clone <repo> Cycling && cd Cycling
 npm install
 cp .env.example .env && $EDITOR .env
 
-# 2. Base de données
+# 2. Base de données — création des tables (idempotent grâce aux IF NOT EXISTS)
 mysql -u root -p < schema.sql
 
-# 3. Générer les tracés GPX (passe par les vrais points iconiques)
-node scripts/generate-gpx.js --all
-
-# 4. Vérifier la cohérence
-node scripts/validate-gpx.js
-
-# 5. Peupler la base
+# 3. Premier seed (peuple admin + données initiales)
 node seed.js
 
-# 6. (Optionnel) Importer un vrai GPX pour une sortie spécifique
-cp ~/Téléchargements/votre-fichier.gpx asset/gpx/arenberg-2025.gpx
-node scripts/validate-gpx.js arenberg-2025.gpx
-
-# 7. Lancer
+# 4. Lancer l'app
 npm start
 ```
 
 Ouvrir `http://localhost:3000/`.
+
+---
+
+## 10. ⚠️ Persistance des données — comprendre seed.js
+
+**Comportement par défaut (depuis le dernier patch).** `node seed.js` est
+maintenant **safe** : il fait des `INSERT IGNORE` et ne touche pas aux
+sorties que vous avez importées via le formulaire admin, ni aux comptes
+créés. Vous pouvez le relancer autant que vous voulez sans risque.
+
+**Mode reset.** Si vous voulez vraiment tout effacer (par exemple pour
+une démo), utilisez explicitement le drapeau `--reset` :
+
+```bash
+node seed.js --reset
+```
+
+Ce mode **TRUNCATE** toutes les tables avant de reseeder. Toutes vos
+sorties importées, comptes créés, et messages de contact seront effacés.
+
+**Données InnoDB.** MySQL avec moteur InnoDB est persistant : les courses
+restent en DB tant que vous ne les supprimez pas explicitement. Le
+redémarrage du serveur Node, de nodemon, de VS Code, ou même de Windows
+n'efface rien. Si vos courses disparaissent, c'est forcément parce que :
+
+1. Vous avez relancé `node seed.js --reset` (ou l'ancienne version sans
+   ce flag — version corrigée maintenant)
+2. L'INSERT a échoué silencieusement à l'import. Vérifiez les logs serveur
+   (terminal qui fait tourner `npm run dev`) — chaque import-gpx loggue
+   chaque étape avec `[import-gpx]` en préfixe.
+
+---
+
+## 11. Sessions — pas d'expiration en pratique
+
+**Tokens longs.** Depuis le dernier patch :
+- Access token : valide 1 an
+- Refresh token : valide 10 ans
+
+Vous pouvez surcharger via `.env` :
+```env
+JWT_EXPIRES_IN=365d
+JWT_REFRESH_EXPIRES_IN=3650d
+```
+
+**Cookie session.** Le cookie httpOnly du refresh token a un `maxAge`
+de 10 ans aussi. Cocher « Se souvenir de moi » au login active ce cookie
+persistant (sinon le cookie est de session — disparaît à la fermeture du
+navigateur).
+
+**Persistance frontend.** Le token est stocké dans `localStorage` si
+remember-me est coché (persiste fermeture navigateur), sinon
+`sessionStorage` (durée de l'onglet uniquement).
+
+**Rate limiting.** Les utilisateurs authentifiés (header `Authorization`)
+sont **exemptés** du rate limit global. Vous pouvez créer 50 sorties
+d'affilée sans déclencher le « trop de requêtes ».

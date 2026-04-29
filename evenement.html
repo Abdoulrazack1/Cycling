@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Événement · Club de Cyclisme de Salouel</title>
+  <meta name="description" content="Détail d'un événement cycliste organisé par le C.C. Salouel.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <main id="main">
+
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb">
+        <a href="index.html">Accueil</a><span class="sep">/</span>
+        <a href="evenements.html">Événements</a><span class="sep">/</span>
+        <span id="bc-title">…</span>
+      </nav>
+      <div class="page-head-chapter"><em id="ev-chapter">Événement</em></div>
+      <h1 class="d-l page-head-title" id="ev-title">Chargement…</h1>
+      <p class="page-head-sub" id="ev-subtitle"></p>
+      <div class="page-head-meta" id="ev-meta"></div>
+    </div>
+  </section>
+
+  <section class="section-sm">
+    <div class="wrap" style="display:grid; grid-template-columns: 1fr 380px; gap: 64px;">
+
+      <article class="prose-block" data-reveal>
+        <div id="ev-description-block">
+          <h2 class="d-m" style="margin-bottom:24px;">À <span class="it">propos</span></h2>
+          <p id="ev-description" class="lede">Chargement…</p>
+        </div>
+
+        <div id="ev-parcours-block" hidden style="margin-top:48px;">
+          <h2 class="d-m" style="margin-bottom:24px;">Le <span class="it">parcours</span></h2>
+          <div id="ev-parcours-link"></div>
+        </div>
+
+        <div id="ev-inscrits-block" style="margin-top:48px;">
+          <h2 class="d-m" style="margin-bottom:24px;">Les <span class="it">inscrits</span></h2>
+          <div id="ev-inscrits-list" style="font-family:var(--f-sans); font-size:13px;">Chargement…</div>
+        </div>
+      </article>
+
+      <aside class="sticky-side" data-reveal data-delay="80">
+        <div class="ev-detail-card" style="background:var(--ink-2); border:1px solid var(--line); padding:28px; position:sticky; top:32px;">
+          <div style="font-family:var(--f-sans); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--parch-3); margin-bottom:8px;" id="ev-date-label">—</div>
+          <div style="font-family:var(--f-disp); font-size:28px; line-height:1.1; color:var(--parch); margin-bottom:24px;" id="ev-date-big">—</div>
+
+          <div style="font-size:13px; font-family:var(--f-sans); color:var(--parch-2); line-height:1.7; margin-bottom:24px;">
+            <div id="ev-info-lieu" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line-soft);">
+              <span style="color:var(--parch-3);">Lieu</span>
+              <span style="color:var(--parch);">—</span>
+            </div>
+            <div id="ev-info-distance" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line-soft);">
+              <span style="color:var(--parch-3);">Distance</span>
+              <span style="color:var(--parch);">—</span>
+            </div>
+            <div id="ev-info-engagement" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line-soft);">
+              <span style="color:var(--parch-3);">Engagement</span>
+              <span style="color:var(--parch);">—</span>
+            </div>
+            <div id="ev-info-inscrits" style="display:flex; justify-content:space-between; padding:8px 0;">
+              <span style="color:var(--parch-3);">Inscrits</span>
+              <span style="color:var(--parch);" id="ev-inscrits-count">—</span>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-brass" id="btn-register" style="width:100%;">S'inscrire</button>
+          <a href="evenements.html" class="btn btn-ghost" style="width:100%; margin-top:12px;">← Tous les événements</a>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Modal d'inscription -->
+  <div id="ev-modal" class="ev-modal" hidden role="dialog" aria-modal="true">
+    <div class="ev-modal-backdrop" data-close></div>
+    <div class="ev-modal-panel">
+      <button type="button" class="ev-modal-close" aria-label="Fermer" data-close>×</button>
+      <div class="ev-modal-chapter"><em>Inscription</em></div>
+      <h3 class="ev-modal-title" id="ev-modal-title">—</h3>
+      <p class="ev-modal-sub" id="ev-modal-sub">—</p>
+
+      <div id="ev-form-error"   class="auth-error"   role="alert"  hidden style="margin-top:18px;"></div>
+      <div id="ev-form-success" class="auth-success" role="status" hidden style="margin-top:18px;"></div>
+
+      <form id="ev-form" class="event-inscr-form" novalidate>
+        <div class="field-row">
+          <div class="field"><label for="ev-prenom">Prénom *</label><input id="ev-prenom" type="text" autocomplete="given-name" required></div>
+          <div class="field"><label for="ev-nom">Nom *</label><input id="ev-nom" type="text" autocomplete="family-name" required></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ev-email">Email *</label><input id="ev-email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="ev-tel">Téléphone</label><input id="ev-tel" type="tel" autocomplete="tel"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ev-cat">Catégorie</label>
+            <select id="ev-cat">
+              <option value="">— Indifférent —</option>
+              <option value="loisir">Loisir / Découverte</option>
+              <option value="sport">Sport (≥ 28 km/h)</option>
+              <option value="expert">Expert / FFC</option>
+              <option value="ecole">École de vélo (8–14 ans)</option>
+            </select>
+          </div>
+          <div class="field"><label for="ev-dist">Distance (km)</label>
+            <input id="ev-dist" type="number" min="0" placeholder="ex. 115">
+          </div>
+        </div>
+        <div style="margin-top:24px; text-align:right;">
+          <button type="button" class="btn btn-ghost" data-close>Annuler</button>
+          <button type="submit" class="btn btn-brass" id="ev-submit">Confirmer l'inscription</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>window.CCS_CONFIG = { backend: 'rest', apiBase: 'http://localhost:3000/api' };</script>
+  <script src="asset/js/data.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script>
+  (async () => {
+    const params = new URLSearchParams(location.search);
+    const evId = params.get('id') || params.get('slug');
+    if (!evId) {
+      document.getElementById('ev-title').textContent = 'Événement non spécifié';
+      return;
+    }
+
+    const wait = () => new Promise(r => {
+      const tick = () => window.CCS_DATA ? r() : setTimeout(tick, 50);
+      tick();
+    });
+    await wait();
+
+    let ev;
+    try {
+      ev = await window.CCS_DATA.getEvenement(evId);
+    } catch (err) {
+      document.getElementById('ev-title').textContent = 'Événement introuvable';
+      document.getElementById('ev-subtitle').textContent = err.message || '';
+      return;
+    }
+
+    // Helpers
+    const fmtDate = (iso) => {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    };
+    const fmtDateBig = (iso) => {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    };
+    const fmtDays = (iso) => {
+      if (!iso) return '—';
+      const days = Math.ceil((new Date(iso) - new Date()) / 86400000);
+      if (days < 0) return 'Passé';
+      if (days === 0) return "Aujourd'hui";
+      if (days === 1) return 'Demain';
+      return `Dans ${days} j`;
+    };
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    // Header
+    document.title = `${ev.title} · C.C. Salouel`;
+    document.getElementById('bc-title').textContent = ev.title;
+    document.getElementById('ev-chapter').textContent = (ev.type || 'événement').toUpperCase();
+    document.getElementById('ev-title').innerHTML = ev.title_html || esc(ev.title);
+    document.getElementById('ev-subtitle').textContent = ev.subtitle || '';
+
+    // Meta
+    const metaItems = [
+      { l: 'Date', v: fmtDateBig(ev.date) },
+      { l: 'J−', v: fmtDays(ev.date) },
+      { l: 'Distance', v: ev.distance_km ? `${ev.distance_km} km` : '—' },
+      { l: 'Inscrits', v: ev.max_inscrits ? `${ev.inscrits || 0}/${ev.max_inscrits}` : (ev.inscrits || 0) },
+    ];
+    document.getElementById('ev-meta').innerHTML = metaItems.map(m =>
+      `<div class="page-head-meta-item"><div class="page-head-meta-l">${m.l}</div><div class="page-head-meta-v">${m.v}</div></div>`
+    ).join('');
+
+    // Description
+    if (ev.description) {
+      document.getElementById('ev-description').textContent = ev.description;
+    } else {
+      document.getElementById('ev-description-block').hidden = true;
+    }
+
+    // Parcours lié
+    if (ev.sortie_id) {
+      document.getElementById('ev-parcours-block').hidden = false;
+      document.getElementById('ev-parcours-link').innerHTML =
+        `<a href="sortie.html?id=${encodeURIComponent(ev.sortie_id)}" class="btn btn-ghost">Voir le parcours détaillé →</a>`;
+    }
+
+    // Inscrits
+    const insc = ev.inscriptions || [];
+    const inscWrap = document.getElementById('ev-inscrits-list');
+    if (insc.length === 0) {
+      inscWrap.innerHTML = '<p style="color:var(--parch-3); font-style:italic;">Soyez le premier à vous inscrire.</p>';
+    } else {
+      inscWrap.innerHTML = `
+        <table class="palm-table" style="width:100%; font-family:var(--f-sans); font-size:13px;">
+          <thead><tr style="border-bottom:1px solid var(--line);"><th style="text-align:left;padding:8px;">Nom</th><th style="text-align:left;padding:8px;">Catégorie</th><th style="text-align:left;padding:8px;">Distance</th></tr></thead>
+          <tbody>${insc.map(i => `
+            <tr style="border-bottom:1px solid var(--line-soft);">
+              <td style="padding:8px;">${esc(i.prenom)} ${esc(i.nom?.[0] || '')}.</td>
+              <td style="padding:8px;color:var(--parch-3);">${esc(i.categorie || '—')}</td>
+              <td style="padding:8px;color:var(--parch-3);">${i.distance ? i.distance + ' km' : '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    // Aside card
+    document.getElementById('ev-date-label').textContent = fmtDays(ev.date);
+    document.getElementById('ev-date-big').textContent = fmtDate(ev.date) + (ev.heure ? ` · ${ev.heure}` : '');
+    document.querySelector('#ev-info-lieu span:last-child').textContent = ev.lieu || ev.region || '—';
+    document.querySelector('#ev-info-distance span:last-child').textContent = ev.distance_km ? `${ev.distance_km} km` : '—';
+    document.querySelector('#ev-info-engagement span:last-child').textContent = ev.engagement_eur ? `${ev.engagement_eur} €` : 'Gratuit';
+    document.getElementById('ev-inscrits-count').textContent = ev.max_inscrits ? `${ev.inscrits || 0}/${ev.max_inscrits}` : (ev.inscrits || 0);
+
+    // Bouton inscription
+    const btnReg = document.getElementById('btn-register');
+    if (ev.statut === 'complet')      { btnReg.disabled = true; btnReg.textContent = 'Complet'; }
+    else if (ev.statut === 'termine') { btnReg.disabled = true; btnReg.textContent = 'Terminé'; }
+    else if (ev.statut === 'annule')  { btnReg.disabled = true; btnReg.textContent = 'Annulé'; }
+
+    // Modal handlers
+    const modal = document.getElementById('ev-modal');
+    const evError = document.getElementById('ev-form-error');
+    const evSuccess = document.getElementById('ev-form-success');
+    const evForm = document.getElementById('ev-form');
+    const evSubmit = document.getElementById('ev-submit');
+
+    btnReg.addEventListener('click', () => {
+      // Pré-remplir avec l'utilisateur connecté si disponible
+      const u = window.CCS_AUTH?.getUser();
+      if (u) {
+        document.getElementById('ev-prenom').value = u.prenom || '';
+        document.getElementById('ev-nom').value    = u.nom || '';
+        document.getElementById('ev-email').value  = u.email || '';
+      }
+      document.getElementById('ev-modal-title').textContent = ev.title;
+      document.getElementById('ev-modal-sub').textContent = `${fmtDate(ev.date)}${ev.lieu ? ' · ' + ev.lieu : ''}`;
+      evError.hidden = true; evSuccess.hidden = true; evForm.style.display = '';
+      modal.hidden = false;
+    });
+
+    document.querySelectorAll('[data-close]').forEach(el => {
+      el.addEventListener('click', () => { modal.hidden = true; });
+    });
+
+    evForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      evError.hidden = true;
+      const data = {
+        prenom:    document.getElementById('ev-prenom').value.trim(),
+        nom:       document.getElementById('ev-nom').value.trim(),
+        email:     document.getElementById('ev-email').value.trim(),
+        telephone: document.getElementById('ev-tel').value.trim() || undefined,
+        categorie: document.getElementById('ev-cat').value || undefined,
+        distance:  parseInt(document.getElementById('ev-dist').value) || undefined,
+      };
+      if (!data.prenom || !data.nom || !data.email) {
+        evError.textContent = 'Prénom, nom et email sont requis'; evError.hidden = false; return;
+      }
+      evSubmit.textContent = 'Envoi…'; evSubmit.disabled = true;
+      try {
+        await window.CCS_DATA.inscrireEvenement(ev.id, data);
+        evSuccess.textContent = 'Inscription confirmée ! Vous recevrez un email de confirmation.';
+        evSuccess.hidden = false;
+        evForm.style.display = 'none';
+        setTimeout(() => { modal.hidden = true; location.reload(); }, 2500);
+      } catch (err) {
+        evError.textContent = err.message || "Erreur lors de l'inscription";
+        evError.hidden = false;
+        evSubmit.textContent = "Confirmer l'inscription"; evSubmit.disabled = false;
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

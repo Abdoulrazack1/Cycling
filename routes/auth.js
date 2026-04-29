@@ -4,17 +4,20 @@ const bcrypt    = require('bcryptjs');
 const jwt       = require('jsonwebtoken');
 const crypto    = require('crypto');
 const { query, withTransaction } = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
 
 // ── Helpers ───────────────────────────────────────────────────
+// TTL extrêmement longs : 1 an pour l'access, 10 ans pour le refresh.
+// L'utilisateur a explicitement demandé à ne plus avoir d'expiration.
+// Surchargeable via JWT_EXPIRES_IN / JWT_REFRESH_EXPIRES_IN dans .env.
 function signAccess(user) {
   return jwt.sign(
     { sub: user.id, role: user.role, username: user.username },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '365d' }
   );
 }
 
@@ -22,7 +25,7 @@ function signRefresh(user) {
   return jwt.sign(
     { sub: user.id },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '3650d' }
   );
 }
 
@@ -57,7 +60,7 @@ function cookieOpts(rememberMe = true) {
     sameSite: useSecure ? 'none' : 'lax',
     path: '/',
     // Si "se souvenir de moi" non coché : cookie de session (sans maxAge)
-    ...(rememberMe ? { maxAge: 7 * 24 * 3600 * 1000 } : {})
+    ...(rememberMe ? { maxAge: 3650 * 24 * 3600 * 1000 } : {})
   };
   // Domaine explicite optionnel (rarement utile, parfois nécessaire si
   // backend et frontend tournent sur sous-domaines différents en prod).
@@ -112,7 +115,7 @@ router.post('/login', [
     const refreshToken = signRefresh(user);
 
     // Stocker le refresh token (hashé)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    const expiresAt = new Date(Date.now() + 3650 * 24 * 3600 * 1000);
     await query(
       'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
       [user.id, hashToken(refreshToken), expiresAt]
@@ -168,7 +171,7 @@ router.post('/register', [
     const accessToken  = signAccess(user);
     const refreshToken = signRefresh(user);
 
-    const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    const expiresAt = new Date(Date.now() + 3650 * 24 * 3600 * 1000);
     await query(
       'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
       [user.id, hashToken(refreshToken), expiresAt]
@@ -206,7 +209,7 @@ router.post('/refresh', async (req, res) => {
 
     // Rotation du refresh token
     const newRefresh = signRefresh(user);
-    const expiresAt  = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    const expiresAt  = new Date(Date.now() + 3650 * 24 * 3600 * 1000);
 
     await query('DELETE FROM refresh_tokens WHERE id = ?', [stored.id]);
     await query(
@@ -317,6 +320,79 @@ router.post('/forgot-password', [
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ── POST /api/auth/admin-reset/:userId ──────────────────────────
+// Réservé admin : génère un token de reset (JWT 24h) qu'il peut copier-
+// coller dans un email pour l'utilisateur. Le lien est de la forme :
+// http://localhost:3000/reset-password.html?token=...
+router.post('/admin-reset/:userId', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const [user] = await query('SELECT id, prenom, nom, email FROM users WHERE id = ?', [userId]);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const token = jwt.sign(
+      { sub: user.id, type: 'reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    const baseUrl = req.headers.origin || `http://localhost:${process.env.PORT || 3000}`;
+    const resetLink = `${baseUrl}/reset-password.html?token=${token}`;
+
+    res.json({
+      user: { id: user.id, prenom: user.prenom, nom: user.nom, email: user.email },
+      reset_link: resetLink,
+      expires_in: '24 heures'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ── POST /api/auth/reset-password ───────────────────────────────
+// L'utilisateur arrive avec un token (lien généré par admin-reset ou
+// envoyé par email) et choisit un nouveau mot de passe.
+router.post('/reset-password', [
+  body('token').notEmpty(),
+  body('new_password').isLength({ min: 8 }).withMessage('Mot de passe : 8 caractères minimum')
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) {
+    const arr = errs.array();
+    return res.status(400).json({ error: arr.map(e => e.msg).join(' · '), errors: arr });
+  }
+
+  const { token, new_password } = req.body;
+  try {
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Le lien a expiré. Demandez-en un nouveau.' });
+      }
+      return res.status(401).json({ error: 'Lien invalide' });
+    }
+    if (payload.type !== 'reset') {
+      return res.status(401).json({ error: 'Token de mauvais type' });
+    }
+
+    const [user] = await query('SELECT id FROM users WHERE id = ? AND actif = TRUE', [payload.sub]);
+    if (!user) return res.status(401).json({ error: 'Compte invalide ou désactivé' });
+
+    const hash = await bcrypt.hash(new_password, 12);
+    await query('UPDATE users SET password_hash = ? WHERE id = ?', [hash, user.id]);
+
+    // Invalider les sessions actives
+    await query('DELETE FROM refresh_tokens WHERE user_id = ?', [user.id]);
+
+    res.json({ message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' });
+  } catch (err) {
+    console.error('[reset-password]', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
