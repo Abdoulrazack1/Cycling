@@ -115,21 +115,28 @@ router.get('/', async (req, res) => {
     const sorties = await Promise.all(rows.map(buildSortie));
     res.json({ sorties, total: cnt });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
 // ── GET /api/sorties/:id ──────────────────────────────────────
 router.get('/:id', async (req, res) => {
   try {
-    const [row] = await query('SELECT * FROM sorties WHERE id = ?', [req.params.id]);
-    if (!row) return res.status(404).json({ error: 'Sortie introuvable' });
-    const sortie = await buildSortie(row);
+    // Tenter par id d'abord, puis par slug si rien (les anciens liens utilisent
+    // parfois le slug). Cela évite que sortie.html?id=mon-slug renvoie 404
+    // alors que la sortie existe sous l'id "mon-slug-2025-04-30".
+    const lookup = req.params.id;
+    let rows = await query('SELECT * FROM sorties WHERE id = ?', [lookup]);
+    if (rows.length === 0) {
+      rows = await query('SELECT * FROM sorties WHERE slug = ? ORDER BY date DESC LIMIT 1', [lookup]);
+    }
+    if (rows.length === 0) return res.status(404).json({ error: `Sortie "${lookup}" introuvable` });
+    const sortie = await buildSortie(rows[0]);
     res.json(sortie);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
@@ -298,20 +305,23 @@ router.put('/:id', requireAuth, requireModo, async (req, res) => {
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [id]))[0]);
     res.json(sortie);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
 // ── DELETE /api/sorties/:id ───────────────────────────────────
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const [row] = await query('SELECT id FROM sorties WHERE id = ?', [req.params.id]);
+    const [row] = await query('SELECT id, title, gpx_filename FROM sorties WHERE id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ error: 'Sortie introuvable' });
     await query('DELETE FROM sorties WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Sortie supprimée' });
+    // Audit log : on garde une trace de qui a supprimé quoi et quand
+    console.log(`[AUDIT] ${new Date().toISOString()} — Sortie supprimée : "${row.title}" (id=${row.id}, gpx=${row.gpx_filename || 'aucun'}) par user ${req.user.id} (${req.user.username || 'anonyme'})`);
+    res.json({ message: 'Sortie supprimée', id: row.id, title: row.title });
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[DELETE /sorties/:id]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -475,5 +485,155 @@ router.post('/import-gpx',
     }
   }
 );
+
+// ── GET /api/sorties/orphan-gpx ─────────────────────────────────
+// Liste les fichiers GPX présents dans asset/gpx/ qui ne sont rattachés
+// à AUCUNE sortie en base. Utile après un --reset accidentel pour
+// retrouver les fichiers à réimporter.
+router.get('/orphan-gpx/list', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const files = fs.readdirSync(ASSET_GPX_DIR)
+      .filter(f => f.toLowerCase().endsWith('.gpx'));
+
+    if (files.length === 0) return res.json({ orphans: [], total_files: 0 });
+
+    // Récupérer tous les gpx_filename utilisés en base
+    const rows = await query('SELECT gpx_filename FROM sorties WHERE gpx_filename IS NOT NULL');
+    const used = new Set(rows.map(r => r.gpx_filename));
+
+    const orphans = [];
+    for (const f of files) {
+      if (used.has(f)) continue;
+      const stat = fs.statSync(path.join(ASSET_GPX_DIR, f));
+      // Parser pour récupérer les metrics utiles
+      let metrics = null;
+      try {
+        const xml = fs.readFileSync(path.join(ASSET_GPX_DIR, f), 'utf8');
+        const m = parseGpx(xml);
+        metrics = {
+          distance_km: m.distance_km,
+          elevation_gain: m.elevation_gain,
+          points_count: m.points.length,
+          start: m.start,
+          name_from_gpx: m.name,
+        };
+      } catch (e) {
+        metrics = { error: 'GPX invalide : ' + e.message };
+      }
+      orphans.push({
+        filename: f,
+        size_bytes: stat.size,
+        modified: stat.mtime.toISOString(),
+        suggested_slug: f.replace(/\.gpx$/i, ''),
+        metrics
+      });
+    }
+    res.json({ orphans, total_files: files.length, used_count: used.size });
+  } catch (err) {
+    console.error('[GET /orphan-gpx]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.message || err.sqlMessage) });
+  }
+});
+
+// ── GET /api/sorties/:id/diagnose ─────────────────────────────
+// Diagnostic admin : pour une sortie donnée, vérifie tout ce qui peut
+// bloquer le rendu de la page (GPX présent ? Coords valides ? POIs ?).
+// Utile quand "la page sortie est vide" pour identifier la cause.
+router.get('/:id/diagnose', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const lookup = req.params.id;
+    let rows = await query('SELECT * FROM sorties WHERE id = ?', [lookup]);
+    if (rows.length === 0) {
+      rows = await query('SELECT * FROM sorties WHERE slug = ? ORDER BY date DESC LIMIT 1', [lookup]);
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({
+        error: `Sortie "${lookup}" introuvable en base`,
+        suggestion: 'Vérifiez l\'URL ou réimportez la sortie depuis l\'admin.'
+      });
+    }
+    const row = rows[0];
+    const checks = [];
+
+    // Check 1 : GPX filename présent en base ?
+    if (!row.gpx_filename) {
+      checks.push({ status: 'error', message: 'Champ gpx_filename est NULL en base — la sortie n\'a aucun fichier GPX rattaché.' });
+    } else {
+      // Check 2 : Fichier physique existe ?
+      const gpxPath = path.join(ASSET_GPX_DIR, row.gpx_filename);
+      if (!fs.existsSync(gpxPath)) {
+        checks.push({
+          status: 'error',
+          message: `Fichier GPX "${row.gpx_filename}" déclaré en base mais ABSENT du disque (cherché dans ${gpxPath}).`,
+          suggestion: 'Réimportez le fichier GPX depuis le formulaire admin, ou supprimez puis recréez la sortie.'
+        });
+      } else {
+        const stat = fs.statSync(gpxPath);
+        if (stat.size === 0) {
+          checks.push({ status: 'error', message: `Fichier GPX "${row.gpx_filename}" présent mais VIDE (0 octets).` });
+        } else {
+          // Check 3 : GPX parseable ?
+          try {
+            const xml = fs.readFileSync(gpxPath, 'utf8');
+            const m = parseGpx(xml);
+            checks.push({
+              status: 'ok',
+              message: `GPX OK : ${m.points.length} points, ${m.distance_km} km, D+${m.elevation_gain} m, départ (${m.start.lat}, ${m.start.lng}).`
+            });
+          } catch (err) {
+            checks.push({ status: 'error', message: `GPX corrompu : ${err.message}` });
+          }
+        }
+      }
+    }
+
+    // Check 4 : Coords départ
+    if (!row.location_lat || !row.location_lng) {
+      checks.push({
+        status: 'warning',
+        message: `Coordonnées de départ manquantes (location_lat=${row.location_lat}, location_lng=${row.location_lng}). La carte centrera sur le Nord par défaut.`
+      });
+    } else {
+      checks.push({ status: 'ok', message: `Coords départ : ${row.location_lat}, ${row.location_lng}` });
+    }
+
+    // Check 5 : Image hero
+    if (!row.hero_img) {
+      checks.push({ status: 'warning', message: 'Aucune image hero — fond noir.' });
+    } else {
+      const heroPath = path.join(__dirname, '..', row.hero_img);
+      if (fs.existsSync(heroPath)) {
+        checks.push({ status: 'ok', message: `Image hero OK : ${row.hero_img}` });
+      } else {
+        checks.push({ status: 'warning', message: `Image hero "${row.hero_img}" introuvable sur disque.` });
+      }
+    }
+
+    // Check 6 : POIs
+    const pois = await query('SELECT COUNT(*) as cnt FROM pois WHERE sortie_id = ?', [row.id]);
+    checks.push({ status: 'ok', message: `${pois[0].cnt} POI(s) rattaché(s) à cette sortie.` });
+
+    // Check 7 : Champs minimaux
+    const required = ['id', 'title', 'date', 'distance_km'];
+    const missing = required.filter(f => row[f] === null || row[f] === undefined);
+    if (missing.length) {
+      checks.push({ status: 'warning', message: `Champs vides : ${missing.join(', ')}` });
+    }
+
+    res.json({
+      sortie: { id: row.id, slug: row.slug, title: row.title, gpx_filename: row.gpx_filename },
+      checks,
+      summary: {
+        errors: checks.filter(c => c.status === 'error').length,
+        warnings: checks.filter(c => c.status === 'warning').length,
+        ok: checks.filter(c => c.status === 'ok').length
+      },
+      view_url: `/sortie.html?id=${encodeURIComponent(row.id)}`
+    });
+  } catch (err) {
+    console.error('[diagnose]', err);
+    res.status(500).json({ error: 'Erreur diagnostic : ' + (err.message) });
+  }
+});
 
 module.exports = router;

@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     const rows = await query('SELECT cle, valeur FROM club_settings');
     const settings = Object.fromEntries(rows.map(r => [r.cle, r.valeur]));
     res.json(settings);
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 router.put('/', requireAuth, requireAdmin, async (req, res) => {
@@ -22,7 +22,7 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
     }
     const rows = await query('SELECT cle, valeur FROM club_settings');
     res.json(Object.fromEntries(rows.map(r => [r.cle, r.valeur])));
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 module.exports = router;

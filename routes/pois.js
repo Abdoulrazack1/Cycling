@@ -10,7 +10,8 @@ const router = express.Router({ mergeParams: true }); // :sortieId hérité
 function formatPoi(row) {
   return {
     id: row.id, type: row.type, label: row.label,
-    desc: row.description, km: row.km,
+    desc: row.description,
+    km: row.km != null ? parseFloat(row.km) : null,
     lat: parseFloat(row.lat), lng: parseFloat(row.lng),
     contact: (row.contact_name || row.contact_phone)
       ? { name: row.contact_name, phone: row.contact_phone }
@@ -28,7 +29,8 @@ router.get('/', async (req, res) => {
     );
     res.json(rows.map(formatPoi));
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
@@ -67,8 +69,8 @@ router.post('/', requireAuth, [
     const [row] = await query('SELECT * FROM pois WHERE id = ?', [id]);
     res.status(201).json(formatPoi(row));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
@@ -99,8 +101,8 @@ router.post('/bulk', requireAuth, requireAdmin, async (req, res) => {
     const rows = await query('SELECT * FROM pois WHERE sortie_id = ? ORDER BY km', [sortieId]);
     res.json(rows.map(formatPoi));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
@@ -128,7 +130,8 @@ router.put('/:poiId', requireAuth, async (req, res) => {
     const [updated] = await query('SELECT * FROM pois WHERE id = ?', [poiId]);
     res.json(formatPoi(updated));
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
@@ -147,7 +150,8 @@ router.delete('/:poiId', requireAuth, async (req, res) => {
     await query('DELETE FROM pois WHERE id = ?', [poiId]);
     res.json({ message: 'POI supprimé' });
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 

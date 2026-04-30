@@ -8,11 +8,15 @@ router.get('/', async (req, res) => {
   try {
     const rows = await query('SELECT * FROM segments_global ORDER BY stars DESC, name');
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) {
+    console.error('[GET /segments]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+  }
 });
 
 router.post('/', requireAuth, requireAdmin, async (req, res) => {
   const s = req.body;
+  if (!s.name) return res.status(400).json({ error: 'Nom requis' });
   try {
     const result = await query(
       `INSERT INTO segments_global (name, location, stars, length_m, meilleur_temps,
@@ -20,11 +24,14 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
        VALUES (?,?,?,?,?,?,?,?,?,?)`,
       [s.name, s.location||null, s.stars||3, s.length_m||null,
        s.meilleur_temps||null, s.delta_moyenne||null, s.rang||null,
-       s.rang_cls||null, s.kom?1:0, s.sortie_id||null]
+       s.rang_cls||null, s.kom||null, s.sortie_id||null]
     );
     const [created] = await query('SELECT * FROM segments_global WHERE id = ?', [result.insertId]);
     res.status(201).json(created);
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) {
+    console.error('[POST /segments]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur lors de l\'ajout : ' + (err.sqlMessage || err.message) });
+  }
 });
 
 router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
@@ -35,18 +42,24 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
         delta_moyenne=?, rang=?, rang_cls=?, kom=?, sortie_id=? WHERE id=?`,
       [s.name, s.location||null, s.stars||3, s.length_m||null,
        s.meilleur_temps||null, s.delta_moyenne||null, s.rang||null,
-       s.rang_cls||null, s.kom?1:0, s.sortie_id||null, req.params.id]
+       s.rang_cls||null, s.kom||null, s.sortie_id||null, req.params.id]
     );
     const [updated] = await query('SELECT * FROM segments_global WHERE id = ?', [req.params.id]);
     res.json(updated);
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) {
+    console.error('[PUT /segments/:id]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+  }
 });
 
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('DELETE FROM segments_global WHERE id = ?', [req.params.id]);
     res.json({ message: 'Segment supprimé' });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) {
+    console.error('[DELETE /segments/:id]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+  }
 });
 
 module.exports = router;
