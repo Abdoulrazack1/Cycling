@@ -655,26 +655,62 @@ maintenant **safe** : il fait des `INSERT IGNORE` et ne touche pas aux
 sorties que vous avez importées via le formulaire admin, ni aux comptes
 créés. Vous pouvez le relancer autant que vous voulez sans risque.
 
-**Mode reset.** Si vous voulez vraiment tout effacer (par exemple pour
-une démo), utilisez explicitement le drapeau `--reset` :
+**Mode reset — protections renforcées.**
 
 ```bash
 node seed.js --reset
 ```
 
-Ce mode **TRUNCATE** toutes les tables avant de reseeder. Toutes vos
-sorties importées, comptes créés, et messages de contact seront effacés.
+Désormais, ce mode demande **une confirmation interactive obligatoire** :
+vous devez taper exactement `OUI EFFACER` pour que l'opération soit
+effectuée. Toute autre saisie (Entrée vide, autre texte) annule
+l'opération.
+
+Pour les scripts CI/CD, on peut bypasser la confirmation avec `--yes`
+(ou `-y`) :
+
+```bash
+node seed.js --reset --yes   # à utiliser AVEC PRUDENCE
+```
+
+**Aucune autre commande n'efface vos sorties.** Le code a été audité :
+- `seed.js --reset` est le seul TRUNCATE
+- `DELETE /api/sorties/:id` est le seul DELETE individuel (route admin protégée)
+- Aucun setInterval, aucun cron, aucun cleanup automatique
+- Le serveur ne fait rien de destructif au démarrage
+
+**Suppression depuis l'admin — double confirmation.** Le bouton ✕ d'une
+sortie ouvre maintenant deux dialogues : un confirm classique, puis un
+prompt qui demande de retaper l'identifiant exact de la sortie. Un clic
+accidentel ne suffit plus pour effacer.
+
+**Audit log.** Chaque suppression de sortie est journalisée dans le
+terminal serveur :
+```
+[AUDIT] 2025-04-30T12:34:56.789Z — Sortie supprimée : "Tour Avesnois 2026" (id=tour-avesnois-2026, gpx=tour-avesnois-2026.gpx) par user 1 (admin)
+```
 
 **Données InnoDB.** MySQL avec moteur InnoDB est persistant : les courses
 restent en DB tant que vous ne les supprimez pas explicitement. Le
 redémarrage du serveur Node, de nodemon, de VS Code, ou même de Windows
-n'efface rien. Si vos courses disparaissent, c'est forcément parce que :
+n'efface rien.
 
-1. Vous avez relancé `node seed.js --reset` (ou l'ancienne version sans
-   ce flag — version corrigée maintenant)
-2. L'INSERT a échoué silencieusement à l'import. Vérifiez les logs serveur
-   (terminal qui fait tourner `npm run dev`) — chaque import-gpx loggue
-   chaque étape avec `[import-gpx]` en préfixe.
+### Récupération de GPX orphelins
+
+Si vous avez fait un `--reset` accidentellement et que les fichiers `.gpx`
+sont toujours dans `asset/gpx/` (le `--reset` ne touche que la base, pas
+les fichiers), vous pouvez les rerattacher à de nouvelles sorties.
+
+**Depuis l'admin** :
+1. Allez dans **Sorties & parcours**
+2. Cliquez **« Récupérer GPX orphelins »**
+3. Une popup liste les fichiers présents non rattachés en base, avec
+   distance et D+ pré-calculés
+4. Cliquez **Importer** sur chaque fichier, donnez un titre et une date,
+   le serveur recrée la sortie
+
+**Endpoint API** : `GET /api/sorties/orphan-gpx/list` (admin) renvoie la
+liste des fichiers orphelins avec leurs métadonnées GPX.
 
 ---
 
@@ -702,3 +738,79 @@ remember-me est coché (persiste fermeture navigateur), sinon
 **Rate limiting.** Les utilisateurs authentifiés (header `Authorization`)
 sont **exemptés** du rate limit global. Vous pouvez créer 50 sorties
 d'affilée sans déclencher le « trop de requêtes ».
+
+---
+
+## 12. Espace admin — fonctionnalités complètes
+
+L'espace admin (`/admin.html`) couvre les domaines suivants :
+
+| Panneau         | Rôle requis | Actions possibles                                                 |
+|-----------------|-------------|-------------------------------------------------------------------|
+| Tableau de bord | admin       | Stats globales (sorties, événements, membres, contacts non lus)   |
+| Sorties         | admin       | CRUD complet, **import GPX automatique**, édition de toutes les métadonnées |
+| Événements      | admin/modo  | CRUD, suivi des inscrits                                          |
+| Membres         | admin       | Gestion des rôles (membre/modo/admin), désactivation, **génération de liens reset password** |
+| Contacts        | admin       | Lecture, marquage lu/traité, réponse mailto                       |
+| GPX             | admin       | Upload, téléchargement, suppression                               |
+| Paramètres club | admin       | Édition du nom, président, adresse, etc.                          |
+| Palmarès        | admin/modo  | CRUD résultats par année, médailles, événements                   |
+| Segments KOM    | admin       | CRUD segments chronométrés                                        |
+| **Points d'intérêt** | admin  | Vue globale tous-sorties, filtres, recherche, suppression (**nouveau**) |
+| Auto-import     | admin       | Scrape de courses publiques (Miles Republic, FFC HdF)             |
+
+### Réinitialisation de mot de passe (workflow admin)
+
+1. Un membre demande un reset via `mot-de-passe-oublie.html`
+2. Vous voyez le message dans **Contacts**
+3. Vous allez dans **Membres**, cliquez sur 🔑 à côté du membre
+4. Une popup s'ouvre avec un lien (valable 24 h) à copier
+5. Vous l'envoyez par email
+6. Le membre arrive sur `reset-password.html?token=...` et choisit son nouveau mot de passe
+
+Le bouton 🔑 utilise l'endpoint `POST /api/auth/admin-reset/:userId` qui
+renvoie un JWT signé avec votre `JWT_SECRET`. Toutes les sessions actives
+du membre sont invalidées au moment du reset.
+
+---
+
+## 13. Points d'intérêt (POIs)
+
+Les POIs sont des marqueurs géolocalisés rattachés à une sortie : signaleurs,
+ravitaillements, dangers (chute pavé, descente glissante), secteurs notés,
+points de départ et d'arrivée. Ils s'affichent sur la carte et dans la liste
+latérale de la page sortie.
+
+### Ajouter un POI (depuis la page d'une sortie)
+
+1. Ouvrir la sortie concernée (`/sortie.html?id=...`)
+2. Section **Points d'intérêt** sur la droite
+3. Cliquer **« Cliquer sur la carte »** (active le mode placement)
+4. Cliquer sur la carte (mini-carte ou plan principal) à l'endroit voulu
+5. Remplir le formulaire (type, libellé obligatoire, description, contact optionnel)
+6. **Enregistrer**
+
+Le serveur calcule automatiquement le kilomètre (distance depuis le départ
+en suivant le tracé GPX) le plus proche du clic. Anonymes peuvent voir les
+POIs ; seuls les utilisateurs connectés peuvent en ajouter.
+
+### Gérer les POIs (espace admin)
+
+Panel **Points d'intérêt** dans `/admin.html`. Vue globale tous-sorties avec :
+- Filtre par type (signaleur, ravito, danger, secteur, départ, arrivée)
+- Recherche texte (sur libellé et description)
+- Lien direct vers la sortie depuis chaque ligne
+- Affichage du créateur (avec emoji 👤 utilisateur ou 🤖 système)
+- Suppression unitaire avec confirmation
+
+### Endpoints API
+
+| Méthode | Route                                              | Auth   | Action                          |
+|---------|----------------------------------------------------|--------|---------------------------------|
+| GET     | /api/sorties/:sortieId/pois                        | -      | POIs d'une sortie               |
+| POST    | /api/sorties/:sortieId/pois                        | bearer | Ajouter un POI                  |
+| PUT     | /api/sorties/:sortieId/pois/:poiId                 | bearer | Modifier (auteur ou admin)      |
+| DELETE  | /api/sorties/:sortieId/pois/:poiId                 | bearer | Supprimer (auteur ou admin)     |
+| POST    | /api/sorties/:sortieId/pois/bulk                   | admin  | Remplacer tous les POIs système |
+| GET     | /api/pois?type=&q=&sortie_id=                      | admin  | Liste globale (admin)           |
+| DELETE  | /api/pois/:id                                      | admin  | Supprimer directement (admin)   |

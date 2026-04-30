@@ -153,6 +153,18 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M21 12h-2M5 12H3M18.66 18.66l-1.41-1.41M6.34 5.34L4.93 4.93M12 19v2M12 3V1"/></svg>
           Paramètres club
         </button>
+        <button class="admin-nav-item" data-panel="palmares">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          Palmarès
+        </button>
+        <button class="admin-nav-item" data-panel="segments">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Segments KOM
+        </button>
+        <button class="admin-nav-item" data-panel="pois">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Points d'intérêt
+        </button>
         <button class="admin-nav-item" data-panel="auto-import">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3-3m3 3l3-3M5 12h14M5 12l3-3m-3 3l3 3M19 12l-3 3m3-3l-3-3M12 22v-6m0 0l3 3m-3-3l-3 3"/></svg>
           Auto-import
@@ -183,6 +195,10 @@
           <div class="admin-section-title">
             <span>Sorties <span class="it">&</span> parcours</span>
             <div style="display:flex; gap:8px;">
+              <button class="btn btn-ghost btn-sm" id="btn-orphan-gpx" title="Lister les fichiers GPX présents dans asset/gpx/ mais non rattachés à une sortie en base">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Récupérer GPX orphelins
+              </button>
               <button class="btn btn-ghost btn-sm" id="btn-import-gpx">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                 Importer depuis GPX
@@ -232,6 +248,47 @@
         <div id="panel-club" class="admin-panel">
           <div class="admin-section-title">Paramètres <span class="it">du club</span></div>
           <div id="club-settings-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- Palmarès -->
+        <div id="panel-palmares" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Palmarès <span class="it">&</span> résultats</span>
+            <button class="btn btn-brass btn-sm" id="btn-new-palm">+ Nouveau résultat</button>
+          </div>
+          <div id="palmares-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- Segments KOM -->
+        <div id="panel-segments" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Segments <span class="it">chronométrés</span></span>
+            <button class="btn btn-brass btn-sm" id="btn-new-segment">+ Nouveau segment</button>
+          </div>
+          <div id="segments-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
+        </div>
+
+        <!-- POIs -->
+        <div id="panel-pois" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Points <span class="it">d'intérêt</span></span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="poi-filter-type" style="background:var(--ink-2); border:1px solid var(--line); color:var(--parch); font-family:var(--f-sans); font-size:12px; padding:6px 10px;">
+                <option value="">Tous types</option>
+                <option value="signaleur">Signaleurs</option>
+                <option value="ravito">Ravitos</option>
+                <option value="danger">Dangers</option>
+                <option value="secteur">Secteurs</option>
+                <option value="depart">Départs</option>
+                <option value="arrivee">Arrivées</option>
+              </select>
+              <input id="poi-filter-q" type="search" placeholder="Rechercher…" style="background:var(--ink-2); border:1px solid var(--line); color:var(--parch); font-family:var(--f-sans); font-size:12px; padding:6px 10px; width:180px;">
+            </div>
+          </div>
+          <p style="font-family:var(--f-sans); font-size:12px; color:var(--parch-3); margin-bottom:16px;">
+            Tous les POIs créés par les utilisateurs ou par les admins, toutes sorties confondues. Pour <b>ajouter</b> un POI, ouvrez la page d'une sortie et utilisez le formulaire dédié.
+          </p>
+          <div id="pois-table-wrap"><div class="admin-empty"><div class="loading-spinner"></div></div></div>
         </div>
 
         <!-- Auto-import (scraping + génération automatique de courses) -->
@@ -362,6 +419,9 @@
         contacts:     loadContacts,
         gpx:          loadGpx,
         club:         loadClub,
+        palmares:     loadPalmares,
+        segments:     loadSegments,
+        pois:         loadPois,
         'auto-import': loadAutoImport,
       };
       loaders[name]?.();
@@ -433,6 +493,7 @@
                 <td style="display:flex;gap:6px;align-items:center;">
                   <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="btn-xs" target="_blank">↗</a>
                   <button class="btn-xs btn-edit-sortie" data-id="${escHtml(s.id)}">Éditer</button>
+                  <button class="btn-xs btn-diag-sortie" data-id="${escHtml(s.id)}" title="Diagnostiquer cette sortie (pourquoi la page apparaît vide ?)">⚕</button>
                   <button class="btn-xs btn-xs-danger btn-del-sortie" data-id="${escHtml(s.id)}">✕</button>
                 </td>
               </tr>`).join('')}
@@ -441,9 +502,18 @@
 
         wrap.querySelectorAll('.btn-del-sortie').forEach(btn => {
           btn.addEventListener('click', async () => {
-            if (!confirm(`Supprimer la sortie "${btn.dataset.id}" ?`)) return;
+            const id = btn.dataset.id;
+            // Double confirmation : confirm + saisie de l'ID pour éviter les
+            // suppressions accidentelles (un clic mal placé ne suffit pas).
+            if (!confirm(`Supprimer définitivement la sortie « ${id} » ?\n\nCette action est IRRÉVERSIBLE. Tous les POIs, segments et inscriptions liés seront aussi supprimés (CASCADE).\n\nLe fichier GPX physique dans asset/gpx/ sera conservé.`)) return;
+            const typed = prompt(`Pour confirmer, retapez l'identifiant de la sortie :\n\n${id}`);
+            if (typed === null) return; // annulé
+            if (typed.trim() !== id) {
+              toast('Suppression annulée — identifiant ne correspond pas', 'warning');
+              return;
+            }
             try {
-              await apiFetch('/sorties/' + encodeURIComponent(btn.dataset.id), { method: 'DELETE' });
+              await apiFetch('/sorties/' + encodeURIComponent(id), { method: 'DELETE' });
               toast('Sortie supprimée', 'success');
               loadSorties();
             } catch (err) { toast(err.message, 'error'); }
@@ -451,6 +521,39 @@
         });
         wrap.querySelectorAll('.btn-edit-sortie').forEach(btn => {
           btn.addEventListener('click', () => openSortieModal(btn.dataset.id));
+        });
+        wrap.querySelectorAll('.btn-diag-sortie').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            try {
+              const data = await apiFetch('/sorties/' + encodeURIComponent(btn.dataset.id) + '/diagnose');
+              const ICONS = { ok: '✓', warning: '⚠', error: '✗' };
+              const COLORS = { ok: '#7aa57a', warning: '#caa35b', error: '#c08080' };
+              openModal(`
+                <div class="admin-modal-title">Diagnostic <span class="it">de la sortie</span></div>
+                <p style="font-family:var(--f-sans); font-size:12px; color:var(--parch-2); margin-bottom:18px;">
+                  <b>${escHtml(data.sortie.title)}</b> <span style="opacity:.6;">(id=${escHtml(data.sortie.id)}, gpx=${escHtml(data.sortie.gpx_filename || 'aucun')})</span>
+                </p>
+                <div style="font-family:var(--f-sans); font-size:13px;">
+                  ${data.checks.map(c => `
+                    <div style="display:flex; gap:12px; padding:10px 12px; margin-bottom:6px; background:var(--ink-2); border-left:3px solid ${COLORS[c.status]}; border-radius:0;">
+                      <span style="color:${COLORS[c.status]}; font-size:16px; line-height:1;">${ICONS[c.status]}</span>
+                      <div>
+                        <div style="color:var(--parch);">${escHtml(c.message)}</div>
+                        ${c.suggestion ? `<div style="opacity:.6; font-size:11px; margin-top:4px;">→ ${escHtml(c.suggestion)}</div>` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+                <div style="margin-top:18px; padding:12px; background:var(--ink-2); font-family:var(--f-sans); font-size:11px; color:var(--parch-3);">
+                  <b>${data.summary.ok} OK</b> · <b>${data.summary.warnings} warnings</b> · <b>${data.summary.errors} erreurs</b>
+                </div>
+                <div class="admin-modal-actions">
+                  <a href="${data.view_url}" target="_blank" class="btn btn-ghost btn-sm">↗ Ouvrir la page sortie</a>
+                  <button class="btn btn-brass btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Fermer</button>
+                </div>
+              `);
+            } catch (err) { toast(err.message, 'error'); }
+          });
         });
       } catch (err) {
         wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
@@ -462,41 +565,52 @@
       const wrap = document.getElementById('membres-table-wrap');
       try {
         const membres = await apiFetch('/membres');
+        const me = window.CCS_AUTH.getUser();
         wrap.innerHTML = `
           <table class="admin-table">
             <thead><tr><th>№</th><th>Nom</th><th>Email</th><th>Rôle</th><th>FTP</th><th>Km saison</th><th></th></tr></thead>
-            <tbody>${membres.map(m => `
+            <tbody>${membres.map(m => {
+              const isMe = me && me.id === m.id;
+              return `
               <tr>
                 <td style="opacity:.5;">${m.numero || '—'}</td>
-                <td><b>${escHtml(m.prenom)} ${escHtml(m.nom)}</b></td>
+                <td><b>${escHtml(m.prenom)} ${escHtml(m.nom)}</b>${isMe ? ' <span style="opacity:.5;font-size:10px;">(vous)</span>' : ''}</td>
                 <td style="opacity:.7;">${escHtml(m.email || '')}</td>
                 <td>${badge(m.role)}</td>
                 <td>${m.ftp_w ? m.ftp_w + ' w' : '—'}</td>
                 <td>${m.km_saison ? m.km_saison + ' km' : '—'}</td>
-                <td style="display:flex;gap:6px;">
-                  ${m.role !== 'admin' ? `
-                    <button class="btn-xs btn-promote" data-id="${m.id}" data-role="${m.role === 'moderateur' ? 'membre' : 'moderateur'}">
-                      ${m.role === 'moderateur' ? '↓ Membre' : '↑ Modo'}
-                    </button>
-                    <button class="btn-xs btn-xs-danger btn-deactivate" data-id="${m.id}">Désactiver</button>
-                  ` : '<span style="opacity:.3">Admin</span>'}
+                <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <select class="btn-xs role-select" data-id="${m.id}" ${isMe ? 'disabled title="Vous ne pouvez pas changer votre propre rôle"' : ''}>
+                    <option value="membre"      ${m.role==='membre'?'selected':''}>Membre</option>
+                    <option value="moderateur"  ${m.role==='moderateur'?'selected':''}>Modo</option>
+                    <option value="admin"       ${m.role==='admin'?'selected':''}>Admin</option>
+                  </select>
+                  <button class="btn-xs btn-reset-pw" data-id="${m.id}" data-name="${escHtml(m.prenom + ' ' + m.nom)}" title="Générer un lien de réinitialisation de mot de passe">🔑</button>
+                  ${!isMe ? `<button class="btn-xs btn-xs-danger btn-deactivate" data-id="${m.id}" title="Désactiver ce compte">Désactiver</button>` : ''}
                 </td>
-              </tr>`).join('')}
+              </tr>`;
+            }).join('')}
             </tbody>
           </table>`;
 
-        wrap.querySelectorAll('.btn-promote').forEach(btn => {
-          btn.addEventListener('click', async () => {
+        wrap.querySelectorAll('.role-select').forEach(sel => {
+          sel.addEventListener('change', async () => {
+            const newRole = sel.value;
+            if (newRole === 'admin' && !confirm('Promouvoir ce membre au rang d\'administrateur ? Il aura tous les droits.')) {
+              loadMembres();
+              return;
+            }
             try {
-              await apiFetch('/membres/' + btn.dataset.id + '/role', { method: 'PATCH', body: JSON.stringify({ role: btn.dataset.role }) });
+              await apiFetch('/membres/' + sel.dataset.id + '/role', { method: 'PATCH', body: JSON.stringify({ role: newRole }) });
               toast('Rôle mis à jour', 'success');
               loadMembres();
-            } catch (err) { toast(err.message, 'error'); }
+            } catch (err) { toast(err.message, 'error'); loadMembres(); }
           });
         });
+
         wrap.querySelectorAll('.btn-deactivate').forEach(btn => {
           btn.addEventListener('click', async () => {
-            if (!confirm('Désactiver ce membre ?')) return;
+            if (!confirm('Désactiver ce membre ? Il ne pourra plus se connecter.')) return;
             try {
               await apiFetch('/membres/' + btn.dataset.id + '/actif', { method: 'PATCH', body: JSON.stringify({ actif: false }) });
               toast('Membre désactivé', 'success');
@@ -504,9 +618,46 @@
             } catch (err) { toast(err.message, 'error'); }
           });
         });
+
+        wrap.querySelectorAll('.btn-reset-pw').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm(`Générer un lien de réinitialisation pour ${btn.dataset.name} ?\n\nVous pourrez le copier-coller dans un email.`)) return;
+            try {
+              const data = await apiFetch('/auth/admin-reset/' + btn.dataset.id, { method: 'POST' });
+              showResetLinkModal(data);
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
       } catch (err) {
         wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
       }
+    }
+
+    function showResetLinkModal(data) {
+      openModal(`
+        <div class="admin-modal-title">Lien <span class="it">de réinitialisation</span></div>
+        <p style="font-family:var(--f-sans); font-size:12px; line-height:1.6; color:var(--parch-2); margin-bottom:20px;">
+          Lien généré pour <b>${escHtml(data.user.prenom)} ${escHtml(data.user.nom)}</b> (<i>${escHtml(data.user.email)}</i>).<br>
+          Valable <b>${escHtml(data.expires_in)}</b>. Copiez-le et envoyez-le par email à la personne.
+        </p>
+        <div style="background:var(--ink-2); border:1px solid var(--line); padding:14px 16px; font-family:'DM Mono', monospace; font-size:12px; color:var(--brass); word-break:break-all; margin-bottom:18px;" id="reset-link-text">${escHtml(data.reset_link)}</div>
+        <div class="admin-modal-actions">
+          <button class="btn btn-ghost btn-sm" id="reset-copy-btn">📋 Copier</button>
+          <button class="btn btn-brass btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Fermer</button>
+        </div>`);
+      document.getElementById('reset-copy-btn').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(data.reset_link);
+          toast('Lien copié dans le presse-papiers', 'success');
+        } catch {
+          // fallback : sélection
+          const range = document.createRange();
+          range.selectNode(document.getElementById('reset-link-text'));
+          window.getSelection().removeAllRanges();
+          window.getSelection().addRange(range);
+          toast('Sélectionné — Ctrl+C pour copier', 'info');
+        }
+      });
     }
 
     // ── Contacts ─────────────────────────────────────────────────
@@ -651,6 +802,258 @@
         wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
       }
     }
+
+    // ── Palmarès ─────────────────────────────────────────────────
+    async function loadPalmares() {
+      const wrap = document.getElementById('palmares-table-wrap');
+      try {
+        const items = await apiFetch('/palmares');
+        if (!items.length) { wrap.innerHTML = '<div class="admin-empty">Aucun résultat — cliquez sur « + Nouveau résultat »</div>'; return; }
+        const medLabels = { or: '🥇 Or', argent: '🥈 Argent', bronze: '🥉 Bronze' };
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Année</th><th>Titre</th><th>Événement</th><th>Catégorie</th><th>Rang</th><th>Médaille</th><th></th></tr></thead>
+            <tbody>${items.map(p => `
+              <tr data-id="${p.id}">
+                <td>${escHtml(p.annee || '—')}</td>
+                <td><b>${escHtml(p.titre || '—')}</b>${p.equipe ? ' <span style="opacity:.5;font-size:10px;">(équipe)</span>' : ''}</td>
+                <td>${escHtml(p.evenement || '—')}</td>
+                <td style="opacity:.7;">${escHtml(p.categorie || '—')}</td>
+                <td>${p.rang ? p.rang + 'ᵉ' : '—'}</td>
+                <td>${medLabels[p.medaille] || '—'}</td>
+                <td style="display:flex;gap:6px;">
+                  <button class="btn-xs btn-edit-palm" data-id="${p.id}">Éditer</button>
+                  <button class="btn-xs btn-xs-danger btn-del-palm" data-id="${p.id}">✕</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+        wrap.querySelectorAll('.btn-del-palm').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Supprimer ce résultat ?')) return;
+            try {
+              await apiFetch('/palmares/' + btn.dataset.id, { method: 'DELETE' });
+              toast('Résultat supprimé', 'success');
+              loadPalmares();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+        wrap.querySelectorAll('.btn-edit-palm').forEach(btn => {
+          btn.addEventListener('click', () => openPalmModal(items.find(p => String(p.id) === btn.dataset.id)));
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    function openPalmModal(p) {
+      const data = p || {};
+      const isEdit = !!p;
+      openModal(`
+        <div class="admin-modal-title">${isEdit ? 'Éditer' : 'Nouveau'} <span class="it">résultat</span></div>
+        <div class="admin-form-grid">
+          <div class="field"><label>Année *</label><input id="p-annee" type="number" min="1978" max="2100" value="${data.annee || new Date().getFullYear()}"></div>
+          <div class="field"><label>Médaille</label>
+            <select id="p-medaille">
+              <option value="">—</option>
+              <option value="or"     ${data.medaille==='or'?'selected':''}>Or (1ᵉʳ)</option>
+              <option value="argent" ${data.medaille==='argent'?'selected':''}>Argent (2ᵉ)</option>
+              <option value="bronze" ${data.medaille==='bronze'?'selected':''}>Bronze (3ᵉ)</option>
+            </select>
+          </div>
+          <div class="field admin-form-full"><label>Titre / Coureur *</label><input id="p-titre" value="${escHtml(data.titre||'')}" placeholder="ex: Antoine Lemaire"></div>
+          <div class="field admin-form-full"><label>Événement</label><input id="p-evenement" value="${escHtml(data.evenement||'')}" placeholder="ex: Grand Prix de Salouel"></div>
+          <div class="field"><label>Catégorie</label><input id="p-categorie" value="${escHtml(data.categorie||'')}" placeholder="ex: FSGT 2ᵉ"></div>
+          <div class="field"><label>Rang</label><input id="p-rang" type="number" value="${data.rang||''}" placeholder="ex: 1, 5, 12"></div>
+          <div class="field"><label>Sortie liée (id)</label><input id="p-sortie" value="${escHtml(data.sortie_id||'')}" placeholder="optionnel"></div>
+          <div class="field"><label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="p-equipe" ${data.equipe ? 'checked' : ''}> Résultat d'équipe</label></div>
+        </div>
+        <div id="modal-err" class="auth-error" hidden></div>
+        <div class="admin-modal-actions">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Annuler</button>
+          <button class="btn btn-brass btn-sm" id="save-palm-btn">Enregistrer</button>
+        </div>`);
+      document.getElementById('save-palm-btn').addEventListener('click', async () => {
+        const errEl = document.getElementById('modal-err');
+        const body = {
+          annee:     parseInt(document.getElementById('p-annee').value) || null,
+          titre:     document.getElementById('p-titre').value.trim(),
+          evenement: document.getElementById('p-evenement').value.trim() || null,
+          categorie: document.getElementById('p-categorie').value.trim() || null,
+          rang:      parseInt(document.getElementById('p-rang').value) || null,
+          medaille:  document.getElementById('p-medaille').value || null,
+          equipe:    document.getElementById('p-equipe').checked,
+          sortie_id: document.getElementById('p-sortie').value.trim() || null,
+        };
+        if (!body.annee || !body.titre) {
+          errEl.textContent = 'Année et titre sont requis'; errEl.hidden = false; return;
+        }
+        try {
+          if (isEdit) {
+            await apiFetch('/palmares/' + p.id, { method: 'PUT', body: JSON.stringify(body) });
+          } else {
+            await apiFetch('/palmares', { method: 'POST', body: JSON.stringify(body) });
+          }
+          closeModal();
+          toast(isEdit ? 'Résultat mis à jour' : 'Résultat ajouté', 'success');
+          loadPalmares();
+        } catch (err) { errEl.textContent = err.message; errEl.hidden = false; }
+      });
+    }
+
+    // ── Segments KOM ─────────────────────────────────────────────
+    async function loadSegments() {
+      const wrap = document.getElementById('segments-table-wrap');
+      try {
+        const items = await apiFetch('/segments');
+        if (!items.length) { wrap.innerHTML = '<div class="admin-empty">Aucun segment</div>'; return; }
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Nom</th><th>Lieu</th><th>Étoiles</th><th>Longueur</th><th>Meilleur temps</th><th>KOM</th><th></th></tr></thead>
+            <tbody>${items.map(s => `
+              <tr data-id="${s.id}">
+                <td><b>${escHtml(s.name || '—')}</b></td>
+                <td style="opacity:.7;">${escHtml(s.location || '—')}</td>
+                <td>${'★'.repeat(s.stars || 0)}</td>
+                <td>${s.length_m ? (s.length_m/1000).toFixed(1)+' km' : '—'}</td>
+                <td>${escHtml(s.meilleur_temps || '—')}</td>
+                <td style="opacity:.7;">${escHtml(s.kom || '—')}</td>
+                <td style="display:flex;gap:6px;">
+                  <button class="btn-xs btn-edit-seg" data-id="${s.id}">Éditer</button>
+                  <button class="btn-xs btn-xs-danger btn-del-seg" data-id="${s.id}">✕</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+        wrap.querySelectorAll('.btn-del-seg').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Supprimer ce segment ?')) return;
+            try {
+              await apiFetch('/segments/' + btn.dataset.id, { method: 'DELETE' });
+              toast('Segment supprimé', 'success');
+              loadSegments();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+        wrap.querySelectorAll('.btn-edit-seg').forEach(btn => {
+          btn.addEventListener('click', () => openSegmentModal(items.find(s => String(s.id) === btn.dataset.id)));
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
+    function openSegmentModal(s) {
+      const data = s || {};
+      const isEdit = !!s;
+      openModal(`
+        <div class="admin-modal-title">${isEdit ? 'Éditer' : 'Nouveau'} <span class="it">segment</span></div>
+        <div class="admin-form-grid">
+          <div class="field admin-form-full"><label>Nom *</label><input id="seg-name" value="${escHtml(data.name||'')}" placeholder="ex: Côte du Pas-Bayard"></div>
+          <div class="field admin-form-full"><label>Lieu</label><input id="seg-location" value="${escHtml(data.location||'')}" placeholder="ex: Marbaix, Avesnois"></div>
+          <div class="field"><label>Étoiles</label>
+            <select id="seg-stars">
+              ${[1,2,3,4,5].map(n => `<option value="${n}" ${data.stars==n?'selected':''}>${'★'.repeat(n)} (${n})</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>Longueur (m)</label><input id="seg-length" type="number" value="${data.length_m||''}"></div>
+          <div class="field"><label>Meilleur temps</label><input id="seg-time" value="${escHtml(data.meilleur_temps||'')}" placeholder="ex: 2:14"></div>
+          <div class="field"><label>Delta moyenne</label><input id="seg-delta" value="${escHtml(data.delta_moyenne||'')}" placeholder="ex: −12 s"></div>
+          <div class="field"><label>Rang</label><input id="seg-rang" value="${escHtml(data.rang||'')}" placeholder="ex: 1/47"></div>
+          <div class="field"><label>KOM</label><input id="seg-kom" value="${escHtml(data.kom||'')}" placeholder="ex: T. Dubois"></div>
+          <div class="field"><label>Sortie liée (id)</label><input id="seg-sortie" value="${escHtml(data.sortie_id||'')}" placeholder="optionnel"></div>
+        </div>
+        <div id="modal-err" class="auth-error" hidden></div>
+        <div class="admin-modal-actions">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Annuler</button>
+          <button class="btn btn-brass btn-sm" id="save-seg-btn">Enregistrer</button>
+        </div>`);
+      document.getElementById('save-seg-btn').addEventListener('click', async () => {
+        const errEl = document.getElementById('modal-err');
+        const body = {
+          name:           document.getElementById('seg-name').value.trim(),
+          location:       document.getElementById('seg-location').value.trim() || null,
+          stars:          parseInt(document.getElementById('seg-stars').value) || 3,
+          length_m:       parseInt(document.getElementById('seg-length').value) || null,
+          meilleur_temps: document.getElementById('seg-time').value.trim() || null,
+          delta_moyenne:  document.getElementById('seg-delta').value.trim() || null,
+          rang:           document.getElementById('seg-rang').value.trim() || null,
+          kom:            document.getElementById('seg-kom').value.trim() || null,
+          sortie_id:      document.getElementById('seg-sortie').value.trim() || null,
+        };
+        if (!body.name) {
+          errEl.textContent = 'Nom requis'; errEl.hidden = false; return;
+        }
+        try {
+          if (isEdit) {
+            await apiFetch('/segments/' + s.id, { method: 'PUT', body: JSON.stringify(body) });
+          } else {
+            await apiFetch('/segments', { method: 'POST', body: JSON.stringify(body) });
+          }
+          closeModal();
+          toast(isEdit ? 'Segment mis à jour' : 'Segment ajouté', 'success');
+          loadSegments();
+        } catch (err) { errEl.textContent = err.message; errEl.hidden = false; }
+      });
+    }
+
+    // ── POIs (admin global) ──────────────────────────────────────
+    let _poisAll = [];
+    async function loadPois() {
+      const wrap = document.getElementById('pois-table-wrap');
+      const typeF = document.getElementById('poi-filter-type');
+      const qF = document.getElementById('poi-filter-q');
+      try {
+        const params = [];
+        if (typeF.value) params.push('type=' + encodeURIComponent(typeF.value));
+        if (qF.value)    params.push('q=' + encodeURIComponent(qF.value.trim()));
+        const url = '/pois' + (params.length ? '?' + params.join('&') : '');
+        const items = await apiFetch(url);
+        _poisAll = items;
+        if (!items.length) { wrap.innerHTML = '<div class="admin-empty">Aucun point d\'intérêt</div>'; return; }
+        const TYPE_LABELS = { signaleur: '🚩 Signaleur', ravito: '🍞 Ravito', danger: '⚠ Danger', secteur: '★ Secteur', depart: '◯ Départ', arrivee: '◉ Arrivée' };
+        wrap.innerHTML = `
+          <table class="admin-table">
+            <thead><tr><th>Type</th><th>Libellé</th><th>Sortie</th><th>Km</th><th>Coords</th><th>Créé par</th><th></th></tr></thead>
+            <tbody>${items.map(p => `
+              <tr data-id="${escHtml(p.id)}">
+                <td style="white-space:nowrap;">${TYPE_LABELS[p.type] || p.type}</td>
+                <td><b>${escHtml(p.label || '—')}</b>${p.description ? '<br><span style="opacity:.6;font-size:11px;">' + escHtml(p.description.slice(0, 80)) + (p.description.length > 80 ? '…' : '') + '</span>' : ''}</td>
+                <td><a href="sortie.html?id=${encodeURIComponent(p.sortie_id)}" target="_blank" style="color:var(--brass);">${escHtml(p.sortie_title)}</a></td>
+                <td style="opacity:.7;">${p.km != null ? Number(p.km).toFixed(1) : '—'}</td>
+                <td style="font-family:'DM Mono',monospace;font-size:11px;opacity:.6;">${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</td>
+                <td style="opacity:.7;">${p.user_added ? '👤 ' : '🤖 '}${escHtml(p.creator || '—')}</td>
+                <td>
+                  <button class="btn-xs btn-xs-danger btn-del-poi" data-id="${escHtml(p.id)}" data-label="${escHtml(p.label || p.id)}">✕ Suppr.</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+        wrap.querySelectorAll('.btn-del-poi').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm(`Supprimer le POI « ${btn.dataset.label} » ?`)) return;
+            try {
+              await apiFetch('/pois/' + encodeURIComponent(btn.dataset.id), { method: 'DELETE' });
+              toast('POI supprimé', 'success');
+              loadPois();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="admin-empty" style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+    // Filter handlers (debounced for the search input)
+    let _poiFilterTimer;
+    document.addEventListener('input', (e) => {
+      if (e.target.id === 'poi-filter-q') {
+        clearTimeout(_poiFilterTimer);
+        _poiFilterTimer = setTimeout(loadPois, 300);
+      }
+    });
+    document.addEventListener('change', (e) => {
+      if (e.target.id === 'poi-filter-type') loadPois();
+    });
 
     // ── Événements ───────────────────────────────────────────────
     async function loadEvenements() {
@@ -875,7 +1278,10 @@
 
     document.getElementById('btn-new-sortie')?.addEventListener('click', () => openSortieModal(null));
     document.getElementById('btn-import-gpx')?.addEventListener('click', () => openImportGpxModal());
+    document.getElementById('btn-orphan-gpx')?.addEventListener('click', () => openOrphanGpxModal());
     document.getElementById('btn-new-event')?.addEventListener('click', () => openEventModal(null));
+    document.getElementById('btn-new-palm')?.addEventListener('click', () => openPalmModal(null));
+    document.getElementById('btn-new-segment')?.addEventListener('click', () => openSegmentModal(null));
 
     async function openEventModal(id) {
       let ev = null;
@@ -1165,6 +1571,62 @@
           if (d > 0) dPlus += d; else dMinus += -d;
         }
       }
+
+      // Extraction des métadonnées du GPX (nom, description, date, type)
+      // Strava : <name>, <desc>, <time>, <type>
+      // RideWithGPS : <name>, <desc>, <link>
+      // Komoot : <name>, <desc>, <type>
+      // On essaie d'abord <metadata>, puis <trk>
+      const meta = {};
+      const mdMatch = xml.match(/<metadata>([\s\S]*?)<\/metadata>/);
+      const trkHead = xml.match(/<trk>([\s\S]*?)<trkseg/);
+      const sources = [mdMatch?.[1], trkHead?.[1]].filter(Boolean);
+      for (const src of sources) {
+        if (!meta.name) {
+          const nm = src.match(/<name>([\s\S]*?)<\/name>/);
+          if (nm) meta.name = nm[1].replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+        }
+        if (!meta.desc) {
+          const dm = src.match(/<desc>([\s\S]*?)<\/desc>/);
+          if (dm) meta.desc = dm[1].replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+        }
+        if (!meta.time) {
+          const tm = src.match(/<time>([\s\S]*?)<\/time>/);
+          if (tm) meta.time = tm[1].trim();
+        }
+        if (!meta.type) {
+          const tym = src.match(/<type>([\s\S]*?)<\/type>/);
+          if (tym) meta.type = tym[1].trim().toLowerCase();
+        }
+      }
+
+      // Fallback sur <time> du premier <trkpt> si pas de date dans metadata
+      if (!meta.time) {
+        const firstPtMatch = xml.match(/<trkpt[^>]*>[\s\S]*?<time>([\s\S]*?)<\/time>/);
+        if (firstPtMatch) meta.time = firstPtMatch[1].trim();
+      }
+
+      // Convertir time → date YYYY-MM-DD
+      let dateISO = null;
+      if (meta.time) {
+        const d = new Date(meta.time);
+        if (!isNaN(d)) dateISO = d.toISOString().slice(0, 10);
+      }
+
+      // Détecter le type de parcours selon les heuristiques
+      let chapter = null;
+      const elevRatio = distM > 0 ? (dPlus / (distM / 1000)) : 0; // m/km
+      if (meta.type) {
+        const t = meta.type;
+        if (t.includes('gravel') || t.includes('mountain') || t.includes('mtb')) chapter = 'gravel';
+        else if (t.includes('road') || t.includes('cycling')) chapter = 'route';
+      }
+      if (!chapter) {
+        // Heuristique : vraiment vallonné = monts ; sinon route
+        if (elevRatio > 12) chapter = 'monts';
+        else chapter = 'route';
+      }
+
       return {
         points_count:   points.length,
         distance_km:    Math.round(distM / 100) / 10,
@@ -1172,6 +1634,11 @@
         elevation_loss: Math.round(dMinus),
         start:          points[0],
         end:            points[points.length - 1],
+        // Métadonnées extraites
+        name:           meta.name || null,
+        description:    meta.desc || null,
+        date:           dateISO,
+        chapter,
       };
     }
 
@@ -1184,13 +1651,117 @@
         .slice(0, 60);
     }
 
+    // Modal pour les GPX orphelins (fichiers présents mais non rattachés)
+    async function openOrphanGpxModal() {
+      openModal(`
+        <h2 class="admin-modal-title">GPX <span class="it">orphelins</span></h2>
+        <p style="color:var(--parch-2); font-family:var(--f-sans); font-size:12px; line-height:1.6; margin-bottom:20px;">
+          Fichiers <code>.gpx</code> présents dans <code>asset/gpx/</code> mais
+          rattachés à <b>aucune sortie</b> en base. Cliquez « Importer » sur
+          chaque fichier pour le réinjecter en tant que nouvelle sortie.
+        </p>
+        <div id="orphan-list" style="font-family:var(--f-sans); font-size:13px;">
+          <div class="loading-spinner"></div>
+        </div>
+        <div class="admin-modal-actions">
+          <button class="btn btn-brass btn-sm" onclick="document.getElementById('modal-overlay').hidden=true">Fermer</button>
+        </div>
+      `);
+
+      try {
+        const data = await apiFetch('/sorties/orphan-gpx/list');
+        const wrap = document.getElementById('orphan-list');
+        if (!data.orphans || data.orphans.length === 0) {
+          wrap.innerHTML = `<div style="background:var(--ink-2); border:1px solid var(--line); padding:20px; text-align:center; color:var(--parch-3);">
+            ✓ Aucun fichier orphelin. Tous les ${data.total_files || 0} GPX sont rattachés à une sortie.
+          </div>`;
+          return;
+        }
+        wrap.innerHTML = `
+          <div style="background:var(--ink-2); border:1px solid var(--brass); padding:12px 16px; margin-bottom:14px; font-size:12px; color:var(--brass);">
+            <b>${data.orphans.length}</b> fichier(s) orphelin(s) sur ${data.total_files} total ·
+            ${data.used_count} déjà rattaché(s) à une sortie.
+          </div>
+          <table class="admin-table" style="width:100%;">
+            <thead>
+              <tr><th>Fichier</th><th>Distance</th><th>D+</th><th>Modifié</th><th></th></tr>
+            </thead>
+            <tbody>
+              ${data.orphans.map(o => `
+                <tr>
+                  <td><b>${escHtml(o.filename)}</b>${o.metrics?.name_from_gpx ? `<br><span style="opacity:.6;font-size:11px;">${escHtml(o.metrics.name_from_gpx)}</span>` : ''}</td>
+                  <td>${o.metrics?.distance_km != null ? o.metrics.distance_km + ' km' : '<span style="color:#c08080;">' + (o.metrics?.error || '—') + '</span>'}</td>
+                  <td>${o.metrics?.elevation_gain != null ? o.metrics.elevation_gain + ' m' : '—'}</td>
+                  <td style="opacity:.6; font-size:11px;">${new Date(o.modified).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                  <td>
+                    <button class="btn-xs btn-restore-orphan" data-filename="${escHtml(o.filename)}" data-slug="${escHtml(o.suggested_slug)}" data-name="${escHtml(o.metrics?.name_from_gpx || '')}">Importer</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>`;
+
+        // Wire up the restore buttons
+        wrap.querySelectorAll('.btn-restore-orphan').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const filename = btn.dataset.filename;
+            const suggested = btn.dataset.name || btn.dataset.slug.replace(/-/g, ' ');
+            const title = prompt(`Titre pour cette sortie :`, suggested);
+            if (!title) return;
+            const today = new Date().toISOString().slice(0, 10);
+            const date = prompt(`Date (YYYY-MM-DD) :`, today);
+            if (!date) return;
+
+            // On utilise un fetch direct car le fichier est déjà sur disque ;
+            // l'endpoint import-gpx attend un upload. On va donc passer par
+            // le fetch du fichier puis le re-soumettre.
+            btn.textContent = 'Import…';
+            btn.disabled = true;
+            try {
+              // Récupérer le fichier depuis asset/gpx/
+              const res = await fetch('/asset/gpx/' + encodeURIComponent(filename));
+              if (!res.ok) throw new Error('Fichier introuvable');
+              const blob = await res.blob();
+              // Le re-soumettre via import-gpx
+              const fd = new FormData();
+              fd.append('gpx', new File([blob], filename, { type: 'application/gpx+xml' }));
+              fd.append('title', title);
+              fd.append('date', date);
+              fd.append('slug', btn.dataset.slug);
+              fd.append('chapter', 'route');
+              fd.append('statut', 'passee');
+              const token = CCS_AUTH.getToken();
+              const r2 = await fetch(API + '/sorties/import-gpx', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { Authorization: 'Bearer ' + token },
+                body: fd
+              });
+              const data2 = await r2.json();
+              if (!r2.ok) throw new Error(data2.error || 'HTTP ' + r2.status);
+              btn.textContent = '✓ Importé';
+              btn.style.background = 'var(--brass)';
+              toast(`« ${data2.sortie.title} » réimporté`, 'success');
+            } catch (err) {
+              btn.textContent = 'Erreur';
+              btn.disabled = false;
+              alert('Échec : ' + err.message);
+            }
+          });
+        });
+      } catch (err) {
+        document.getElementById('orphan-list').innerHTML = `<div style="color:#c08080;">${escHtml(err.message)}</div>`;
+      }
+    }
+
     function openImportGpxModal() {
       openModal(`
         <h2 class="admin-modal-title">Importer une sortie depuis un GPX</h2>
         <p style="color:var(--parch-2); font-family:var(--f-sans); font-size:12px; line-height:1.6; margin-bottom:24px;">
-          Téléversez un fichier <code>.gpx</code> (Strava, RideWithGPS, Komoot, organisateur). Le serveur calcule
-          automatiquement la distance, le D+/D− et les coordonnées de départ.
-          Vous n'avez qu'à donner un titre, une date, et le type de parcours.
+          Téléversez un fichier <code>.gpx</code> (Strava, RideWithGPS, Komoot, organisateur).
+          <b>Le formulaire se remplit automatiquement</b> à partir des métadonnées du GPX :
+          titre, date, type de parcours, description, et lieu de départ (via géocodage inverse).
+          Vous pouvez ensuite ajuster les champs avant d'importer.
         </p>
 
         <!-- ÉTAPE 1 : fichier GPX -->
@@ -1282,7 +1853,7 @@
       const preview   = document.getElementById('ig-preview');
       let parsedFile  = null;   // { file, metrics }
 
-      // Parsing à la volée + preview
+      // Parsing à la volée + preview + auto-remplissage des champs
       fileInput.addEventListener('change', async () => {
         errEl.hidden = true;
         preview.hidden = true;
@@ -1305,6 +1876,85 @@
           preview.hidden = false;
           parsedFile = { file: f, metrics: m };
           submitBtn.disabled = false;
+
+          // ─── Auto-remplissage des champs (uniquement les champs encore vides) ───
+          // Titre : depuis <metadata><name>, puis <trk><name>, puis nom du fichier
+          const titleField = document.getElementById('ig-title');
+          if (!titleField.value.trim()) {
+            // Nettoyage : enlève l'extension, remplace tirets/underscores par espaces
+            const nameFromFile = f.name.replace(/\.gpx$/i, '').replace(/[-_]+/g, ' ');
+            titleField.value = m.name || nameFromFile;
+            // Déclenche le calcul auto-slug
+            titleField.dispatchEvent(new Event('input'));
+          }
+
+          // Date : depuis <metadata><time> ou premier <trkpt><time>, ou aujourd'hui
+          const dateField = document.getElementById('ig-date');
+          if (!dateField.value) {
+            dateField.value = m.date || new Date().toISOString().slice(0, 10);
+          }
+
+          // Statut : si la date est passée → "passee", sinon "future"
+          const statutField = document.getElementById('ig-statut');
+          const today = new Date().toISOString().slice(0, 10);
+          if (dateField.value && dateField.value > today) {
+            statutField.value = 'future';
+          } else {
+            statutField.value = 'passee';
+          }
+
+          // Type de parcours : heuristique (cf. parseGpxClient)
+          const chapterField = document.getElementById('ig-chapter');
+          if (m.chapter && chapterField.value === 'route') {
+            // Ne change que si on est sur la valeur par défaut "route"
+            chapterField.value = m.chapter;
+          }
+
+          // Description : depuis <metadata><desc>
+          const descField = document.getElementById('ig-desc');
+          if (!descField.value.trim() && m.description) {
+            descField.value = m.description;
+          }
+
+          // Sous-titre : génère depuis distance + D+ si vide
+          const subField = document.getElementById('ig-subtitle');
+          if (!subField.value.trim()) {
+            subField.value = `${m.distance_km.toFixed(0)} km · D+ ${m.elevation_gain} m`;
+          }
+
+          // Lieu de départ : reverse-geocoding via Nominatim (best-effort, non bloquant)
+          const locField = document.getElementById('ig-location');
+          if (!locField.value.trim()) {
+            locField.placeholder = 'Recherche en cours…';
+            try {
+              const ctrl = new AbortController();
+              setTimeout(() => ctrl.abort(), 4000);
+              const r = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${m.start.lat}&lon=${m.start.lng}&zoom=14&addressdetails=1`,
+                { signal: ctrl.signal, headers: { 'Accept-Language': 'fr' } }
+              );
+              if (r.ok) {
+                const geo = await r.json();
+                const a = geo.address || {};
+                const ville = a.village || a.town || a.city || a.municipality || a.county;
+                const lieu = a.amenity || a.road;
+                const parts = [lieu, ville].filter(Boolean);
+                if (parts.length) locField.value = parts.join(', ');
+              }
+            } catch {} // silencieux : reverse-geocoding optionnel
+            locField.placeholder = 'Ex : Maroilles, place de la Mairie';
+          }
+
+          // Toast d'information
+          if (window.toast) {
+            const filledFields = [];
+            if (m.name)        filledFields.push('titre');
+            if (m.date)        filledFields.push('date');
+            if (m.description) filledFields.push('description');
+            if (filledFields.length) {
+              window.toast(`Auto-rempli : ${filledFields.join(', ')}`, 'info');
+            }
+          }
         } catch (err) {
           errEl.textContent = 'Erreur lecture GPX : ' + err.message;
           errEl.hidden = false;

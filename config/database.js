@@ -16,6 +16,11 @@ const pool = mysql.createPool({
   // (sinon JSON.stringify produit "2025-04-05T22:00:00.000Z" au lieu de
   //  "2025-04-05" — ce qui casse Open-Meteo et toute comparaison de date côté frontend).
   dateStrings:        ['DATE', 'DATETIME'],
+  // IMPORTANT : convertir les DECIMAL en Number plutôt qu'en string.
+  // Sans ça, distance_km, lat, lng, km de POI etc. arrivent comme strings
+  // côté JS, et tout `.toFixed()` ou calcul plante avec un cryptique
+  // "toFixed is not a function".
+  decimalNumbers:     true,
   // Reconnexion automatique
   enableKeepAlive:    true,
   keepAliveInitialDelay: 0,

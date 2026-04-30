@@ -250,6 +250,24 @@
 
       try {
         await CCS_AUTH.login(login, pw, remember);
+        // Mémoriser l'identifiant (PAS le mot de passe — ça reste au gestionnaire
+        // de mots de passe du navigateur). Cookie 1 an.
+        if (remember) {
+          try {
+            localStorage.setItem('ccs_last_login', login);
+            localStorage.setItem('ccs_remember_pref', '1');
+            // Historique des 5 derniers identifiants pour datalist
+            let history = JSON.parse(localStorage.getItem('ccs_login_history') || '[]');
+            if (!Array.isArray(history)) history = [];
+            history = [login, ...history.filter(h => h !== login)].slice(0, 5);
+            localStorage.setItem('ccs_login_history', JSON.stringify(history));
+          } catch {}
+        } else {
+          try {
+            localStorage.removeItem('ccs_last_login');
+            localStorage.setItem('ccs_remember_pref', '0');
+          } catch {}
+        }
         window.location.href = getRedirect();
       } catch (err) {
         errEl.textContent = err.message || 'Identifiants invalides';
@@ -258,6 +276,60 @@
         document.getElementById('login-pw').focus();
       }
     }
+
+    // ── Restauration du « se souvenir » + suggestion par autocomplete ─────
+    // Au chargement de la page, si l'utilisateur s'était précédemment connecté
+    // avec « Se souvenir de moi », on pré-remplit son identifiant et on coche
+    // la case. Le navigateur prendra le relais pour suggérer le mot de passe
+    // depuis son gestionnaire intégré (qui le stocke chiffré, contrairement
+    // à du localStorage qui serait lisible par toute extension/script).
+    (function preFillLogin() {
+      try {
+        const lastLogin = localStorage.getItem('ccs_last_login');
+        const rememberPref = localStorage.getItem('ccs_remember_pref');
+        if (lastLogin) {
+          const idEl = document.getElementById('login-id');
+          if (idEl && !idEl.value) {
+            idEl.value = lastLogin;
+            // Suggestion : déplacer le focus directement sur le mot de passe
+            // pour que l'utilisateur n'ait qu'à taper celui-ci (le gestionnaire
+            // de mots de passe peut auto-compléter).
+            const pwEl = document.getElementById('login-pw');
+            if (pwEl) {
+              setTimeout(() => pwEl.focus(), 100);
+            }
+          }
+        }
+        if (rememberPref !== null) {
+          const rmEl = document.getElementById('login-remember');
+          if (rmEl) rmEl.checked = (rememberPref === '1');
+        }
+      } catch {}
+    })();
+
+    // ── Datalist : suggestion à la 1ʳᵉ lettre ─────────────────────────────
+    // Liste des identifiants précédemment utilisés (max 5), pour qu'au moment
+    // où l'utilisateur tape une lettre, le navigateur affiche une suggestion.
+    (function setupLoginDatalist() {
+      try {
+        const idEl = document.getElementById('login-id');
+        if (!idEl) return;
+
+        let history = JSON.parse(localStorage.getItem('ccs_login_history') || '[]');
+        if (!Array.isArray(history)) history = [];
+
+        let datalist = document.getElementById('login-history-list');
+        if (!datalist) {
+          datalist = document.createElement('datalist');
+          datalist.id = 'login-history-list';
+          document.body.appendChild(datalist);
+        }
+        datalist.innerHTML = history.slice(0, 5)
+          .map(h => `<option value="${String(h).replace(/"/g, '&quot;')}">`)
+          .join('');
+        idEl.setAttribute('list', 'login-history-list');
+      } catch {}
+    })();
 
     document.getElementById('tab-login').addEventListener('submit', doLogin);
 

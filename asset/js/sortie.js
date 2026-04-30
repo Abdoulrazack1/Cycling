@@ -19,6 +19,16 @@
   }
   const SORTIE_ID = readSortieId();
 
+  /**
+   * Coerce un km en Number ; tolérant aux strings, aux nulls, aux undefined.
+   * MySQL retourne les DECIMAL comme strings, donc on doit toujours caster
+   * avant tout calcul ou .toFixed().
+   */
+  const numKm = v => {
+    const n = (v == null) ? 0 : (typeof v === 'number' ? v : parseFloat(v));
+    return Number.isFinite(n) ? n : 0;
+  };
+
   const POI_LABELS = {
     signaleur: 'Signaleur',
     ravito:    'Ravitaillement',
@@ -61,9 +71,17 @@
   async function parseGpx(url) {
     try {
       const r = await fetch(url);
-      if (!r.ok) throw new Error('GPX ' + r.status);
+      if (!r.ok) {
+        console.error('[parseGpx] HTTP', r.status, 'pour', url);
+        throw new Error('GPX ' + r.status + ' (fichier introuvable ?)');
+      }
       const text = await r.text();
       const xml = new DOMParser().parseFromString(text, 'text/xml');
+      const parserErr = xml.querySelector('parsererror');
+      if (parserErr) {
+        console.error('[parseGpx] XML invalide:', parserErr.textContent.slice(0, 200));
+        return [];
+      }
       const pts = xml.querySelectorAll('trkpt, rtept, wpt');
       const raw = [];
       pts.forEach(p => {
@@ -72,7 +90,10 @@
         const ele = parseFloat(p.querySelector('ele')?.textContent) || 0;
         if (!isNaN(lat) && !isNaN(lng)) raw.push({ lat, lng, ele });
       });
-      if (!raw.length) return [];
+      if (!raw.length) {
+        console.warn('[parseGpx] Aucun trkpt trouvé dans le GPX', url);
+        return [];
+      }
       // Tente OSRM pour lisser le tracé sur les routes réelles, mais ne
       // bloque jamais le rendu : si OSRM échoue, on prend les points GPX bruts.
       let routed = raw;
@@ -88,7 +109,7 @@
         arr.push(p); prev = p;
       });
       return arr;
-    } catch (err) { console.warn('GPX:', err.message); return []; }
+    } catch (err) { console.warn('[parseGpx] Erreur:', err.message, 'URL:', url); return []; }
   }
 
   /**
@@ -174,7 +195,7 @@
     return `
       <div class="poi-popup-head">
         <span class="poi-popup-type" style="color:${POI_COLORS[poi.type] || '#B08E4A'}">${type}</span>
-        <span class="poi-popup-km">${(poi.km ?? 0).toFixed(1)}<span style="font-family:'Archivo',sans-serif;font-size:.5em;font-style:normal;margin-left:2px;letter-spacing:.1em;"> km</span></span>
+        <span class="poi-popup-km">${numKm(poi.km).toFixed(1)}<span style="font-family:'Archivo',sans-serif;font-size:.5em;font-style:normal;margin-left:2px;letter-spacing:.1em;"> km</span></span>
       </div>
       <div class="poi-popup-body">
         <div class="poi-popup-title">${poi.label || '—'}</div>
@@ -217,6 +238,8 @@
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19 }).addTo(state.mapMini);
       drawRoute(state.mapMini);
       drawPois(state.mapMini, false);
+      // Permettre le clic sur la mini-carte aussi pour placer un POI
+      state.mapMini.on('click', onMapClick);
     }
   }
 
@@ -576,7 +599,7 @@
           ${p.contact ? `<div class="poi-item-contact"><b>${p.contact.name || ''}</b>${p.contact.phone ? ' · <a href="tel:' + p.contact.phone.replace(/\s/g,'') + '">' + p.contact.phone + '</a>' : ''}</div>` : ''}
         </div>
         <div class="poi-item-right">
-          <div class="poi-item-km">${(p.km ?? 0).toFixed(1)}<span class="unit">km</span></div>
+          <div class="poi-item-km">${numKm(p.km).toFixed(1)}<span class="unit">km</span></div>
           ${p._userAdded ? `<button class="poi-del-btn" data-del="${p.id}" aria-label="Supprimer">✕</button>` : ''}
         </div>
       </div>`).join('');
@@ -716,11 +739,17 @@
 
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
+        // Vérifier que l'utilisateur est connecté avant d'activer le mode
+        if (!state.addingPoi && window.CCS_AUTH && !window.CCS_AUTH.isLoggedIn()) {
+          if (window.toast) window.toast('Connectez-vous pour ajouter un point d\'intérêt', 'warning');
+          else alert('Connectez-vous pour ajouter un point d\'intérêt');
+          return;
+        }
         state.addingPoi = !state.addingPoi;
         if (hint) {
           hint.classList.toggle('active', state.addingPoi);
           hint.textContent = state.addingPoi
-            ? "→ Cliquez sur le plan (vue carte de l'explorateur) pour définir la position"
+            ? "→ Cliquez sur la carte (mini-carte ci-dessous ou plan de l'explorateur) pour positionner le point"
             : "Mode désactivé — activez-le pour cliquer sur la carte";
         }
         toggleBtn.textContent = state.addingPoi ? 'Annuler' : 'Cliquer sur la carte';
@@ -746,30 +775,88 @@
         const name = document.getElementById('poi-form-contact-name')?.value?.trim();
         const phone = document.getElementById('poi-form-contact-phone')?.value?.trim();
         const cv = coords?.value;
-        if (!cv) { if (window.toast) window.toast("Cliquez d'abord sur la carte", 'warning'); return; }
-        if (!label) { if (window.toast) window.toast('Libellé requis', 'warning'); return; }
+
+        // Validation explicite avec feedback
+        if (!cv) {
+          if (window.toast) window.toast("Cliquez d'abord sur la carte pour positionner le POI", 'warning');
+          else alert("Cliquez d'abord sur la carte pour positionner le POI");
+          return;
+        }
+        if (!label) {
+          if (window.toast) window.toast('Le libellé est obligatoire', 'warning');
+          else alert('Le libellé est obligatoire');
+          document.getElementById('poi-form-label')?.focus();
+          return;
+        }
+
         const [lat, lng] = cv.split(',').map(parseFloat);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          if (window.toast) window.toast('Coordonnées invalides — recliquez sur la carte', 'error');
+          return;
+        }
+
+        // Calcul du km le plus proche sur le parcours
         let km = 0;
-        if (state.routePoints.length) {
+        if (state.routePoints && state.routePoints.length) {
           let best = Infinity, bestIdx = 0;
           state.routePoints.forEach((pt, i) => {
             const d = haversine({ lat, lng }, pt);
             if (d < best) { best = d; bestIdx = i; }
           });
-          km = state.routePoints[bestIdx].distAccum / 1000;
+          km = (state.routePoints[bestIdx].distAccum || 0) / 1000;
         }
-        const newPoi = { type, label, desc, lat, lng, km: +km.toFixed(1), contact: (name || phone) ? { name, phone } : undefined };
-        const saved = await window.CCS_DATA.addPoi(SORTIE_ID, newPoi);
-        if (saved) {
+
+        const newPoi = {
+          type, label, desc, lat, lng,
+          km: +km.toFixed(1),
+          contact: (name || phone) ? { name, phone } : undefined
+        };
+
+        // Désactiver le bouton pendant l'envoi
+        const originalLabel = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Envoi…';
+
+        try {
+          const saved = await window.CCS_DATA.addPoi(SORTIE_ID, newPoi);
+          if (!saved) throw new Error('Réponse serveur vide');
+
           state.pois.push(saved);
           state.pois.sort((a, b) => (a.km || 0) - (b.km || 0));
-          renderPoiList(); redrawAllPois(); renderScrubTicks();
+          renderPoiList();
+          redrawAllPois();
+          renderScrubTicks();
+
           if (window.toast) window.toast('Point ajouté', 'success');
           form.reset();
           if (coords) coords.value = '';
           state.addingPoi = false;
-          if (hint) { hint.classList.remove('active'); hint.textContent = "Mode désactivé — activez-le pour cliquer sur la carte"; }
-          if (toggleBtn) { toggleBtn.textContent = 'Cliquer sur la carte'; toggleBtn.classList.remove('btn-brass'); toggleBtn.classList.add('btn-ghost'); }
+          if (hint) {
+            hint.classList.remove('active');
+            hint.textContent = "Mode désactivé — activez-le pour cliquer sur la carte";
+          }
+          if (toggleBtn) {
+            toggleBtn.textContent = 'Cliquer sur la carte';
+            toggleBtn.classList.remove('btn-brass');
+            toggleBtn.classList.add('btn-ghost');
+          }
+        } catch (err) {
+          console.error('[POI add] error:', err);
+          let msg = err.message || 'Erreur inconnue';
+          if (err.status === 401) {
+            msg = 'Vous devez être connecté pour ajouter un point.';
+          } else if (err.status === 403) {
+            msg = "Vous n'avez pas les droits pour ajouter un point sur cette sortie.";
+          } else if (err.status === 404) {
+            msg = "Sortie introuvable — la page est peut-être obsolète, rechargez.";
+          } else if (err.status === 400) {
+            msg = 'Données invalides : ' + msg;
+          }
+          if (window.toast) window.toast(msg, 'error');
+          else alert(msg);
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = originalLabel || 'Enregistrer';
         }
       });
     }
@@ -1226,7 +1313,13 @@
       return;
     }
     state.pois = await window.CCS_DATA.pois(SORTIE_ID);
-    if (state.sortie?.gpx_ref) state.routePoints = await parseGpx('asset/gpx/' + state.sortie.gpx_ref);
+    if (state.sortie?.gpx_ref) {
+      console.log('[sortie] Tentative chargement GPX:', 'asset/gpx/' + state.sortie.gpx_ref);
+      state.routePoints = await parseGpx('asset/gpx/' + state.sortie.gpx_ref);
+      console.log('[sortie] GPX chargé:', state.routePoints.length, 'points');
+    } else {
+      console.warn('[sortie] Pas de gpx_ref pour cette sortie. Champ DB gpx_filename probablement null.');
+    }
 
     renderHeader();
     // Fix 3 — sync scrub total with real GPX distance (overrides distance_km from data)

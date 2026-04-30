@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
       'SELECT * FROM users WHERE actif = TRUE ORDER BY numero',
     );
     res.json(rows.map(userPublic));
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // GET /api/membres/:id
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
       [user.id]
     );
     res.json({ ...userPublic(user), equipment });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // PUT /api/membres/:id (self ou admin)
@@ -58,7 +58,7 @@ router.put('/:id', requireAuth, [
     );
     const [updated] = await query('SELECT * FROM users WHERE id = ?', [targetId]);
     res.json(userPublic(updated));
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // Admin: désactiver un membre
@@ -66,7 +66,7 @@ router.patch('/:id/actif', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('UPDATE users SET actif = ? WHERE id = ?', [req.body.actif ? 1 : 0, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // Admin: changer le rôle
@@ -78,7 +78,7 @@ router.patch('/:id/role', requireAuth, requireAdmin, [
   try {
     await query('UPDATE users SET role = ? WHERE id = ?', [req.body.role, req.params.id]);
     res.json({ message: 'Rôle mis à jour' });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 module.exports = router;

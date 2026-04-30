@@ -15,19 +15,30 @@ router.get('/', async (req, res) => {
     sql += ' ORDER BY date ASC' + pageClause(limit, offset, { defaultLimit: 20, maxLimit: 100 });
     const rows = await query(sql, params);
     res.json(rows);
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 router.get('/:id', async (req, res) => {
   try {
-    const [ev] = await query('SELECT * FROM evenements WHERE id = ?', [req.params.id]);
+    const idOrSlug = req.params.id;
+    // Si c'est un nombre, recherche par id ; sinon par slug
+    const isNumeric = /^\d+$/.test(idOrSlug);
+    const [ev] = await query(
+      isNumeric
+        ? 'SELECT * FROM evenements WHERE id = ?'
+        : 'SELECT * FROM evenements WHERE slug = ? OR id = ?',
+      isNumeric ? [parseInt(idOrSlug)] : [idOrSlug, idOrSlug]
+    );
     if (!ev) return res.status(404).json({ error: 'Événement introuvable' });
     const inscrits = await query(
       'SELECT id, prenom, nom, categorie, distance, statut FROM evenement_inscriptions WHERE evenement_id = ? AND statut != "annule"',
       [ev.id]
     );
     res.json({ ...ev, inscriptions: inscrits });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) {
+    console.error('[GET /evenements/:id]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+  }
 });
 
 router.post('/', requireAuth, requireModo, [
@@ -54,7 +65,7 @@ router.post('/', requireAuth, requireModo, [
     );
     const [created] = await query('SELECT * FROM evenements WHERE id = ?', [result.insertId]);
     res.status(201).json(created);
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 router.put('/:id', requireAuth, requireModo, async (req, res) => {
@@ -75,14 +86,14 @@ router.put('/:id', requireAuth, requireModo, async (req, res) => {
     );
     const [updated] = await query('SELECT * FROM evenements WHERE id = ?', [req.params.id]);
     res.json(updated);
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('DELETE FROM evenements WHERE id = ?', [req.params.id]);
     res.json({ message: 'Événement supprimé' });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // POST /api/evenements/:id/inscrire
@@ -113,7 +124,7 @@ router.post('/:id/inscrire', optionalAuth, [
       await query('UPDATE evenements SET statut = "complet" WHERE id = ?', [ev.id]);
     }
     res.status(201).json({ message: 'Inscription confirmée', id: result.insertId });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 module.exports = router;

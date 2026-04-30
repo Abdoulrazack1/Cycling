@@ -157,6 +157,7 @@ app.use('/api/segments',   require('./routes/segments'));
 app.use('/api/palmares',   require('./routes/palmares'));
 app.use('/api/gpx',        require('./routes/gpx'));
 app.use('/api/auto-courses', require('./routes/auto-courses'));
+app.use('/api/pois',       require('./routes/pois-admin'));
 
 // ── Routes POI — montage avec mergeParams ─────────────────────
 // Doit être après /api/sorties pour que :sortieId soit disponible

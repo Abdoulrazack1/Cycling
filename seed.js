@@ -377,10 +377,40 @@ async function seed() {
   // les courses importées via /api/sorties/import-gpx, les comptes
   // utilisateurs, les contacts, etc.
   const RESET = process.argv.includes('--reset') || process.argv.includes('-r');
+  const FORCE = process.argv.includes('--yes') || process.argv.includes('-y');
 
   if (RESET) {
-    console.log('🔥 Mode --reset : TOUTES les données vont être effacées.');
-    console.log('   (y compris les courses importées et les comptes créés)');
+    console.log('');
+    console.log('⚠️  ⚠️  ⚠️   AVERTISSEMENT  ⚠️  ⚠️  ⚠️');
+    console.log('');
+    console.log('Mode --reset : VOUS ALLEZ EFFACER ABSOLUMENT TOUTES LES DONNÉES.');
+    console.log('Cela inclut :');
+    console.log('   • Toutes les sorties (y compris celles importées via le formulaire admin)');
+    console.log('   • Tous les comptes utilisateurs créés');
+    console.log('   • Tous les événements, inscriptions, contacts');
+    console.log('   • Le palmarès, les segments, les POIs');
+    console.log('');
+    console.log('Cette action est IRRÉVERSIBLE. Les fichiers GPX physiques dans');
+    console.log('asset/gpx/ ne seront PAS supprimés mais les sorties ne pointeront');
+    console.log('plus dessus en base.');
+    console.log('');
+
+    if (!FORCE) {
+      // Demande de confirmation interactive
+      const readline = require('readline');
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const answer = await new Promise(resolve => {
+        rl.question('Tapez exactement "OUI EFFACER" pour confirmer (sinon Entrée pour annuler) : ', resolve);
+      });
+      rl.close();
+      if (answer.trim() !== 'OUI EFFACER') {
+        console.log('\n✓ Reset annulé. Aucune donnée n\'a été touchée.\n');
+        process.exit(0);
+      }
+      console.log('');
+    } else {
+      console.log('   --yes détecté, exécution sans confirmation.\n');
+    }
   } else {
     console.log('🌱 Mode safe (par défaut) : seed des données initiales sans toucher');
     console.log('   aux courses importées ni aux comptes utilisateurs existants.');
@@ -517,7 +547,7 @@ async function seed() {
         `INSERT IGNORE INTO segments_global (name,location,stars,length_m,meilleur_temps,delta_moyenne,rang,rang_cls,kom,sortie_id)
          VALUES (?,?,?,?,?,?,?,?,?,?)`,
         [s.name, s.location||null, s.stars||3, s.length_m||null, s.meilleur_temps||null,
-         s.delta_moyenne||null, s.rang||null, s.rang_cls||null, s.kom?1:0, s.sortie_id||null]
+         s.delta_moyenne||null, s.rang||null, s.rang_cls||null, s.kom||null, s.sortie_id||null]
       );
     }
     console.log(`  ✅ ${SEGMENTS_GLOBAL.length} segments importés\n`);
@@ -528,7 +558,7 @@ async function seed() {
       await query(
         `INSERT IGNORE INTO palmares (annee,titre,evenement,categorie,rang,medaille,equipe,sortie_id)
          VALUES (?,?,?,?,?,?,?,?)`,
-        [p.annee, p.titre, p.evenement||null, p.categorie||null, p.rang||null, p.medaille||null, p.equipe?1:0, p.sortie_id||null]
+        [p.annee, p.titre, p.evenement||null, p.categorie||null, p.rang||null, p.medaille||null, p.equipe||null, p.sortie_id||null]
       );
     }
     console.log(`  ✅ ${PALMARES_DATA.length} entrées palmarès importées\n`);

@@ -47,8 +47,8 @@ router.post('/', [
 
     res.status(201).json({ message: 'Message envoyé', id: result.insertId });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
 
@@ -63,7 +63,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
     const rows = await query(sql, params);
     const [{ total }] = await query('SELECT COUNT(*) AS total FROM contacts');
     res.json({ messages: rows, total });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 // PATCH /api/contact/:id/statut
@@ -75,7 +75,7 @@ router.patch('/:id/statut', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('UPDATE contacts SET statut=? WHERE id=?', [statut, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
-  } catch (err) { res.status(500).json({ error: 'Erreur serveur' }); }
+  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 module.exports = router;

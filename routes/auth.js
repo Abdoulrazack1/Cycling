@@ -129,8 +129,8 @@ router.post('/login', [
       user: userPublic(user)
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -144,7 +144,13 @@ router.post('/register', [
   body('nom').notEmpty().trim().isLength({ max: 50 })
 ], async (req, res) => {
   const errs = validationResult(req);
-  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
+  if (!errs.isEmpty()) {
+    const arr = errs.array();
+    return res.status(400).json({
+      error: arr.map(e => `${e.path || e.param}: ${e.msg}`).join(' · '),
+      errors: arr
+    });
+  }
 
   const { username, email, password, prenom, nom, licence_ffc, annee_adhesion } = req.body;
   try {
@@ -181,8 +187,8 @@ router.post('/register', [
 
     res.status(201).json({ accessToken, user: userPublic(user) });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[register]', err.code, err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur lors de l\'inscription : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -251,8 +257,8 @@ router.get('/me', requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
     res.json(userPublic(user));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -277,7 +283,7 @@ router.post('/change-password', requireAuth, [
     res.clearCookie('refreshToken', clearCookieOpts());
     res.json({ message: 'Mot de passe modifié — reconnectez-vous' });
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -319,8 +325,8 @@ router.post('/forgot-password', [
       message: 'Si un compte existe avec cette adresse, un administrateur vous contactera sous 48 h.'
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -348,8 +354,8 @@ router.post('/admin-reset/:userId', requireAuth, requireAdmin, async (req, res) 
       expires_in: '24 heures'
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -393,7 +399,7 @@ router.post('/reset-password', [
     res.json({ message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' });
   } catch (err) {
     console.error('[reset-password]', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
 
