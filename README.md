@@ -1,15 +1,11 @@
 # Club de Cyclisme de Salouel — Application web
 
-> ## 🔑 Identifiants par défaut
+> ## 🔑 Identifiants
 >
-> | Rôle | Login | Mot de passe |
-> |---|---|---|
-> | **Admin** | `admin` *(ou `admin@club-salouel.fr`)* | `Admin@Salouel2025` |
-> | **Membre** | `membre1` | `Membre@Salouel2025` |
+> Les identifiants par défaut (admin, membre, MySQL) sont stockés dans `CREDENTIALS.md` à la racine du projet.
+> **Ce fichier est gitignoré** et ne sera jamais publié sur GitHub.
 >
-> **MySQL** : utilisateur `ccs_user` · mot de passe `CCS_Salouel_2025!` · base `ccs_salouel`
->
-> Ces identifiants sont créés/restaurés par `node seed.js` et affichés dans le terminal à chaque exécution.
+> Ces identifiants sont également affichés à chaque exécution de `node seed.js` dans le terminal.
 
 ---
 
