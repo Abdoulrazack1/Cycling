@@ -1,208 +1,184 @@
 /**
- * services/course-scraper.js
- * 
- * Scraper de sources publiques pour détecter les nouvelles courses HdF.
- * 
- * Sources actuellement supportées :
- *   - milesrepublic.com/cyclosportive/hauts-de-france
- *   - hautsdefrancecyclisme.fr/route (calendrier officiel FFC HdF)
- * 
- * Les sources peuvent être ajoutées en éditant l'array `SOURCES` ci-dessous.
- * Chaque source a un `parser` qui transforme le HTML brut en événements normalisés.
- * 
- * Format normalisé d'événement :
- *   {
- *     name:         "L'Enfer des Flandres",
- *     slug:         "enfer-des-flandres-2026",
- *     date:         "2026-06-14",
- *     lieu:         "Cassel",
- *     region:       "Nord (59)",
- *     distanceKm:   157,
- *     type:         "cyclosportive" | "rando" | "course" | "gravel",
- *     source:       "milesrepublic.com",
- *     sourceUrl:    "https://...",
- *     // Optionnels (souvent absents du scraping → à enrichir manuellement)
- *     waypoints:    null,
- *     description:  "..."
- *   }
+ * services/course-scraper.js — v3
+ *
+ * Sources de calendriers cyclistes. MilesRepublic est protégé par Cloudflare
+ * et bloque Node.js → on privilégie les sources sans anti-bot.
+ *
+ * Pour MilesRepublic : solution de contournement via un dump HTML local
+ * (voir commentaire MILES_WORKAROUND ci-dessous).
  */
+'use strict';
 
+const fs   = require('fs');
+const path = require('path');
+
+const FETCH_TIMEOUT = 20_000;
+const UA_BROWSER = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+  'AppleWebKit/537.36 (KHTML, like Gecko)',
+  'Chrome/124.0.0.0 Safari/537.36',
+].join(' ');
+
+// ═══════════════════════════════════════════════════════════════
+//  SOURCES configurées
+// ═══════════════════════════════════════════════════════════════
 const SOURCES = [
-  {
-    name: 'milesrepublic',
-    label: 'Miles Republic — HdF',
-    url:   'https://fr.milesrepublic.com/cyclosportive/hauts-de-france',
-    parser: parseMilesRepublic,
-  },
-  {
-    name: 'milesrepublic-pdc',
-    label: 'Miles Republic — Pas-de-Calais',
-    url:   'https://fr.milesrepublic.com/velo/pas-de-calais',
-    parser: parseMilesRepublic,
-  },
-  {
-    name: 'milesrepublic-cyclo-pdc',
-    label: 'Miles Republic — Cyclo PdC',
-    url:   'https://fr.milesrepublic.com/cyclosportive/pas-de-calais',
-    parser: parseMilesRepublic,
-  },
-  // Note : le scraping de la FFC HdF nécessite l'API FFC ou une page calendrier
-  // accessible sans JavaScript. À ajouter quand l'URL stable sera identifiée.
+  // ── OpenStreetMap Overpass (itinéraires cyclables nommés, fiable) ──
+  // Requiert le flag --osm dans scrape-sorties.js
+  // Pas de rate-limit problématique pour un usage raisonnable.
+  { name: 'osm-hdf',   label: 'OSM — HdF routes cyclables',    type: 'osm' },
+  { name: 'osm-somme', label: 'OSM — Somme routes cyclables',   type: 'osm' },
+
+  // ── MilesRepublic (listing, peut être bloqué par Cloudflare) ──
+  // Si 403 : déposer les pages HTML dans scripts/html-dumps/ et relancer.
+  { name: 'mr-cyclo-hdf',  label: 'MilesRepublic — Cyclosportive HdF', url: 'https://fr.milesrepublic.com/cyclosportive/hauts-de-france', type: 'milesrepublic', eventType: 'cyclosportive' },
+  { name: 'mr-gravel-hdf', label: 'MilesRepublic — Gravel HdF',        url: 'https://fr.milesrepublic.com/course-gravel/hauts-de-france', type: 'milesrepublic', eventType: 'gravel' },
+  { name: 'mr-velo-hdf',   label: 'MilesRepublic — Vélo HdF',          url: 'https://fr.milesrepublic.com/velo/hauts-de-france',          type: 'milesrepublic', eventType: 'rando' },
+  { name: 'mr-rando-hdf',  label: 'MilesRepublic — Rando HdF',         url: 'https://fr.milesrepublic.com/rando-velo-de-route/hauts-de-france', type: 'milesrepublic', eventType: 'rando' },
 ];
 
-const FETCH_TIMEOUT = 15_000;
-const USER_AGENT = 'CCS-Cycling-Bot/1.0 (+https://ccs-salouel.fr; contact@ccs-salouel.fr)';
-
-/**
- * Lance le scraping de toutes les sources et agrège les résultats.
- * Dédoublonne par slug.
- * 
- * @param {object} [opts]
- * @param {boolean} [opts.parallel=true]
- * @returns {Promise<{events: Array, errors: Array, log: Array}>}
- */
-async function scrapeAll(opts = {}) {
-  const log = [];
-  const errors = [];
-  const allEvents = [];
-
-  const promises = SOURCES.map(source => _scrapeSource(source, log, errors));
-  const results = await Promise.allSettled(promises);
-
-  for (const res of results) {
-    if (res.status === 'fulfilled' && res.value) {
-      allEvents.push(...res.value);
-    }
+// ═══════════════════════════════════════════════════════════════
+//  Fetch HTTP simple (avec fallback dump local)
+// ═══════════════════════════════════════════════════════════════
+async function _fetch(url, source) {
+  // Dump local : si scripts/html-dumps/<source.name>.html existe, l'utiliser
+  const dumpPath = path.join(__dirname, '..', 'scripts', 'html-dumps', source.name + '.html');
+  if (fs.existsSync(dumpPath)) {
+    console.log(`    (dump local: ${source.name}.html)`);
+    return fs.readFileSync(dumpPath, 'utf8');
   }
 
-  // Dédoublonnage par slug
-  const seen = new Set();
-  const unique = allEvents.filter(e => {
-    if (!e.slug) return false;
-    if (seen.has(e.slug)) return false;
-    seen.add(e.slug);
-    return true;
-  });
-
-  log.push(`Total brut: ${allEvents.length}, unique: ${unique.length}`);
-  return { events: unique, errors, log };
-}
-
-async function _scrapeSource(source, log, errors) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
   try {
-    log.push(`→ ${source.name} : fetching ${source.url}`);
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
-    const resp = await fetch(source.url, {
+    const r = await fetch(url, {
       signal: ctrl.signal,
-      headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml' },
+      headers: {
+        'User-Agent': UA_BROWSER,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'fr-FR,fr;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Upgrade-Insecure-Requests': '1',
+      },
     });
-    clearTimeout(t);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    const events = source.parser(html, source);
-    log.push(`✓ ${source.name} : ${events.length} événements`);
-    return events;
-  } catch (err) {
-    errors.push({ source: source.name, error: err.message });
-    log.push(`✗ ${source.name} : ${err.message}`);
-    return [];
-  }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.text();
+  } finally { clearTimeout(t); }
 }
 
-/**
- * Parser pour Miles Republic (et variantes).
- * 
- * Le HTML de Miles Republic suit un schéma de cartes :
- *   <article class="card">
- *     <h3>Nom de la course</h3>
- *     <span class="date">8 mai 2026</span>
- *     <span class="lieu">Croix-en-Ternois (62)</span>
- *     <span class="distance">28 km</span>
- *   </article>
- * 
- * Comme la structure exacte évolue, on utilise des regex robustes plutôt qu'un parseur DOM.
- */
+// ═══════════════════════════════════════════════════════════════
+//  Parser MilesRepublic — structure réelle mai 2026
+//  Les événements sont dans des <a href="/event/slug-id">
+// ═══════════════════════════════════════════════════════════════
 function parseMilesRepublic(html, source) {
   const events = [];
-  // Cherche les blocs de courses : balises <a class="..."> qui contiennent
-  // titre, date et lieu. Très tolérant à la structure exacte.
-  const cardRegex = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-  const matches = [...html.matchAll(cardRegex)];
-
-  for (const m of matches) {
-    const href = m[1];
-    const inner = m[2];
-    // Ne traiter que les liens vers une page d'événement
-    if (!/\/(?:cyclosportive|velo|gravel|rando)\//.test(href)) continue;
-
-    const titleMatch = inner.match(/<(?:h\d|span[^>]*class="[^"]*title[^"]*")[^>]*>([^<]+)</i);
-    const title = titleMatch ? titleMatch[1].trim() : null;
-    if (!title || title.length < 3) continue;
-
-    // Date au format "8 mai 2026" ou "Date à confirmer"
-    const dateMatch = inner.match(/(\d{1,2})\s*([\u00C0-\u017F\w]+)\s*(20\d{2})/i);
-    let date = null;
-    if (dateMatch) {
-      const day = parseInt(dateMatch[1], 10);
-      const month = _monthFr(dateMatch[2]);
-      const year = parseInt(dateMatch[3], 10);
-      if (month) date = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    }
-
-    const lieuMatch = inner.match(/([\w\u00C0-\u017F][\w\u00C0-\u017F\s\-']{2,40})\s*\((\d{2})\)/);
-    let lieu = null, region = null;
-    if (lieuMatch) {
-      lieu = lieuMatch[1].trim();
-      const dept = lieuMatch[2];
-      region = _regionForDept(dept);
-    }
-
-    const distanceMatch = inner.match(/(\d{1,3})\s*km/i);
-    const distanceKm = distanceMatch ? parseInt(distanceMatch[1], 10) : null;
-
-    // Type inféré depuis l'URL
-    let type = 'rando';
-    if (/cyclosportive/.test(href)) type = 'cyclosportive';
-    else if (/gravel/.test(href)) type = 'gravel';
-
-    const slug = _slugify(title) + (date ? '-' + date.substring(0, 4) : '');
-
-    events.push({
-      name: title, slug,
-      date, lieu, region,
-      distanceKm, type,
-      source: source.name,
-      sourceUrl: href.startsWith('http') ? href : new URL(href, source.url).href,
-      waypoints: null,
-      description: null,
-    });
+  const re = /<a[^>]+href=["'](\/event\/[^"'?#\s]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const text = _strip(m[2]);
+    const name = _name(text);
+    if (!name || name.length < 3) continue;
+    if (/running|trail|triathlon|natation|marche nordique|ski|yoga|parapente/i.test(name)) continue;
+    const date = _date(text);
+    const { lieu, region } = _lieu(text);
+    const distanceKm = _dist(text);
+    let type = source.eventType || 'rando';
+    if (/gravel/i.test(name + ' ' + text)) type = 'gravel';
+    const slug = _slug(m[1], date);
+    events.push({ name, slug, date, lieu, region, distanceKm, type,
+      source: source.name, sourceUrl: 'https://fr.milesrepublic.com' + m[1],
+      waypoints: null, description: null });
   }
   return events;
 }
 
-function _monthFr(s) {
-  const map = {
-    'janvier':1,'février':2,'fevrier':2,'mars':3,'avril':4,'mai':5,'juin':6,
-    'juillet':7,'août':8,'aout':8,'septembre':9,'octobre':10,'novembre':11,'décembre':12,'decembre':12
-  };
-  return map[s.toLowerCase()];
+// ── Helpers de parsing ─────────────────────────────────────────
+function _strip(html) {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<script[\s\S]*?<\/script>/gi,'')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ')
+    .replace(/&#\d+;/g,' ').replace(/&[a-z]+;/g,' ')
+    .replace(/\s{2,}/g,' ').trim();
 }
 
-function _regionForDept(dept) {
-  const map = {
-    '02': 'Aisne (02)', '59': 'Nord (59)', '60': 'Oise (60)',
-    '62': 'Pas-de-Calais (62)', '80': 'Somme (80)',
-  };
-  return map[dept] || `Département ${dept}`;
+function _name(text) {
+  let t = text.replace(/^(Achat instantan[ée]|Nouveau|Complet|Partenaire\s+\w+)\s*/i,'');
+  const i = t.indexOf(' - image ');
+  if (i > 3) t = t.substring(0, i).trim();
+  t = t.replace(/\s*\d{1,2}\s+(?:janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre).*/i,'').trim();
+  return t.length >= 3 ? t.replace(/\s+/g,' ') : null;
 }
 
-function _slugify(s) {
-  return String(s).toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .substring(0, 60);
+function _date(text) {
+  const MONTHS = {janvier:1,février:2,fevrier:2,mars:3,avril:4,mai:5,juin:6,juillet:7,août:8,aout:8,septembre:9,octobre:10,novembre:11,décembre:12,decembre:12};
+  const m = text.match(/(\d{1,2})\s*(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre)\s*(20\d{2})/i);
+  if (!m) return null;
+  const mo = MONTHS[m[2].toLowerCase()];
+  return mo ? `${m[3]}-${String(mo).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}` : null;
+}
+
+function _lieu(text) {
+  const DEPTS = {'02':'Aisne (02)','59':'Nord (59)','60':'Oise (60)','62':'Pas-de-Calais (62)','80':'Somme (80)'};
+  const m = text.match(/([A-ZÀ-Ö][a-zA-ZÀ-öØ-ÿ\s''\-]{1,40})\s*\((\d{2})\)/);
+  if (!m) return { lieu: null, region: null };
+  return { lieu: m[1].trim(), region: DEPTS[m[2]] || `Dépt. ${m[2]}` };
+}
+
+function _dist(text) {
+  const m = text.match(/(\d{2,3})\s*km/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function _slug(relHref, date) {
+  const base = relHref.replace('/event/','').replace(/-\d+$/,'').replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  return `${base}-${date ? date.slice(0,4) : new Date().getFullYear()}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  scrapeAll — publie toutes les sources MilesRepublic
+//  (OSM est géré séparément dans scrape-sorties.js --osm)
+// ═══════════════════════════════════════════════════════════════
+async function scrapeAll(opts = {}) {
+  const log = [], errors = [], all = [];
+  const sources = SOURCES.filter(s => s.type === 'milesrepublic');
+
+  await Promise.allSettled(sources.map(async src => {
+    try {
+      log.push(`→ ${src.name} : ${src.url}`);
+      const html = await _fetch(src.url, src);
+      const evs  = parseMilesRepublic(html, src);
+      log.push(`✓ ${src.name} : ${evs.length} événements`);
+      all.push(...evs);
+    } catch (e) {
+      // 403 = Cloudflare bot protection → expliquer le workaround
+      const hint = e.message.includes('403')
+        ? ` (Cloudflare bloque Node.js — voir workaround ci-dessous)`
+        : '';
+      errors.push({ source: src.name, error: e.message + hint });
+      log.push(`✗ ${src.name} : ${e.message}${hint}`);
+    }
+  }));
+
+  const seen = new Set();
+  const unique = all.filter(e => { if (!e.slug||seen.has(e.slug)) return false; seen.add(e.slug); return true; });
+  log.push(`Total brut: ${all.length}, unique: ${unique.length}`);
+
+  if (errors.some(e => e.error.includes('403'))) {
+    log.push('');
+    log.push('💡 WORKAROUND MilesRepublic (Cloudflare bloque les requêtes Node.js) :');
+    log.push('   1. Ouvrir https://fr.milesrepublic.com/cyclosportive/hauts-de-france dans Chrome');
+    log.push('   2. Ctrl+S → Enregistrer la page sous scripts/html-dumps/mr-cyclo-hdf.html');
+    log.push('   3. Faire pareil pour les autres pages (gravel, rando, velo)');
+    log.push('   4. Relancer npm run scrape');
+  }
+
+  return { events: unique, errors, log };
 }
 
 module.exports = { scrapeAll, SOURCES };
