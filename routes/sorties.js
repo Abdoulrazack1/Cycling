@@ -7,12 +7,12 @@ const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, param, query: qv, validationResult } = require('express-validator');
 const { parseGpx } = require('../services/gpx-parser');
+const { audit } = require('../services/audit-log');
+// Cf. AUDIT item #8 — un seul dossier GPX partagé entre /api/gpx/upload
+// (multer disque) et /api/sorties/import-gpx (multer mémoire).
+const { GPX_DIR: ASSET_GPX_DIR } = require('../middleware/upload');
 
 const router = express.Router();
-
-// Stockage en mémoire pour l'import GPX (le fichier final est écrit dans asset/gpx/)
-const ASSET_GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
-if (!fs.existsSync(ASSET_GPX_DIR)) fs.mkdirSync(ASSET_GPX_DIR, { recursive: true });
 
 const importUpload = multer({
   storage: multer.memoryStorage(),
@@ -46,7 +46,8 @@ function suggestDurationLabel(distance_km) {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-// Reconstruit une sortie complète depuis les tables normalisées
+// Reconstruit une sortie complète depuis les tables normalisées.
+// Path "single" : 3 SELECT par appel — OK pour /:id (1 sortie).
 async function buildSortie(row) {
   if (!row) return null;
   const [tags, stats, segments] = await Promise.all([
@@ -54,6 +55,43 @@ async function buildSortie(row) {
     query('SELECT label, value, unit, cls FROM sortie_stats_extra WHERE sortie_id = ? ORDER BY sort_order', [row.id]),
     query('SELECT idx, name, sub, stars, length_m, time, delta, delta_cls, `rank` FROM sortie_segments WHERE sortie_id = ? ORDER BY idx', [row.id])
   ]);
+  return _shapeSortie(row, { tags, stats, segments });
+}
+
+// Path "list" : pour N sorties, 3 SELECT IN(...) au total au lieu de 3*N.
+// Cf. AUDIT opt-2 — sur 50 sorties, on passe de 150 requêtes à 3.
+async function buildSortiesList(rows) {
+  if (rows.length === 0) return [];
+  const ids = rows.map(r => r.id);
+  const placeholders = ids.map(() => '?').join(',');
+  const [allTags, allStats, allSegs] = await Promise.all([
+    query(`SELECT sortie_id, type, label FROM sortie_tags WHERE sortie_id IN (${placeholders}) ORDER BY sort_order`, ids),
+    query(`SELECT sortie_id, label, value, unit, cls FROM sortie_stats_extra WHERE sortie_id IN (${placeholders}) ORDER BY sort_order`, ids),
+    query(`SELECT sortie_id, idx, name, sub, stars, length_m, time, delta, delta_cls, \`rank\` FROM sortie_segments WHERE sortie_id IN (${placeholders}) ORDER BY idx`, ids),
+  ]);
+  // Groupe par sortie_id en JS
+  const groupBy = (arr, key) => {
+    const m = new Map();
+    for (const r of arr) {
+      if (!m.has(r[key])) m.set(r[key], []);
+      // On retire le sortie_id du payload pour rester compatible avec
+      // le format de l'endpoint single.
+      const { [key]: _, ...rest } = r;
+      m.get(r[key]).push(rest);
+    }
+    return m;
+  };
+  const tagsBy = groupBy(allTags, 'sortie_id');
+  const statsBy = groupBy(allStats, 'sortie_id');
+  const segsBy = groupBy(allSegs, 'sortie_id');
+  return rows.map(row => _shapeSortie(row, {
+    tags:     tagsBy.get(row.id) || [],
+    stats:    statsBy.get(row.id) || [],
+    segments: segsBy.get(row.id) || []
+  }));
+}
+
+function _shapeSortie(row, { tags, stats, segments }) {
   return {
     id:             row.id,
     slug:           row.slug,
@@ -112,7 +150,7 @@ router.get('/', async (req, res) => {
       query(sql, params),
       query(countSql, countParams)
     ]);
-    const sorties = await Promise.all(rows.map(buildSortie));
+    const sorties = await buildSortiesList(rows);
     res.json({ sorties, total: cnt });
   } catch (err) {
     console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
@@ -232,7 +270,18 @@ router.post('/', requireAuth, requireModo, [
 });
 
 // ── PUT /api/sorties/:id ──────────────────────────────────────
-router.put('/:id', requireAuth, requireModo, async (req, res) => {
+router.put('/:id', requireAuth, requireModo, [
+  body('title').optional().notEmpty().trim().isLength({ max: 200 }),
+  body('date').optional().isDate().withMessage('Date au format YYYY-MM-DD'),
+  body('distance_km').optional({ nullable: true }).isFloat({ min: 0, max: 9999 }),
+  body('elevation_gain').optional({ nullable: true }).isInt({ min: 0, max: 99999 }),
+  body('elevation_loss').optional({ nullable: true }).isInt({ min: 0, max: 99999 }),
+  body('statut').optional().isIn(['passee','en_cours','future']),
+  body('location.lat').optional({ nullable: true }).isFloat({ min: -90,  max: 90 }),
+  body('location.lng').optional({ nullable: true }).isFloat({ min: -180, max: 180 }),
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
   const { id } = req.params;
   const s = req.body;
   try {
@@ -316,8 +365,8 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     const [row] = await query('SELECT id, title, gpx_filename FROM sorties WHERE id = ?', [req.params.id]);
     if (!row) return res.status(404).json({ error: 'Sortie introuvable' });
     await query('DELETE FROM sorties WHERE id = ?', [req.params.id]);
-    // Audit log : on garde une trace de qui a supprimé quoi et quand
-    console.log(`[AUDIT] ${new Date().toISOString()} — Sortie supprimée : "${row.title}" (id=${row.id}, gpx=${row.gpx_filename || 'aucun'}) par user ${req.user.id} (${req.user.username || 'anonyme'})`);
+    // Audit log : trace structurée dans audit_log (cf. AUDIT item #30).
+    audit(req, 'delete', 'sortie', row.id, { title: row.title, gpx: row.gpx_filename || null });
     res.json({ message: 'Sortie supprimée', id: row.id, title: row.title });
   } catch (err) {
     console.error('[DELETE /sorties/:id]', err.code || '', err.sqlMessage || err.message);

@@ -13,11 +13,22 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
 });
 
+// Échappement HTML pour insertion dans le corps du mail admin.
+// Cf. AUDIT item #13 : un message de contact public sans échappement
+// permettait à n'importe qui de glisser un lien de phishing dans le
+// mail reçu par l'admin.
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+  );
+}
+
 // POST /api/contact
 router.post('/', [
   body('prenom').notEmpty().trim().isLength({ max: 50 }),
   body('nom').notEmpty().trim().isLength({ max: 50 }),
   body('email').isEmail().normalizeEmail(),
+  body('telephone').optional().trim().isLength({ max: 20 }).matches(/^[0-9 +\-().]*$/),
   body('sujet').notEmpty().trim().isLength({ max: 200 }),
   body('message').notEmpty().trim().isLength({ min: 10, max: 2000 })
 ], async (req, res) => {
@@ -32,16 +43,17 @@ router.post('/', [
       [prenom, nom, email, telephone||null, sujet, message, req.ip]
     );
 
-    // Email notification à l'admin (non-bloquant)
+    // Email notification à l'admin (non-bloquant, valeurs échappées)
     if (process.env.EMAIL_ADMIN) {
       transporter.sendMail({
         from: process.env.EMAIL_FROM,
         to: process.env.EMAIL_ADMIN,
-        subject: `[CCS Contact] ${sujet}`,
-        html: `<p><b>De :</b> ${prenom} ${nom} &lt;${email}&gt;</p>
-               ${telephone ? `<p><b>Tél :</b> ${telephone}</p>` : ''}
-               <p><b>Sujet :</b> ${sujet}</p>
-               <hr><p>${message.replace(/\n/g,'<br>')}</p>`
+        subject: `[CCS Contact] ${sujet}`.slice(0, 180), // évite l'injection CRLF dans le subject
+        html: `<p><b>De :</b> ${esc(prenom)} ${esc(nom)} &lt;${esc(email)}&gt;</p>
+               ${telephone ? `<p><b>Tél :</b> ${esc(telephone)}</p>` : ''}
+               <p><b>Sujet :</b> ${esc(sujet)}</p>
+               <hr><p>${esc(message).replace(/\n/g,'<br>')}</p>
+               <hr><p style="color:#888;font-size:11px;">IP : ${esc(req.ip)} · ID #${result.insertId}</p>`
       }).catch(err => console.error('Email error:', err.message));
     }
 

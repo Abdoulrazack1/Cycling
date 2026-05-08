@@ -152,7 +152,11 @@
     _notify();
   }
 
+  // Réutilise le helper partagé (utils.js) si présent, sinon fallback local.
+  // Pourquoi ce fallback : auth.js peut être chargé avant utils.js dans
+  // d'anciennes pages externes. Le fallback est identique au shared.
   function escapeHtml(s) {
+    if (window.CCS_UTILS?.escapeHtml) return window.CCS_UTILS.escapeHtml(s);
     return String(s ?? '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#039;');

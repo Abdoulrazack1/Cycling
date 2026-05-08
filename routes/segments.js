@@ -1,13 +1,19 @@
 // routes/segments.js
 const express = require('express');
-const { query } = require('../config/database');
+const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const rows = await query('SELECT * FROM segments_global ORDER BY stars DESC, name');
-    res.json(rows);
+    const { limit = 50, offset = 0 } = req.query;
+    const sql = 'SELECT * FROM segments_global ORDER BY stars DESC, name'
+              + pageClause(limit, offset, { defaultLimit: 50, maxLimit: 200 });
+    const [rows, [{ cnt }]] = await Promise.all([
+      query(sql),
+      query('SELECT COUNT(*) AS cnt FROM segments_global')
+    ]);
+    res.json({ segments: rows, total: cnt });
   } catch (err) {
     console.error('[GET /segments]', err.code || '', err.sqlMessage || err.message);
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });

@@ -1,0 +1,40 @@
+# ── Secrets ────────────────────────────────────────────────────
+# JAMAIS commiter le .env (cf. AUDIT.md item #1 — 8 mai 2026)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ── Node.js ────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.bak
+
+# ── Uploads runtime (contenu utilisateur, pas du code) ────────
+# Garder le dossier mais pas son contenu :
+uploads/*
+!uploads/.gitkeep
+
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Éditeur / OS ───────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Build artefacts éventuels ──────────────────────────────────
+dist/
+build/
+.cache/
+
+# ── Tests / coverage ───────────────────────────────────────────
+coverage/
+.nyc_output/

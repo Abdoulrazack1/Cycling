@@ -89,6 +89,7 @@
             <a href="membres.html">Les sociétaires</a>
             <a href="profil.html">Mon profil</a>
             <a href="contact.html">Nous rejoindre</a>
+            <a href="DOCUMENTATION.md">Guide utilisateur</a>
             <a href="mentions-legales.html">Mentions légales</a>
           </nav>
         </div>
@@ -242,7 +243,7 @@
       warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3l10 18H2L12 3z" stroke="currentColor" stroke-width="2"/><path d="M12 10v5M12 18h.01" stroke="currentColor" stroke-width="2"/></svg>',
       info:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 17h.01" stroke="currentColor" stroke-width="2"/></svg>'
     };
-    el.innerHTML = (icons[type] || icons.info) + '<span>' + msg + '</span>';
+    el.innerHTML = (icons[type] || icons.info) + '<span>' + (window.esc || (s => String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))))(msg) + '</span>';
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('show'));
     setTimeout(() => {

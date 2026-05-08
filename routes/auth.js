@@ -10,14 +10,28 @@ const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
 // ── Helpers ───────────────────────────────────────────────────
-// TTL extrêmement longs : 1 an pour l'access, 10 ans pour le refresh.
-// L'utilisateur a explicitement demandé à ne plus avoir d'expiration.
-// Surchargeable via JWT_EXPIRES_IN / JWT_REFRESH_EXPIRES_IN dans .env.
+// Politique de durée de vie (cf. AUDIT item #7) :
+//   - access  : 15 min (court → limite l'impact d'un vol de token)
+//   - refresh : 30 j  (équilibre confort utilisateur / risque)
+//
+// Surchargeable via JWT_EXPIRES_IN / JWT_REFRESH_EXPIRES_IN dans .env,
+// mais PAS de fallback géant ('365d') qui mémait l'ancienne version :
+// si l'env est mal configuré, autant que ce soit visible tout de suite.
+const ACCESS_TTL  = process.env.JWT_EXPIRES_IN         || '15m';
+const REFRESH_TTL = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+// Durée DB du refresh token : doit matcher le TTL JWT pour rester cohérent.
+// On stocke en jours pour le INSERT (Date math). Si TTL custom non-jours,
+// fallback raisonnable à 30 j.
+const REFRESH_DB_DAYS = (() => {
+  const m = REFRESH_TTL.match(/^(\d+)d$/);
+  return m ? parseInt(m[1], 10) : 30;
+})();
+
 function signAccess(user) {
   return jwt.sign(
     { sub: user.id, role: user.role, username: user.username },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '365d' }
+    { expiresIn: ACCESS_TTL }
   );
 }
 
@@ -25,7 +39,7 @@ function signRefresh(user) {
   return jwt.sign(
     { sub: user.id },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '3650d' }
+    { expiresIn: REFRESH_TTL }
   );
 }
 
@@ -60,7 +74,7 @@ function cookieOpts(rememberMe = true) {
     sameSite: useSecure ? 'none' : 'lax',
     path: '/',
     // Si "se souvenir de moi" non coché : cookie de session (sans maxAge)
-    ...(rememberMe ? { maxAge: 3650 * 24 * 3600 * 1000 } : {})
+    ...(rememberMe ? { maxAge: REFRESH_DB_DAYS * 24 * 3600 * 1000 } : {})
   };
   // Domaine explicite optionnel (rarement utile, parfois nécessaire si
   // backend et frontend tournent sur sous-domaines différents en prod).
@@ -115,7 +129,7 @@ router.post('/login', [
     const refreshToken = signRefresh(user);
 
     // Stocker le refresh token (hashé)
-    const expiresAt = new Date(Date.now() + 3650 * 24 * 3600 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_DB_DAYS * 24 * 3600 * 1000);
     await query(
       'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
       [user.id, hashToken(refreshToken), expiresAt]
@@ -177,7 +191,7 @@ router.post('/register', [
     const accessToken  = signAccess(user);
     const refreshToken = signRefresh(user);
 
-    const expiresAt = new Date(Date.now() + 3650 * 24 * 3600 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_DB_DAYS * 24 * 3600 * 1000);
     await query(
       'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
       [user.id, hashToken(refreshToken), expiresAt]
@@ -215,7 +229,7 @@ router.post('/refresh', async (req, res) => {
 
     // Rotation du refresh token
     const newRefresh = signRefresh(user);
-    const expiresAt  = new Date(Date.now() + 3650 * 24 * 3600 * 1000);
+    const expiresAt  = new Date(Date.now() + REFRESH_DB_DAYS * 24 * 3600 * 1000);
 
     await query('DELETE FROM refresh_tokens WHERE id = ?', [stored.id]);
     await query(
