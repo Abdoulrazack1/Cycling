@@ -68,7 +68,17 @@ router.post('/', requireAuth, requireModo, [
   } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
-router.put('/:id', requireAuth, requireModo, async (req, res) => {
+router.put('/:id', requireAuth, requireModo, [
+  body('title').optional().notEmpty().trim().isLength({ max: 200 }),
+  body('date').optional().isDate().withMessage('Date au format YYYY-MM-DD'),
+  body('type').optional().isIn(['cyclosportive','gravel','criterium','course','rando','championnat','autre']),
+  body('distance_km').optional({ nullable: true }).isInt({ min: 0, max: 9999 }),
+  body('max_inscrits').optional({ nullable: true }).isInt({ min: 1, max: 100000 }),
+  body('engagement_eur').optional({ nullable: true }).isFloat({ min: 0, max: 9999 }),
+  body('statut').optional().isIn(['ouvert','complet','termine','annule','archive']),
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
   const e = req.body;
   try {
     await query(
@@ -97,34 +107,114 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // POST /api/evenements/:id/inscrire
+//
+// Cf. AUDIT item #9 — l'ancienne version avait :
+//   1. INSERT puis UPDATE séparés (pas de transaction → counter peut dériver)
+//   2. test « ev.inscrits + 1 >= max_inscrits » sur snapshot stale
+//      (sous concurrence, deux requêtes simultanées passaient toutes les deux)
+//   3. dénormalisation inutile : `inscrits` est calculable depuis la table.
+// Maintenant : tout dans withTransaction, count recalculé après l'INSERT,
+// auto-complet en WHERE atomique.
 router.post('/:id/inscrire', optionalAuth, [
-  body('prenom').notEmpty().trim(),
-  body('nom').notEmpty().trim(),
-  body('email').isEmail()
+  body('prenom').notEmpty().trim().isLength({ max: 50 }),
+  body('nom').notEmpty().trim().isLength({ max: 50 }),
+  body('email').isEmail().normalizeEmail(),
+  body('telephone').optional().trim().isLength({ max: 20 }).matches(/^[0-9 +\-().]*$/),
+  body('categorie').optional().trim().isLength({ max: 50 }),
+  body('distance').optional().isInt({ min: 1, max: 1000 }).toInt()
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
   try {
-    const [ev] = await query('SELECT * FROM evenements WHERE id = ?', [req.params.id]);
-    if (!ev) return res.status(404).json({ error: 'Événement introuvable' });
-    if (ev.statut === 'complet') return res.status(409).json({ error: 'Événement complet' });
-    if (ev.statut === 'annule') return res.status(409).json({ error: 'Événement annulé' });
-    if (ev.statut === 'termine') return res.status(409).json({ error: 'Événement terminé' });
+    const result = await withTransaction(async (conn) => {
+      // SELECT FOR UPDATE pour sérialiser les inscriptions concurrentes sur
+      // un même événement (évite que deux clients franchissent le max ensemble).
+      const [evRows] = await conn.execute(
+        'SELECT id, statut, max_inscrits FROM evenements WHERE id = ? FOR UPDATE',
+        [req.params.id]
+      );
+      const ev = evRows[0];
+      if (!ev) { const e = new Error('Événement introuvable'); e.status = 404; throw e; }
+      if (ev.statut === 'complet') { const e = new Error('Événement complet'); e.status = 409; throw e; }
+      if (ev.statut === 'annule')  { const e = new Error('Événement annulé');  e.status = 409; throw e; }
+      if (ev.statut === 'termine') { const e = new Error('Événement terminé'); e.status = 410; throw e; }
 
-    const { prenom, nom, email, telephone, categorie, distance } = req.body;
-    const result = await query(
-      `INSERT INTO evenement_inscriptions (evenement_id,user_id,prenom,nom,email,telephone,categorie,distance)
-       VALUES (?,?,?,?,?,?,?,?)`,
-      [ev.id, req.user?.id || null, prenom, nom, email, telephone||null, categorie||null, distance||null]
-    );
-    // Incrémenter compteur
-    await query('UPDATE evenements SET inscrits = inscrits + 1 WHERE id = ?', [ev.id]);
-    // Auto-complet si max atteint
-    if (ev.max_inscrits && ev.inscrits + 1 >= ev.max_inscrits) {
-      await query('UPDATE evenements SET statut = "complet" WHERE id = ?', [ev.id]);
+      // Recompter avant insert pour vérifier la place
+      const [[{ cnt }]] = await conn.execute(
+        "SELECT COUNT(*) AS cnt FROM evenement_inscriptions WHERE evenement_id = ? AND statut != 'annule'",
+        [ev.id]
+      );
+      if (ev.max_inscrits && cnt >= ev.max_inscrits) {
+        // Marquer complet et refuser
+        await conn.execute("UPDATE evenements SET statut='complet' WHERE id=?", [ev.id]);
+        const e = new Error('Événement complet'); e.status = 409; throw e;
+      }
+
+      const { prenom, nom, email, telephone, categorie, distance } = req.body;
+      const [ins] = await conn.execute(
+        `INSERT INTO evenement_inscriptions (evenement_id,user_id,prenom,nom,email,telephone,categorie,distance)
+         VALUES (?,?,?,?,?,?,?,?)`,
+        [ev.id, req.user?.id || null, prenom, nom, email, telephone||null, categorie||null, distance||null]
+      );
+
+      // Mettre à jour le compteur dénormalisé (gardé pour rétrocompat UI)
+      // ET basculer en 'complet' si on vient d'atteindre max_inscrits.
+      const newCnt = cnt + 1;
+      const newStatut = (ev.max_inscrits && newCnt >= ev.max_inscrits) ? 'complet' : ev.statut;
+      await conn.execute(
+        'UPDATE evenements SET inscrits=?, statut=? WHERE id=?',
+        [newCnt, newStatut, ev.id]
+      );
+
+      return { id: ins.insertId, inscrits: newCnt, complet: newStatut === 'complet' };
+    });
+    res.status(201).json({ message: 'Inscription confirmée', ...result });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    console.error('[POST /evenements/:id/inscrire]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+  }
+});
+
+// ── POST /api/evenements/inscriptions/purge ───────────────────
+// Purge RGPD : supprime les inscriptions dont l'événement est terminé
+// depuis plus de N jours (défaut 365). Réservé aux admins, à lancer
+// périodiquement (cron, ou bouton dans l'admin UI).
+// Cf. AUDIT item #20 — sans cette purge, les emails de non-membres
+// s'accumulent indéfiniment dans `evenement_inscriptions`.
+router.post('/inscriptions/purge', requireAuth, requireAdmin, async (req, res) => {
+  const days = Math.max(30, parseInt(req.body?.days) || 365);
+  const dryRun = req.body?.dryRun !== false; // default ON pour éviter les boulettes
+  try {
+    const sql = `
+      SELECT i.id, i.email, i.created_at, e.title AS evenement, e.date AS evenement_date
+      FROM evenement_inscriptions i
+      JOIN evenements e ON e.id = i.evenement_id
+      WHERE e.statut = 'termine'
+        AND e.date < DATE_SUB(CURDATE(), INTERVAL ? DAY)
+    `;
+    const rows = await query(sql, [days]);
+    if (dryRun) {
+      return res.json({ dryRun: true, count: rows.length, sample: rows.slice(0, 10) });
     }
-    res.status(201).json({ message: 'Inscription confirmée', id: result.insertId });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
+    if (rows.length === 0) return res.json({ dryRun: false, deleted: 0 });
+    const ids = rows.map(r => r.id);
+    // DELETE par batch de 100 pour ne pas locker la table
+    let deleted = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const batch = ids.slice(i, i + 100);
+      const placeholders = batch.map(() => '?').join(',');
+      const result = await query(
+        `DELETE FROM evenement_inscriptions WHERE id IN (${placeholders})`,
+        batch
+      );
+      deleted += result.affectedRows || 0;
+    }
+    res.json({ dryRun: false, deleted, days });
+  } catch (err) {
+    console.error('[POST /evenements/inscriptions/purge]', err.code || '', err.sqlMessage || err.message);
+    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+  }
 });
 
 module.exports = router;

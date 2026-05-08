@@ -1,6 +1,6 @@
 // routes/palmares.js — Palmarès CRUD
 const express = require('express');
-const { query } = require('../config/database');
+const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
@@ -10,11 +10,12 @@ const router = express.Router();
 // soit un objet groupé { palmares, byYear } si ?grouped=1.
 router.get('/', async (req, res) => {
   try {
-    const { annee, grouped } = req.query;
+    const { annee, grouped, limit = 100, offset = 0 } = req.query;
     let sql = 'SELECT * FROM palmares WHERE 1=1';
     const params = [];
     if (annee) { sql += ' AND annee = ?'; params.push(parseInt(annee)); }
     sql += ' ORDER BY annee DESC, FIELD(medaille, "gold", "silver", "bronze", "") ASC, rang ASC';
+    sql += pageClause(limit, offset, { defaultLimit: 100, maxLimit: 500 });
     const rows = await query(sql, params);
 
     if (grouped === '1') {
@@ -36,6 +37,13 @@ router.get('/', async (req, res) => {
 router.post('/', requireAuth, requireModo, [
   body('annee').isInt({ min: 1978, max: 2100 }).withMessage('Année invalide'),
   body('evenement').notEmpty().trim().withMessage('Événement requis'),
+  // Cf. AUDIT item #10 — refuser 'or'/'argent' côté API plutôt que de
+  // s'en remettre au sql_mode pour rejeter les valeurs ENUM invalides.
+  body('medaille').optional({ nullable: true }).isIn(['gold','silver','bronze'])
+    .withMessage("medaille doit être 'gold', 'silver' ou 'bronze'"),
+  body('rang').optional({ nullable: true }).isLength({ max: 20 }),
+  body('categorie').optional({ nullable: true }).isLength({ max: 100 }),
+  body('equipe').optional({ nullable: true }).isLength({ max: 50 }),
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) {
@@ -61,7 +69,14 @@ router.post('/', requireAuth, requireModo, [
 });
 
 // PUT /api/palmares/:id
-router.put('/:id', requireAuth, requireModo, async (req, res) => {
+router.put('/:id', requireAuth, requireModo, [
+  body('annee').optional().isInt({ min: 1978, max: 2100 }),
+  body('medaille').optional({ nullable: true }).isIn(['gold','silver','bronze']),
+  body('rang').optional({ nullable: true }).isLength({ max: 20 }),
+  body('equipe').optional({ nullable: true }).isLength({ max: 50 }),
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
   const p = req.body;
   try {
     await query(

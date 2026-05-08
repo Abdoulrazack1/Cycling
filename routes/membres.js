@@ -1,7 +1,7 @@
 // routes/membres.js
 const express = require('express');
 const bcrypt  = require('bcryptjs');
-const { query } = require('../config/database');
+const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
@@ -17,13 +17,17 @@ function userPublic(u) {
   };
 }
 
-// GET /api/membres
+// GET /api/membres — annuaire public, paginé (cf. AUDIT item #21)
 router.get('/', async (req, res) => {
   try {
-    const rows = await query(
-      'SELECT * FROM users WHERE actif = TRUE ORDER BY numero',
-    );
-    res.json(rows.map(userPublic));
+    const { limit = 50, offset = 0 } = req.query;
+    const sql = 'SELECT * FROM users WHERE actif = TRUE ORDER BY numero'
+              + pageClause(limit, offset, { defaultLimit: 50, maxLimit: 200 });
+    const [rows, [{ cnt }]] = await Promise.all([
+      query(sql),
+      query('SELECT COUNT(*) AS cnt FROM users WHERE actif = TRUE')
+    ]);
+    res.json({ membres: rows.map(userPublic), total: cnt });
   } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
@@ -62,8 +66,24 @@ router.put('/:id', requireAuth, [
 });
 
 // Admin: désactiver un membre
-router.patch('/:id/actif', requireAuth, requireAdmin, async (req, res) => {
+router.patch('/:id/actif', requireAuth, requireAdmin, [
+  body('actif').isBoolean().withMessage('actif doit être true ou false')
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
   try {
+    // Idem #18 : on ne peut pas désactiver le dernier admin actif.
+    if (req.body.actif === false) {
+      const [target] = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+      if (target?.role === 'admin') {
+        const [{ cnt }] = await query(
+          "SELECT COUNT(*) AS cnt FROM users WHERE role='admin' AND actif=TRUE"
+        );
+        if (cnt <= 1) {
+          return res.status(409).json({ error: 'Dernier admin actif — désactivation refusée.' });
+        }
+      }
+    }
     await query('UPDATE users SET actif = ? WHERE id = ?', [req.body.actif ? 1 : 0, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
   } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
@@ -76,6 +96,22 @@ router.patch('/:id/role', requireAuth, requireAdmin, [
   const errs = validationResult(req);
   if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
   try {
+    // Cf. AUDIT item #18 — empêcher la rétrogradation du DERNIER admin
+    // actif. Sans ça, un admin pouvait se rétrograder lui-même et plus
+    // personne ne pouvait administrer le site.
+    if (req.body.role !== 'admin') {
+      const [target] = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+      if (target?.role === 'admin') {
+        const [{ cnt }] = await query(
+          "SELECT COUNT(*) AS cnt FROM users WHERE role='admin' AND actif=TRUE"
+        );
+        if (cnt <= 1) {
+          return res.status(409).json({
+            error: 'Dernier admin actif — impossible de le rétrograder. Promouvez d\'abord un autre membre.'
+          });
+        }
+      }
+    }
     await query('UPDATE users SET role = ? WHERE id = ?', [req.body.role, req.params.id]);
     res.json({ message: 'Rôle mis à jour' });
   } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }

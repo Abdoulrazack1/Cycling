@@ -1,9 +1,36 @@
 // server.js — Point d'entrée de l'API C.C. Salouel
 require('dotenv').config();
 
+// ── Validation env-vars (FAIL FAST) ──────────────────────────
+// Cf. AUDIT item #12. Sans ces vérifs, le serveur démarrait OK
+// mais crashait à la première requête auth, OU pire : si JWT_SECRET
+// était une chaîne vide, jwt.sign('') produisait des tokens forgeable.
+const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DB_HOST', 'DB_USER', 'DB_NAME'];
+const missing = REQUIRED_ENV.filter(v => !process.env[v]);
+if (missing.length) {
+  console.error(`\n❌ Variables d'environnement requises manquantes : ${missing.join(', ')}`);
+  console.error('   Voir .env.example pour le gabarit complet.\n');
+  process.exit(1);
+}
+if (process.env.JWT_SECRET.length < 32 || process.env.JWT_REFRESH_SECRET.length < 32) {
+  console.error('\n❌ JWT_SECRET et JWT_REFRESH_SECRET doivent faire ≥ 32 caractères.');
+  console.error('   Générer un secret fort : `node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64\'))"`\n');
+  process.exit(1);
+}
+if (process.env.JWT_SECRET === process.env.JWT_REFRESH_SECRET) {
+  console.error('\n❌ JWT_SECRET et JWT_REFRESH_SECRET doivent être DIFFÉRENTS.\n');
+  process.exit(1);
+}
+// Avertir (sans bloquer) si on tourne avec les secrets d'exemple
+if (process.env.JWT_SECRET.includes('CCS_Salouel_JWT_Secret_2025')) {
+  console.warn('\n⚠️  ATTENTION : JWT_SECRET semble être la valeur d\'exemple commitée');
+  console.warn('   dans le .env du repo public. Faites tourner ce secret avant la prod.\n');
+}
+
 const express      = require('express');
 const cors         = require('cors');
 const helmet       = require('helmet');
+const compression  = require('compression');
 const cookieParser = require('cookie-parser');
 const rateLimit    = require('express-rate-limit');
 const path         = require('path');
@@ -129,7 +156,24 @@ const contactLimiter = rateLimit({
   message: { error: 'Vous avez envoyé trop de messages récemment' }
 });
 
+// inscriptionLimiter : anti-spam des inscriptions aux événements
+// (cf. AUDIT item #9 — sans ça, n'importe qui pouvait POST 1000
+// fausses inscriptions pour saturer un événement et bloquer les vraies).
+const inscriptionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10, // 10 tentatives d'inscription par heure et par IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method !== 'POST' || !req.path.endsWith('/inscrire'),
+  message: { error: 'Trop d\'inscriptions tentées récemment, patientez 1 h' }
+});
+
 app.use('/api', globalLimiter);
+
+// ── Compression gzip/brotli ─────────────────────────────────
+// AUDIT opt-4 : 5 lignes pour ~70% de bande passante en moins
+// sur les réponses JSON et les HTML/CSS/JS statiques.
+app.use(compression());
 
 // ── Fichiers statiques du frontend ───────────────────────────
 // Sert les HTML/CSS/JS/GPX directement depuis ce dossier
@@ -146,10 +190,24 @@ app.use(express.static(path.join(__dirname), {
 // ── GPX uploadés via l'admin ───────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Cache HTTP léger sur les GET publics (AUDIT opt-3) ────────
+// 60 s : assez court pour que les modifs admin se propagent vite,
+// assez long pour absorber les rafales de requêtes (carte + sortie + POIs).
+// Auth check : ne PAS mettre en cache les requêtes authentifiées
+// (elles peuvent renvoyer du contenu personnalisé).
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET' && !req.headers.authorization) {
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+  } else {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
+
 // ── Routes API ────────────────────────────────────────────────
 app.use('/api/auth',       authLimiter, require('./routes/auth'));
 app.use('/api/sorties',    require('./routes/sorties'));
-app.use('/api/evenements', require('./routes/evenements'));
+app.use('/api/evenements', inscriptionLimiter, require('./routes/evenements'));
 app.use('/api/membres',    require('./routes/membres'));
 app.use('/api/contact',    contactLimiter, require('./routes/contact'));
 app.use('/api/club',       require('./routes/club'));
@@ -165,13 +223,28 @@ const poisRouter = require('./routes/pois');
 app.use('/api/sorties/:sortieId/pois', poisRouter);
 
 // ── Health check ─────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({
+// /api/health             → simple ping (pour load balancer)
+// /api/health?deep=1      → avec ping DB (pour monitoring)
+app.get('/api/health', async (req, res) => {
+  const out = {
     status: 'ok',
-    version: '1.0.0',
+    version: require('./package.json').version,
     env: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
-  });
+  };
+  if (req.query.deep) {
+    try {
+      const { query } = require('./config/database');
+      const t0 = Date.now();
+      await query('SELECT 1');
+      out.db = { ok: true, latency_ms: Date.now() - t0 };
+    } catch (err) {
+      out.status = 'degraded';
+      out.db = { ok: false, error: err.message };
+      return res.status(503).json(out);
+    }
+  }
+  res.json(out);
 });
 
 // ── 404 API ───────────────────────────────────────────────────

@@ -45,16 +45,20 @@ function parseGpx(xml) {
   }
 
   // Extract <trkpt lat=".." lon=".."> ... <ele>..</ele> .. </trkpt>
+  // Tolère aussi <trkpt lon=".." lat=".."> (Komoot inverse parfois).
   const ptRe =
-    /<trkpt\s+lat="([\-\d.]+)"\s+lon="([\-\d.]+)"\s*>([\s\S]*?)<\/trkpt>|<trkpt\s+lat="([\-\d.]+)"\s+lon="([\-\d.]+)"\s*\/>/g;
+    /<trkpt\s+(?:lat="([\-\d.]+)"\s+lon="([\-\d.]+)"|lon="([\-\d.]+)"\s+lat="([\-\d.]+)"|lat='([\-\d.]+)'\s+lon='([\-\d.]+)')\s*(?:\/>|>([\s\S]*?)<\/trkpt>)/g;
   const eleRe = /<ele>([\-\d.]+)<\/ele>/;
 
   const points = [];
   let m;
   while ((m = ptRe.exec(xml)) !== null) {
-    const lat = parseFloat(m[1] ?? m[4]);
-    const lng = parseFloat(m[2] ?? m[5]);
-    const inner = m[3] ?? '';
+    // Selon le pattern qui a matché, lat/lon sont à des index différents
+    let lat, lng;
+    if (m[1] !== undefined)      { lat = parseFloat(m[1]); lng = parseFloat(m[2]); }
+    else if (m[3] !== undefined) { lng = parseFloat(m[3]); lat = parseFloat(m[4]); }
+    else                          { lat = parseFloat(m[5]); lng = parseFloat(m[6]); }
+    const inner = m[7] ?? '';
     const eleMatch = inner.match(eleRe);
     /** @type {GpxPoint} */
     const p = { lat, lng };
@@ -69,26 +73,41 @@ function parseGpx(xml) {
   }
 
   // Distance totale + élévations
+  // Cf. AUDIT item #22 : l'ancienne version cumulait CHAQUE diff d'élévation,
+  // bruit GPS inclus → D+ inflaté de 30-50% vs Strava/Komoot.
+  // Maintenant : moyenne glissante sur ~10 points qui élimine le bruit haute
+  // fréquence sans masquer les vraies montées. Aucun seuil sur les diffs
+  // (les seuils marchent mal sur les GPX synthétiques où chaque pas fait <1 m).
+  const SMOOTH_WIN = 10;
+  const eles = points.map(p => (typeof p.ele === 'number' && Number.isFinite(p.ele)) ? p.ele : null);
+  const smoothed = eles.map((_, i) => {
+    const start = Math.max(0, i - Math.floor(SMOOTH_WIN / 2));
+    const end   = Math.min(eles.length, i + Math.ceil(SMOOTH_WIN / 2));
+    let sum = 0, n = 0;
+    for (let j = start; j < end; j++) {
+      if (eles[j] !== null) { sum += eles[j]; n++; }
+    }
+    return n > 0 ? sum / n : null;
+  });
+
   let distM = 0;
   let dPlus = 0;
   let dMinus = 0;
   let eMin = null;
   let eMax = null;
   for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    if (typeof p.ele === 'number' && Number.isFinite(p.ele)) {
-      if (eMin === null || p.ele < eMin) eMin = p.ele;
-      if (eMax === null || p.ele > eMax) eMax = p.ele;
+    const e = smoothed[i];
+    if (e !== null) {
+      if (eMin === null || e < eMin) eMin = e;
+      if (eMax === null || e > eMax) eMax = e;
     }
     if (i > 0) {
-      distM += haversineMeters(points[i - 1], p);
-      if (
-        typeof p.ele === 'number' &&
-        typeof points[i - 1].ele === 'number'
-      ) {
-        const d = p.ele - points[i - 1].ele;
-        if (d > 0) dPlus += d;
-        else dMinus += -d;
+      distM += haversineMeters(points[i - 1], points[i]);
+      const prevE = smoothed[i - 1];
+      if (e !== null && prevE !== null) {
+        const d = e - prevE;
+        if (d > 0) dPlus  += d;
+        else       dMinus += -d;
       }
     }
   }

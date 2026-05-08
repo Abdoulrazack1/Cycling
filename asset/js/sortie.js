@@ -589,18 +589,21 @@
     const list = document.getElementById('poi-items');
     if (!list) return;
     const pois = filteredPois();
+    // SÉCURITÉ : les POIs sont créés par n'importe quel membre via
+    // POST /api/sorties/:sortieId/pois — sans escape on aurait du
+    // stored-XSS (cf. AUDIT item #5). Utiliser esc() partout.
     list.innerHTML = pois.map((p, i) => `
-      <div class="poi-item" data-poi-id="${p.id}" role="button" tabindex="0">
-        <div class="poi-item-num type-${p.type}">${i + 1}</div>
+      <div class="poi-item" data-poi-id="${esc(p.id)}" role="button" tabindex="0">
+        <div class="poi-item-num type-${esc(p.type)}">${i + 1}</div>
         <div class="poi-item-body">
-          <div class="poi-item-type">${POI_LABELS[p.type] || p.type}</div>
-          <div class="poi-item-title">${p.label || '—'}</div>
-          ${p.desc ? `<div class="poi-item-desc">${p.desc}</div>` : ''}
-          ${p.contact ? `<div class="poi-item-contact"><b>${p.contact.name || ''}</b>${p.contact.phone ? ' · <a href="tel:' + p.contact.phone.replace(/\s/g,'') + '">' + p.contact.phone + '</a>' : ''}</div>` : ''}
+          <div class="poi-item-type">${esc(POI_LABELS[p.type] || p.type)}</div>
+          <div class="poi-item-title">${esc(p.label || '—')}</div>
+          ${p.desc ? `<div class="poi-item-desc">${esc(p.desc)}</div>` : ''}
+          ${p.contact ? `<div class="poi-item-contact"><b>${esc(p.contact.name || '')}</b>${p.contact.phone ? ' · <a href="tel:' + esc(String(p.contact.phone).replace(/\s/g,'')) + '">' + esc(p.contact.phone) + '</a>' : ''}</div>` : ''}
         </div>
         <div class="poi-item-right">
           <div class="poi-item-km">${numKm(p.km).toFixed(1)}<span class="unit">km</span></div>
-          ${p._userAdded ? `<button class="poi-del-btn" data-del="${p.id}" aria-label="Supprimer">✕</button>` : ''}
+          ${p._userAdded ? `<button class="poi-del-btn" data-del="${esc(p.id)}" aria-label="Supprimer">✕</button>` : ''}
         </div>
       </div>`).join('');
 
@@ -1225,18 +1228,22 @@
     // Tags
     const tagsEl = document.getElementById('sortie-tags');
     if (tagsEl && s.tags) {
+      // tags peuvent venir d'un membre via PUT sortie ; échapper t.label
       tagsEl.innerHTML = s.tags.map(t => {
-        if (t.type === 'live')  return `<span class="tag tag-live"><span class="tag-dot"></span>${t.label}</span>`;
-        if (t.type === 'brass') return `<span class="tag tag-brass">${t.label}</span>`;
-        return `<span class="tag">${t.label}</span>`;
+        if (t.type === 'live')  return `<span class="tag tag-live"><span class="tag-dot"></span>${esc(t.label)}</span>`;
+        if (t.type === 'brass') return `<span class="tag tag-brass">${esc(t.label)}</span>`;
+        return `<span class="tag">${esc(t.label)}</span>`;
       }).join('');
     }
 
     // Chapter, title, subtitle
     const chapterEl = document.getElementById('sortie-chapter');
-    if (chapterEl) chapterEl.innerHTML = `<em>${s.chapter}</em>`;
+    if (chapterEl) chapterEl.innerHTML = `<em>${esc(s.chapter)}</em>`;
     const titleEl = document.getElementById('sortie-title');
-    if (titleEl) titleEl.innerHTML = s.title_html || s.title;
+    // title_html est INTENTIONNELLEMENT non-échappé : il sert à insérer
+    // les <span class="it"> pour la mise en forme typographique.
+    // Seuls les modos peuvent éditer (cf. routes/sorties.js requireModo).
+    if (titleEl) titleEl.innerHTML = s.title_html || esc(s.title);
     const subEl = document.getElementById('sortie-sub');
     if (subEl) subEl.textContent = s.description;
 
@@ -1249,10 +1256,12 @@
         { label: 'D+',       value: String(s.elevation_gain), unit: 'm' }
       ];
       const all = baseStats.concat(s.stats_extra || []);
+      // stats_extra : label + unit configurés par modo via API → on échappe quand même.
+      // cls est aussi mis dans un attribut class, donc on filtre les caractères dangereux.
       statsEl.innerHTML = all.map(st => `
         <div class="sh-stat">
-          <div class="sh-stat-l">${st.label}</div>
-          <div class="sh-stat-v ${st.cls || ''}">${st.value}${st.unit ? '<span class="unit">' + st.unit + '</span>' : ''}</div>
+          <div class="sh-stat-l">${esc(st.label)}</div>
+          <div class="sh-stat-v ${esc(st.cls || '').replace(/[^a-zA-Z0-9_ -]/g,'')}">${esc(st.value)}${st.unit ? '<span class="unit">' + esc(st.unit) + '</span>' : ''}</div>
         </div>`).join('');
     }
 
@@ -1290,12 +1299,12 @@
     tbody.innerHTML = segs.map(seg => `
       <tr>
         <td class="seg-table-idx">${String(seg.idx).padStart(2, '0')}</td>
-        <td><div class="seg-table-name">${seg.name}</div><div class="seg-table-name-sub">${seg.sub}</div></td>
+        <td><div class="seg-table-name">${esc(seg.name)}</div><div class="seg-table-name-sub">${esc(seg.sub)}</div></td>
         <td class="seg-table-stars">${stars(seg.stars)}</td>
-        <td class="seg-table-len">${seg.length_m.toLocaleString('fr-FR')} m</td>
-        <td class="seg-table-time">${seg.time}</td>
-        <td><span class="seg-delta ${seg.delta_cls}">${seg.delta}</span></td>
-        <td><span class="seg-rank">${seg.rank}</span></td>
+        <td class="seg-table-len">${(seg.length_m || 0).toLocaleString('fr-FR')} m</td>
+        <td class="seg-table-time">${esc(seg.time)}</td>
+        <td><span class="seg-delta ${esc(seg.delta_cls || '').replace(/[^a-zA-Z0-9_-]/g,'')}">${esc(seg.delta)}</span></td>
+        <td><span class="seg-rank">${esc(seg.rank)}</span></td>
       </tr>`).join('');
   }
 

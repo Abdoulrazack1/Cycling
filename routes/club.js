@@ -4,6 +4,17 @@ const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
+// Whitelist des clés acceptées pour club_settings (cf. AUDIT item #17).
+// Sans ça, n'importe quel admin pouvait polluer la table avec des clés
+// arbitraires (pas une faille de sécurité grave, mais bombe à dette).
+const ALLOWED_KEYS = new Set([
+  'name', 'founded', 'president', 'licencies',
+  'address', 'email', 'phone', 'sortie_day',
+  'instagram', 'strava', 'facebook', 'twitter',
+  'description', 'logo_url'
+]);
+const MAX_VALUE_LEN = 1000;
+
 router.get('/', async (req, res) => {
   try {
     const rows = await query('SELECT cle, valeur FROM club_settings');
@@ -14,14 +25,24 @@ router.get('/', async (req, res) => {
 
 router.put('/', requireAuth, requireAdmin, async (req, res) => {
   try {
-    for (const [cle, valeur] of Object.entries(req.body)) {
+    const rejected = [];
+    const accepted = [];
+    for (const [cle, valeur] of Object.entries(req.body || {})) {
+      if (!ALLOWED_KEYS.has(cle)) { rejected.push(cle); continue; }
+      const v = String(valeur ?? '');
+      if (v.length > MAX_VALUE_LEN) { rejected.push(cle + ' (>1000 chars)'); continue; }
       await query(
         'INSERT INTO club_settings (cle, valeur) VALUES (?,?) ON DUPLICATE KEY UPDATE valeur=?',
-        [cle, String(valeur), String(valeur)]
+        [cle, v, v]
       );
+      accepted.push(cle);
     }
     const rows = await query('SELECT cle, valeur FROM club_settings');
-    res.json(Object.fromEntries(rows.map(r => [r.cle, r.valeur])));
+    res.json({
+      settings: Object.fromEntries(rows.map(r => [r.cle, r.valeur])),
+      accepted,
+      ...(rejected.length ? { rejected, hint: 'Clés non whitelistées (cf. ALLOWED_KEYS dans routes/club.js)' } : {})
+    });
   } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 

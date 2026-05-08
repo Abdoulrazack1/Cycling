@@ -34,22 +34,13 @@ const scraper   = require('../services/course-scraper');
 
 const router = express.Router();
 
-// Helpers d'auth — fallback si le middleware n'est pas exporté
-let requireAuth, requireAdmin;
-try {
-  ({ requireAuth, requireAdmin } = require('../middleware/auth'));
-} catch {
-  requireAuth = (req, res, next) => next();
-  requireAdmin = (req, res, next) => next();
-}
-
-// Charger query() seulement si la BDD est disponible
-let dbQuery = null;
-try {
-  ({ query: dbQuery } = require('../config/database'));
-} catch {
-  // OK : on tourne en mode fichier seul
-}
+// Auth + DB : require strict. Si l'un des deux casse, on PRÉFÈRE
+// que le serveur refuse de démarrer plutôt que d'exposer ces routes
+// admin sans contrôle. Cf. AUDIT item #3 — l'ancien try/catch
+// transformait silencieusement requireAuth en next() en cas d'erreur
+// au require, rendant TOUS les endpoints publics.
+const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { query: dbQuery } = require('../config/database');
 
 // ════════════════════════════════════════════════════════════════
 //  GET /sources — liste les sources de scraping configurées
@@ -112,9 +103,9 @@ router.post('/generate', requireAuth, requireAdmin, async (req, res) => {
       skipElevation: skipNet,
     });
 
-    // Si la BDD est dispo et que `persist` est demandé, INSERT en sortie
+    // Si `persist` est demandé (défaut), INSERT en base
     let persisted = false;
-    if (dbQuery && body.persist !== false) {
+    if (body.persist !== false) {
       try {
         await _persistSortie(result, body);
         persisted = true;
@@ -159,8 +150,8 @@ router.post('/import', requireAuth, requireAdmin, async (req, res) => {
     try {
       // Sans waypoints, on ne peut pas générer le GPX → on insère juste l'event
       if (!ev.waypoints || ev.waypoints.length < 2) {
-        if (dbQuery) await _persistEventOnly(ev);
-        results.push({ slug: ev.slug, name: ev.name, gpx: false, persisted: !!dbQuery });
+        await _persistEventOnly(ev);
+        results.push({ slug: ev.slug, name: ev.name, gpx: false, persisted: true });
         continue;
       }
 
@@ -172,14 +163,15 @@ router.post('/import', requireAuth, requireAdmin, async (req, res) => {
         waypoints:  ev.waypoints,
       }, { skipRouting: skipNet, skipElevation: skipNet }) : null;
 
-      if (dbQuery) {
-        await _persistSortie(generated || { id: ev.slug, name: ev.name, pois: [], stats: { distanceKm: ev.distanceKm, dPlus: null }, gpxFilename: null }, ev);
-      }
+      await _persistSortie(
+        generated || { id: ev.slug, name: ev.name, pois: [], stats: { distanceKm: ev.distanceKm, dPlus: null }, gpxFilename: null },
+        ev
+      );
       results.push({
         slug: ev.slug, name: ev.name,
         gpx: !!generated?.gpxFilename, gpxFilename: generated?.gpxFilename,
         pois: generated?.pois?.length || 0,
-        persisted: !!dbQuery,
+        persisted: true,
       });
     } catch (err) {
       errors.push({ slug: ev.slug, name: ev.name, error: err.message });
@@ -190,22 +182,22 @@ router.post('/import', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════
-//  GET /:id — récupérer une course auto-générée (depuis fichier ou BDD)
+//  GET /:id — récupérer une course auto-générée (admin only — peut
+//  contenir des sorties non-publiques `statut='future'`)
 // ════════════════════════════════════════════════════════════════
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
   const id = String(req.params.id).replace(/[^a-z0-9_-]/gi, '-');
 
   // Vérifier si le GPX existe sur disque
   const gpxPath = path.join(__dirname, '..', 'asset', 'gpx', id + '.gpx');
   const hasGpx = fs.existsSync(gpxPath);
 
-  // Tenter de récupérer depuis la BDD si dispo
   let sortie = null;
-  if (dbQuery) {
-    try {
-      const rows = await dbQuery('SELECT * FROM sorties WHERE id = ? LIMIT 1', [id]);
-      sortie = rows?.[0] || null;
-    } catch {}
+  try {
+    const rows = await dbQuery('SELECT * FROM sorties WHERE id = ? LIMIT 1', [id]);
+    sortie = rows?.[0] || null;
+  } catch (err) {
+    console.error('[auto-courses GET /:id]', err.message);
   }
 
   res.json({

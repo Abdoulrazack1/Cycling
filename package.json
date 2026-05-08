@@ -1,15 +1,20 @@
 {
   "name": "ccs-salouel-backend",
-  "version": "1.0.0",
-  "description": "Club de Cyclisme de Salouel — API REST complète",
+  "version": "1.0.1",
+  "description": "Club de Cyclisme de Salouel \u2014 API REST compl\u00e8te",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.17"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.0",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -18,10 +23,10 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.0.0",
     "mysql2": "^3.6.5",
-    "nodemailer": "^6.9.7",
-    "uuid": "^9.0.0"
+    "nodemailer": "^8.0.7",
+    "uuid": "^11.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

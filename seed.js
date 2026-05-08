@@ -355,7 +355,9 @@ const EVENEMENTS = [
 ];
 
 const SEGMENTS_GLOBAL = [
-  { name: "Trouée d'Arenberg", location: 'Wallers', stars: 5, length_m: 2400, meilleur_temps: "6'42\"", delta_moyenne: '−22\" scratch', rang: '1er · KOM', rang_cls: 'rank-gold', kom: true, sortie_id: 'arenberg-2025-04-05' },
+  // Schema: kom VARCHAR(100) — utilisé pour stocker le pseudo du KOM,
+  // pas un boolean. true → '1' était silencieux mais sémantiquement faux.
+  { name: "Trouée d'Arenberg", location: 'Wallers', stars: 5, length_m: 2400, meilleur_temps: "6'42\"", delta_moyenne: '−22\" scratch', rang: '1er · KOM', rang_cls: 'rank-gold', kom: 'admin', sortie_id: 'arenberg-2025-04-05' },
   { name: "Carrefour de l'Arbre", location: 'Camphin', stars: 5, length_m: 1600, meilleur_temps: "4'28\"", delta_moyenne: '−12\" scratch', rang: '2e', rang_cls: 'rank-silver', sortie_id: 'arenberg-2025-04-05' },
   { name: 'Mons-en-Pévèle', location: 'Pévèle', stars: 5, length_m: 3000, meilleur_temps: "8'54\"", delta_moyenne: '+4\" scratch', rang: '4e', rang_cls: '', sortie_id: 'pevele-2025-01-26' },
   { name: 'Kemmelberg', location: 'Flandre', stars: 5, length_m: 800, meilleur_temps: "2'54\"", delta_moyenne: '+2\" scratch', rang: '5e', rang_cls: '', sortie_id: 'monts-flandres-2025-03-28' },
@@ -363,10 +365,13 @@ const SEGMENTS_GLOBAL = [
 ];
 
 const PALMARES_DATA = [
-  { annee: 2025, titre: 'Vainqueur — Trouée d\'Arenberg', evenement: 'Reconnaissance Paris-Roubaix', categorie: 'Open', rang: 1, medaille: 'or', sortie_id: 'arenberg-2025-04-05' },
-  { annee: 2024, titre: '2e — Mont des Cats', evenement: 'Ronde des Monts', categorie: 'M40', rang: 2, medaille: 'argent' },
-  { annee: 2024, titre: 'Vainqueur — Grand Prix de Salouel', evenement: 'Grand Prix de Salouel', categorie: '3e cat', rang: 1, medaille: 'or', equipe: false },
-  { annee: 2023, titre: 'Équipe — Critérium UFOLEP', evenement: 'Championnat régional', categorie: 'Équipe', rang: 1, medaille: 'or', equipe: true },
+  // Schema: medaille ENUM('gold','silver','bronze') · equipe VARCHAR(50)
+  // Cf. AUDIT item #10 — l'ancien seed insérait 'or'/'argent' qui sont
+  // refusés (sql_mode strict) ou silencieusement coercés en '' (permissif).
+  { annee: 2025, titre: 'Vainqueur — Trouée d\'Arenberg', evenement: 'Reconnaissance Paris-Roubaix', categorie: 'Open', rang: 1, medaille: 'gold', sortie_id: 'arenberg-2025-04-05' },
+  { annee: 2024, titre: '2e — Mont des Cats', evenement: 'Ronde des Monts', categorie: 'M40', rang: 2, medaille: 'silver' },
+  { annee: 2024, titre: 'Vainqueur — Grand Prix de Salouel', evenement: 'Grand Prix de Salouel', categorie: '3e cat', rang: 1, medaille: 'gold', equipe: null },
+  { annee: 2023, titre: 'Équipe — Critérium UFOLEP', evenement: 'Championnat régional', categorie: 'Équipe', rang: 1, medaille: 'gold', equipe: 'Équipe CCS A' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -475,7 +480,13 @@ async function seed() {
     );
 
     console.log('  ✅ 2 utilisateurs créés (admin + membre)');
-    console.log('  📋 Logins: admin/Admin@Salouel2025  |  membre1/Membre@Salouel2025\n');
+    // Cf. AUDIT item #24 — ne pas dévoiler les mots de passe par défaut
+    // si le seed est lancé en prod (ex. Docker entrypoint qui logge).
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('  📋 Logins: admin/Admin@Salouel2025  |  membre1/Membre@Salouel2025\n');
+    } else {
+      console.log('  📋 (mots de passe non affichés en NODE_ENV=production — voir le code seed.js)\n');
+    }
 
     // ── Sorties ─────────────────────────────────────────────────
     console.log('🚴 Import des sorties...');
