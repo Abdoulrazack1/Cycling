@@ -279,6 +279,22 @@ app.listen(PORT, () => {
   console.log(`   Env     : ${process.env.NODE_ENV || 'development'}`);
   console.log(`   DB      : ${process.env.DB_NAME}@${process.env.DB_HOST}`);
   console.log(`   Frontend: ${process.env.FRONTEND_URL}\n`);
+
+  // ── Auto-expire les courses passées (BDD + GPX) ──────────────
+  // Lance en arrière-plan, sans bloquer le démarrage.
+  // Re-exécute toutes les 24 h tant que le serveur tourne.
+  const runCleanup = () => {
+    const { fork } = require('child_process');
+    const proc = fork(require('path').join(__dirname, 'scripts', 'expire-past-sorties.js'), [], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+    proc.on('error', err => console.warn('[expire-past] failed:', err.message));
+  };
+  // Premier lancement : 30 s après le boot (laisse la BDD se stabiliser)
+  setTimeout(runCleanup, 30_000);
+  // Puis toutes les 24 h
+  setInterval(runCleanup, 24 * 60 * 60 * 1000);
 });
 
 module.exports = app;
