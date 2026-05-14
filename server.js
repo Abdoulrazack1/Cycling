@@ -5,6 +5,9 @@ require('dotenv').config();
 // Cf. AUDIT item #12. Sans ces vérifs, le serveur démarrait OK
 // mais crashait à la première requête auth, OU pire : si JWT_SECRET
 // était une chaîne vide, jwt.sign('') produisait des tokens forgeable.
+// Note : console.error/warn intentionnels ici — le logger pino n'est pas
+// encore chargé à ce stade, et ces messages doivent toujours sortir
+// même si le module logger échoue à s'initialiser.
 const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DB_HOST', 'DB_USER', 'DB_NAME'];
 const missing = REQUIRED_ENV.filter(v => !process.env[v]);
 if (missing.length) {
@@ -34,13 +37,28 @@ const compression  = require('compression');
 const cookieParser = require('cookie-parser');
 const rateLimit    = require('express-rate-limit');
 const path         = require('path');
+const pinoHttp     = require('pino-http');
+const logger       = require('./lib/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (req, res, err) => {
+    if (err || res.statusCode >= 500) return 'error';
+    if (res.statusCode >= 400) return 'warn';
+    return 'info';
+  },
+  serializers: {
+    req: (req) => ({ method: req.method, url: req.url, id: req.id }),
+    res: (res) => ({ statusCode: res.statusCode })
+  }
+}));
+
 // ── Sécurité ─────────────────────────────────────────────────
-// Helmet avec CSP adaptée :
-// - Scripts inline acceptés ('unsafe-inline') car le frontend en utilise partout
+// Helmet avec CSP stricte (sans unsafe-inline / unsafe-eval) :
+// - Tous les scripts sont externes dans asset/js/
 // - CDN externes pour Leaflet/Mapillary/etc.
 // - Images : Unsplash + tuiles Esri/CARTO/OSM
 // - Iframes : Google Maps Street View embed
@@ -52,7 +70,7 @@ app.use(helmet({
     useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+      scriptSrc: ["'self'",
                   'https://cdnjs.cloudflare.com',
                   'https://unpkg.com',
                   'https://cdn.jsdelivr.net'],
@@ -80,7 +98,8 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri:   ["'self'"],
       formAction:["'self'"],
-      frameAncestors: ["'self'"]
+      frameAncestors: ["'self'"],
+      reportUri: ["/csp-report"]
     }
   }
 }));
@@ -88,30 +107,33 @@ app.use(helmet({
 app.set('trust proxy', 1);
 
 // ── CORS ─────────────────────────────────────────────────────
-// En dev : autoriser n'importe quel port localhost / 127.0.0.1 (Live Server,
-// Vite, etc. sont en 5500/5173/3001…). En prod : whitelist via FRONTEND_URL.
-const isProdEnv = process.env.NODE_ENV === 'production';
+// Politique same-origin : frontend et API partagent l'origine
+// (Express en dev, nginx reverse-proxy en prod). CORS n'est conservé que
+// comme défense en profondeur, avec FRONTEND_URL en whitelist explicite
+// pour les rares cas où une origine tierce légitime doit appeler l'API
+// (ex. outil interne, app mobile). Sans FRONTEND_URL → tout cross-origin
+// est refusé.
 const explicitOrigins = (process.env.FRONTEND_URL || '')
   .split(',').map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Autoriser les requêtes sans origin (mobile, curl, Postman, fetch same-origin)
+    // Requêtes sans Origin (curl, server-to-server, fetch same-origin) : OK
     if (!origin) return cb(null, true);
-
-    // Whitelist explicite via env
     if (explicitOrigins.includes(origin)) return cb(null, true);
-
-    // En dev, tolérer tous les localhost / 127.0.0.1 sur n'importe quel port
-    if (!isProdEnv && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-      return cb(null, true);
-    }
     cb(new Error('CORS non autorisé pour : ' + origin));
   },
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
+
+// ── CSP violation reports ─────────────────────────────────────
+app.post('/csp-report', express.json({ type: 'application/csp-report' }), (req, res) => {
+  const report = req.body?.['csp-report'] || req.body;
+  logger.warn({ report }, 'CSP violation');
+  res.status(204).end();
+});
 
 // ── Body parsers ──────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
@@ -265,7 +287,7 @@ app.use((req, res, next) => {
 
 // ── Erreur globale ────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.message);
+  (req.log || logger).error({ err }, 'Unhandled error');
   if (err.message?.includes('CORS')) {
     return res.status(403).json({ error: err.message });
   }
@@ -274,11 +296,12 @@ app.use((err, req, res, next) => {
 
 // ── Démarrage ─────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`\n🚴 API C.C. Salouel démarrée`);
-  console.log(`   Port    : http://localhost:${PORT}`);
-  console.log(`   Env     : ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   DB      : ${process.env.DB_NAME}@${process.env.DB_HOST}`);
-  console.log(`   Frontend: ${process.env.FRONTEND_URL}\n`);
+  logger.info({
+    port: PORT,
+    env: process.env.NODE_ENV || 'development',
+    db: `${process.env.DB_NAME}@${process.env.DB_HOST}`,
+    frontend: process.env.FRONTEND_URL,
+  }, '🚴 API C.C. Salouel démarrée');
 
   // ── Auto-expire les courses passées (BDD + GPX) ──────────────
   // Lance en arrière-plan, sans bloquer le démarrage.
@@ -289,7 +312,7 @@ app.listen(PORT, () => {
       stdio: 'inherit',
       env: process.env,
     });
-    proc.on('error', err => console.warn('[expire-past] failed:', err.message));
+    proc.on('error', err => logger.warn({ err }, '[expire-past] failed'));
   };
   // Premier lancement : 30 s après le boot (laisse la BDD se stabiliser)
   setTimeout(runCleanup, 30_000);

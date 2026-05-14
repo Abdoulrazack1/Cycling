@@ -11,6 +11,7 @@
 // la table audit_log n'existe pas encore (migration pas appliquée),
 // l'erreur est loggée mais ne fait pas échouer la requête métier.
 const { query } = require('../config/database');
+const logger = require('../lib/logger');
 
 /**
  * Enregistre une action dans audit_log.
@@ -45,7 +46,7 @@ function audit(req, action, entity, entityId, payload = null) {
   ).catch(err => {
     // ER_NO_SUCH_TABLE = 1146 → migration 003 pas encore appliquée
     if (err.errno !== 1146) {
-      console.error('[audit_log]', err.code || '', err.sqlMessage || err.message);
+      logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[audit_log]');
     }
   });
 }

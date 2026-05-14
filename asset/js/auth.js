@@ -11,7 +11,7 @@
 (() => {
   'use strict';
 
-  const API_BASE = window.CCS_CONFIG?.apiBase || 'http://localhost:3000/api';
+  const API_BASE = window.CCS_CONFIG?.apiBase || '/api';
   const REMEMBER_KEY    = 'ccs_remember';
   const USER_KEY        = 'ccs_user';
   const ACCESS_KEY      = 'ccs_at';   // sessionStorage : access token (durée de l'onglet)
@@ -186,7 +186,6 @@
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ login, password, remember: rememberMe })
       });
       const data = await res.json().catch(() => ({}));
@@ -200,7 +199,7 @@
     async logout() {
       try {
         await fetch(`${API_BASE}/auth/logout`, {
-          method: 'POST', credentials: 'include'
+          method: 'POST',
         });
       } catch {}
       try { localStorage.removeItem(REMEMBER_KEY); } catch {}
@@ -220,7 +219,7 @@
     async refresh() {
       try {
         const res = await fetch(`${API_BASE}/auth/refresh`, {
-          method: 'POST', credentials: 'include'
+          method: 'POST',
         });
         if (res.ok) {
           const data = await res.json();
@@ -252,7 +251,6 @@
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(fields)
       });
       const data = await res.json().catch(() => ({}));
@@ -283,7 +281,6 @@
           'Content-Type': 'application/json',
           Authorization: 'Bearer ' + _accessToken
         },
-        credentials: 'include',
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
       });
       const data = await res.json().catch(() => ({}));
@@ -313,7 +310,7 @@
         // 2) Tenter un refresh pour récupérer un token frais (best-effort).
         try {
           const res = await fetch(`${API_BASE}/auth/refresh`, {
-            method: 'POST', credentials: 'include'
+            method: 'POST',
           });
           if (res.ok) {
             const data = await res.json();

@@ -7,7 +7,7 @@
   'use strict';
 
   const DATA_BACKEND = window.CCS_CONFIG?.backend || 'static';
-  const API_BASE     = window.CCS_CONFIG?.apiBase  || 'http://localhost:3000/api';
+  const API_BASE     = window.CCS_CONFIG?.apiBase  || '/api';
 
   const STATIC_SORTIES = [
     {
@@ -1352,7 +1352,6 @@
           res = await fetch(this.base + path, {
             ...options,
             headers: { ...this._headers(), ...(options.headers || {}) },
-            credentials: 'include',
             signal: ctrl.signal
           });
         } finally {

@@ -28,6 +28,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../lib/logger');
 
 const generator = require('../services/course-generator');
 const scraper   = require('../services/course-scraper');
@@ -72,7 +73,7 @@ router.get('/scrape', requireAuth, requireAdmin, async (req, res) => {
       errors: result.errors,
     });
   } catch (err) {
-    console.error('[auto-courses scrape]', err);
+    logger.error({ err }, '[auto-courses scrape]');
     res.status(500).json({ error: err.message });
   }
 });
@@ -110,7 +111,7 @@ router.post('/generate', requireAuth, requireAdmin, async (req, res) => {
         await _persistSortie(result, body);
         persisted = true;
       } catch (err) {
-        console.warn('[auto-courses persist]', err.message);
+        logger.warn('[auto-courses persist]', err.message);
         result.errors.push(`Persist: ${err.message}`);
       }
     }
@@ -127,7 +128,7 @@ router.post('/generate', requireAuth, requireAdmin, async (req, res) => {
       persisted,
     });
   } catch (err) {
-    console.error('[auto-courses generate]', err);
+    logger.error({ err }, '[auto-courses generate]');
     res.status(500).json({ error: err.message });
   }
 });
@@ -197,7 +198,7 @@ router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
     const rows = await dbQuery('SELECT * FROM sorties WHERE id = ? LIMIT 1', [id]);
     sortie = rows?.[0] || null;
   } catch (err) {
-    console.error('[auto-courses GET /:id]', err.message);
+    logger.error('[auto-courses GET /:id]', err.message);
   }
 
   res.json({

@@ -11,6 +11,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const logger = require('../lib/logger');
 
 const FETCH_TIMEOUT = 20_000;
 const UA_BROWSER = [
@@ -44,7 +45,7 @@ async function _fetch(url, source) {
   // Dump local : si scripts/html-dumps/<source.name>.html existe, l'utiliser
   const dumpPath = path.join(__dirname, '..', 'scripts', 'html-dumps', source.name + '.html');
   if (fs.existsSync(dumpPath)) {
-    console.log(`    (dump local: ${source.name}.html)`);
+    logger.info(`    (dump local: ${source.name}.html)`);
     return fs.readFileSync(dumpPath, 'utf8');
   }
 

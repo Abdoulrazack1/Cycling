@@ -1,5 +1,6 @@
 // config/database.js — Pool de connexions MySQL avec reconnexion auto
 const mysql = require('mysql2/promise');
+const logger = require('../lib/logger');
 
 const pool = mysql.createPool({
   host:               process.env.DB_HOST     || 'localhost',
@@ -30,13 +31,13 @@ const pool = mysql.createPool({
 // (le health-check et les routes renverront 500 le moment venu)
 pool.getConnection()
   .then(conn => {
-    console.log('✅ MySQL connecté :', process.env.DB_NAME);
+    logger.info('✅ MySQL connecté :', process.env.DB_NAME);
     conn.release();
   })
   .catch(err => {
-    console.error('❌ MySQL connexion échouée :', err.message);
-    console.error('   Vérifiez DB_HOST / DB_USER / DB_PASSWORD dans .env');
-    console.error('   Le serveur continue de tourner — la base sera réessayée à chaque requête.');
+    logger.error({ err: err }, '❌ MySQL connexion échouée :');
+    logger.error('   Vérifiez DB_HOST / DB_USER / DB_PASSWORD dans .env');
+    logger.error('   Le serveur continue de tourner — la base sera réessayée à chaque requête.');
   });
 
 // Helper : exécuter une requête avec gestion d'erreur
@@ -45,7 +46,7 @@ async function query(sql, params = []) {
     const [rows] = await pool.execute(sql, params);
     return rows;
   } catch (err) {
-    console.error('DB Error:', err.message, '| SQL:', sql.slice(0, 100));
+    logger.error('DB Error:', err.message, '| SQL:', sql.slice(0, 100));
     throw err;
   }
 }

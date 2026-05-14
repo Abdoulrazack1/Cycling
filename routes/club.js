@@ -2,6 +2,7 @@
 const express = require('express');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 // Whitelist des clés acceptées pour club_settings (cf. AUDIT item #17).
@@ -20,7 +21,7 @@ router.get('/', async (req, res) => {
     const rows = await query('SELECT cle, valeur FROM club_settings');
     const settings = Object.fromEntries(rows.map(r => [r.cle, r.valeur]));
     res.json(settings);
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 router.put('/', requireAuth, requireAdmin, async (req, res) => {
@@ -43,7 +44,7 @@ router.put('/', requireAuth, requireAdmin, async (req, res) => {
       accepted,
       ...(rejected.length ? { rejected, hint: 'Clés non whitelistées (cf. ALLOWED_KEYS dans routes/club.js)' } : {})
     });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 module.exports = router;

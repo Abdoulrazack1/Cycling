@@ -6,6 +6,7 @@ const crypto    = require('crypto');
 const { query, withTransaction } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -48,51 +49,39 @@ function hashToken(token) {
 }
 
 /**
- * Construit l'objet d'options pour res.cookie() compatible cross-origin
- * en développement (localhost:5500 ↔ localhost:3000) et secure en prod.
+ * Options de cookie en mode same-origin.
  *
- * Règles navigateur :
- *  - sameSite: 'strict' interdit l'envoi cross-site (cas Live Server)
- *  - sameSite: 'none' impose secure: true (HTTPS obligatoire)
- *  - sameSite: 'lax'  fonctionne pour les requêtes top-level same-site
+ * Politique : frontend et API sont servis depuis la même origine
+ * (Express en dev, nginx reverse-proxy en prod), donc on peut utiliser
+ * sameSite: 'strict' — le cookie n'est jamais envoyé cross-site, ce qui
+ * supprime toute surface CSRF résiduelle.
  *
- * En dev sans HTTPS, on utilise 'lax' pour permettre le développement
- * tout en restant raisonnable côté sécurité. localhost:5500 et localhost:3000
- * sont considérés same-site (même registrable domain), donc lax suffit
- * pour la plupart des navigateurs modernes.
- *
- * Le token d'accès étant aussi persisté en sessionStorage côté frontend
- * (cf. asset/js/auth.js), une défaillance du cookie ne casse plus la
- * navigation : seule la persistance long-terme (7 j) est affectée.
+ *  - httpOnly : pas d'accès JS au refresh token (protection XSS)
+ *  - secure   : true en prod (HTTPS obligatoire), false en dev HTTP local
+ *  - sameSite : 'strict' (plus de cross-origin possible)
+ *  - path     : '/'
+ *  - pas de domain : implicite = host courant (évite le partage de cookies
+ *                    accidentel entre sous-domaines)
  */
 function cookieOpts(rememberMe = true) {
   const isProd = process.env.NODE_ENV === 'production';
-  const useSecure = isProd || process.env.COOKIE_SECURE === 'true';
-  const opts = {
+  return {
     httpOnly: true,
-    secure: useSecure,
-    sameSite: useSecure ? 'none' : 'lax',
+    secure: isProd,
+    sameSite: 'strict',
     path: '/',
-    // Si "se souvenir de moi" non coché : cookie de session (sans maxAge)
     ...(rememberMe ? { maxAge: REFRESH_DB_DAYS * 24 * 3600 * 1000 } : {})
   };
-  // Domaine explicite optionnel (rarement utile, parfois nécessaire si
-  // backend et frontend tournent sur sous-domaines différents en prod).
-  if (process.env.COOKIE_DOMAIN) opts.domain = process.env.COOKIE_DOMAIN;
-  return opts;
 }
 
 function clearCookieOpts() {
   const isProd = process.env.NODE_ENV === 'production';
-  const useSecure = isProd || process.env.COOKIE_SECURE === 'true';
-  const opts = {
+  return {
     httpOnly: true,
-    secure: useSecure,
-    sameSite: useSecure ? 'none' : 'lax',
+    secure: isProd,
+    sameSite: 'strict',
     path: '/'
   };
-  if (process.env.COOKIE_DOMAIN) opts.domain = process.env.COOKIE_DOMAIN;
-  return opts;
 }
 
 function userPublic(u) {
@@ -143,7 +132,7 @@ router.post('/login', [
       user: userPublic(user)
     });
   } catch (err) {
-    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -201,7 +190,7 @@ router.post('/register', [
 
     res.status(201).json({ accessToken, user: userPublic(user) });
   } catch (err) {
-    console.error('[register]', err.code, err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[register]');
     res.status(500).json({ error: 'Erreur lors de l\'inscription : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -271,7 +260,7 @@ router.get('/me', requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
     res.json(userPublic(user));
   } catch (err) {
-    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -339,7 +328,7 @@ router.post('/forgot-password', [
       message: 'Si un compte existe avec cette adresse, un administrateur vous contactera sous 48 h.'
     });
   } catch (err) {
-    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -368,7 +357,7 @@ router.post('/admin-reset/:userId', requireAuth, requireAdmin, async (req, res) 
       expires_in: '24 heures'
     });
   } catch (err) {
-    console.error('[auth]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -412,7 +401,7 @@ router.post('/reset-password', [
 
     res.json({ message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' });
   } catch (err) {
-    console.error('[reset-password]', err);
+    logger.error({ err }, '[reset-password]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });

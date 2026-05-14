@@ -4,6 +4,7 @@ const bcrypt  = require('bcryptjs');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 function userPublic(u) {
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
       query('SELECT COUNT(*) AS cnt FROM users WHERE actif = TRUE')
     ]);
     res.json({ membres: rows.map(userPublic), total: cnt });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // GET /api/membres/:id
@@ -41,7 +42,7 @@ router.get('/:id', async (req, res) => {
       [user.id]
     );
     res.json({ ...userPublic(user), equipment });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // PUT /api/membres/:id (self ou admin)
@@ -62,7 +63,7 @@ router.put('/:id', requireAuth, [
     );
     const [updated] = await query('SELECT * FROM users WHERE id = ?', [targetId]);
     res.json(userPublic(updated));
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // Admin: désactiver un membre
@@ -86,7 +87,7 @@ router.patch('/:id/actif', requireAuth, requireAdmin, [
     }
     await query('UPDATE users SET actif = ? WHERE id = ?', [req.body.actif ? 1 : 0, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // Admin: changer le rôle
@@ -114,7 +115,7 @@ router.patch('/:id/role', requireAuth, requireAdmin, [
     }
     await query('UPDATE users SET role = ? WHERE id = ?', [req.body.role, req.params.id]);
     res.json({ message: 'Rôle mis à jour' });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 module.exports = router;
