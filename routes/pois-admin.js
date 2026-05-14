@@ -2,6 +2,7 @@
 const express = require('express');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 // ── GET /api/pois — Tous les POIs avec contexte sortie ──────────
@@ -41,7 +42,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
       created_at: r.created_at,
     })));
   } catch (err) {
-    console.error('[GET /pois]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /pois]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -53,7 +54,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ error: 'POI introuvable' });
     res.json({ message: 'POI supprimé' });
   } catch (err) {
-    console.error('[DELETE /pois/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /pois/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });

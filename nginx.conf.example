@@ -1,0 +1,111 @@
+# ─────────────────────────────────────────────────────────────────────
+# nginx.conf.example — config reverse-proxy same-origin pour C.C. Salouel
+#
+# Architecture (option A du brief auth same-origin) :
+#   - Un seul domaine public servi par nginx
+#   - /api/*  → proxy_pass vers Express (localhost:3000)
+#   - reste   → fichiers statiques du dossier public
+#
+# Avantages :
+#   - Same-origin réel : pas de CORS, pas de preflight
+#   - Cookies sameSite=strict possibles (zéro surface CSRF)
+#   - Frontend et API partagent le certificat TLS
+#   - Pas de configuration DNS supplémentaire
+#
+# À adapter avant déploiement :
+#   - server_name → ton domaine réel
+#   - ssl_certificate / ssl_certificate_key → chemins Let's Encrypt
+#   - root → chemin absolu vers le clone du repo sur le serveur
+# ─────────────────────────────────────────────────────────────────────
+
+# Redirection HTTP → HTTPS
+server {
+  listen 80;
+  listen [::]:80;
+  server_name cc-salouel.fr www.cc-salouel.fr;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  server_name cc-salouel.fr www.cc-salouel.fr;
+
+  # ── TLS ────────────────────────────────────────────────────────────
+  ssl_certificate     /etc/letsencrypt/live/cc-salouel.fr/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/cc-salouel.fr/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_ciphers HIGH:!aNULL:!MD5;
+  ssl_prefer_server_ciphers on;
+  ssl_session_cache shared:SSL:10m;
+
+  # ── Headers de sécurité (complètent helmet côté Express) ───────────
+  add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header X-Frame-Options "SAMEORIGIN" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+  # ── Limites raisonnables ───────────────────────────────────────────
+  client_max_body_size 10M;   # uploads GPX
+
+  # ── API : proxy vers Express ───────────────────────────────────────
+  location /api/ {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Connection        "";   # keep-alive vers upstream
+
+    # Pas de cache sur l'API
+    proxy_cache off;
+    proxy_buffering off;
+  }
+
+  # ── Endpoint de report CSP (POST avec content-type application/csp-report) ──
+  location = /csp-report {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+
+  # ── Uploads (GPX) servis directement par Express ──────────────────
+  location /uploads/ {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    expires 7d;
+    add_header Cache-Control "public, max-age=604800";
+  }
+
+  # ── Fichiers statiques (HTML/CSS/JS/images) ────────────────────────
+  location / {
+    root /var/www/cycling;             # chemin du repo cloné
+    try_files $uri $uri/ /index.html;
+
+    # Cache long pour les assets versionnés ; court pour le HTML
+    location ~* \.(?:css|js|woff2?|ttf|otf|svg|png|jpg|jpeg|gif|webp|ico)$ {
+      expires 30d;
+      add_header Cache-Control "public, max-age=2592000, immutable";
+    }
+    location ~* \.html$ {
+      expires -1;
+      add_header Cache-Control "no-store";
+    }
+  }
+
+  # ── Bloquer l'accès aux fichiers sensibles ─────────────────────────
+  location ~ /\.(?!well-known) { deny all; }
+  location ~* \.(env|log|sql)$ { deny all; }
+  location = /server.js        { deny all; }
+  location = /package.json     { deny all; }
+  location ^~ /node_modules/   { deny all; }
+  location ^~ /routes/         { deny all; }
+  location ^~ /services/       { deny all; }
+  location ^~ /config/         { deny all; }
+  location ^~ /lib/            { deny all; }
+  location ^~ /middleware/     { deny all; }
+  location ^~ /migrations/     { deny all; }
+  location ^~ /scripts/        { deny all; }
+  location ^~ /test/           { deny all; }
+}

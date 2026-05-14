@@ -11,6 +11,7 @@ const { audit } = require('../services/audit-log');
 // Cf. AUDIT item #8 — un seul dossier GPX partagé entre /api/gpx/upload
 // (multer disque) et /api/sorties/import-gpx (multer mémoire).
 const { GPX_DIR: ASSET_GPX_DIR } = require('../middleware/upload');
+const logger = require('../lib/logger');
 
 const router = express.Router();
 
@@ -153,7 +154,7 @@ router.get('/', async (req, res) => {
     const sorties = await buildSortiesList(rows);
     res.json({ sorties, total: cnt });
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -173,7 +174,7 @@ router.get('/:id', async (req, res) => {
     const sortie = await buildSortie(rows[0]);
     res.json(sortie);
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -261,7 +262,7 @@ router.post('/', requireAuth, requireModo, [
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [s.id]))[0]);
     res.status(201).json(sortie);
   } catch (err) {
-    console.error('[POST /sorties]', err.code, err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /sorties]');
     res.status(500).json({
       error: 'Erreur lors de la création : ' + (err.sqlMessage || err.message),
       code: err.code
@@ -354,7 +355,7 @@ router.put('/:id', requireAuth, requireModo, [
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [id]))[0]);
     res.json(sortie);
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -369,7 +370,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     audit(req, 'delete', 'sortie', row.id, { title: row.title, gpx: row.gpx_filename || null });
     res.json({ message: 'Sortie supprimée', id: row.id, title: row.title });
   } catch (err) {
-    console.error('[DELETE /sorties/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /sorties/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -383,16 +384,16 @@ router.post('/import-gpx',
   (req, res, next) => {
     importUpload.single('gpx')(req, res, (err) => {
       if (err) {
-        console.error('[import-gpx] multer error:', err.message);
+        logger.error({ err: err }, '[import-gpx] multer error:');
         return res.status(400).json({ error: 'Upload GPX échoué : ' + err.message });
       }
       next();
     });
   },
   async (req, res) => {
-    console.log('[import-gpx] Démarrage import par user', req.user?.id, req.user?.username);
-    console.log('[import-gpx] Fields reçus:', Object.keys(req.body || {}));
-    console.log('[import-gpx] Fichier:', req.file ? `${req.file.originalname} (${req.file.size} octets)` : 'AUCUN');
+    logger.info('[import-gpx] Démarrage import par user', req.user?.id, req.user?.username);
+    logger.info('[import-gpx] Fields reçus:', Object.keys(req.body || {}));
+    logger.info('[import-gpx] Fichier:', req.file ? `${req.file.originalname} (${req.file.size} octets)` : 'AUCUN');
 
     try {
       // 1. Validation de base
@@ -413,9 +414,9 @@ router.post('/import-gpx',
       let metrics;
       try {
         metrics = parseGpx(xml);
-        console.log(`[import-gpx] GPX parsé : ${metrics.points.length} points, ${metrics.distance_km} km, D+${metrics.elevation_gain} m`);
+        logger.info(`[import-gpx] GPX parsé : ${metrics.points.length} points, ${metrics.distance_km} km, D+${metrics.elevation_gain} m`);
       } catch (err) {
-        console.error('[import-gpx] parse error:', err.message);
+        logger.error({ err: err }, '[import-gpx] parse error:');
         return res.status(400).json({ error: `GPX invalide : ${err.message}` });
       }
 
@@ -425,7 +426,7 @@ router.post('/import-gpx',
         return res.status(400).json({ error: `Slug invalide : "${slug}". Attendu : lettres minuscules, chiffres, tirets.` });
       }
       const id = `${slug}-${date}`;
-      console.log(`[import-gpx] id="${id}", slug="${slug}"`);
+      logger.info(`[import-gpx] id="${id}", slug="${slug}"`);
 
       // Vérifier unicité
       const existingRows = await query('SELECT id FROM sorties WHERE id = ? OR slug = ?', [id, slug]);
@@ -440,9 +441,9 @@ router.post('/import-gpx',
       const gpxPath     = path.join(ASSET_GPX_DIR, gpxFilename);
       try {
         fs.writeFileSync(gpxPath, req.file.buffer);
-        console.log(`[import-gpx] GPX écrit dans ${gpxPath}`);
+        logger.info(`[import-gpx] GPX écrit dans ${gpxPath}`);
       } catch (err) {
-        console.error('[import-gpx] fs.writeFileSync error:', err);
+        logger.error('[import-gpx] fs.writeFileSync error:', err);
         return res.status(500).json({ error: `Impossible d'écrire le fichier GPX : ${err.message}` });
       }
 
@@ -502,9 +503,9 @@ router.post('/import-gpx',
             sortieData.featured, sortieData.statut, req.user.id
           ]
         );
-        console.log(`[import-gpx] INSERT OK : sortie ${id} créée`);
+        logger.info(`[import-gpx] INSERT OK : sortie ${id} créée`);
       } catch (err) {
-        console.error('[import-gpx] INSERT error:', err.code, err.sqlMessage || err.message);
+        logger.error('[import-gpx] INSERT error:', err.code, err.sqlMessage || err.message);
         // En cas d'échec INSERT, supprimer le fichier GPX écrit
         try { fs.unlinkSync(gpxPath); } catch {}
         return res.status(500).json({
@@ -529,7 +530,7 @@ router.post('/import-gpx',
         }
       });
     } catch (err) {
-      console.error('[import-gpx] erreur inattendue:', err);
+      logger.error('[import-gpx] erreur inattendue:', err);
       res.status(500).json({ error: 'Erreur serveur : ' + (err.message || 'inconnue') });
     }
   }
@@ -579,7 +580,7 @@ router.get('/orphan-gpx/list', requireAuth, requireAdmin, async (req, res) => {
     }
     res.json({ orphans, total_files: files.length, used_count: used.size });
   } catch (err) {
-    console.error('[GET /orphan-gpx]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /orphan-gpx]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.message || err.sqlMessage) });
   }
 });
@@ -680,7 +681,7 @@ router.get('/:id/diagnose', requireAuth, requireAdmin, async (req, res) => {
       view_url: `/sortie.html?id=${encodeURIComponent(row.id)}`
     });
   } catch (err) {
-    console.error('[diagnose]', err);
+    logger.error({ err }, '[diagnose]');
     res.status(500).json({ error: 'Erreur diagnostic : ' + (err.message) });
   }
 });

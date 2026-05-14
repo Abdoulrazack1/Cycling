@@ -3,6 +3,7 @@ const express = require('express');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 // GET /api/palmares
@@ -28,7 +29,7 @@ router.get('/', async (req, res) => {
     }
     res.json(rows);
   } catch (err) {
-    console.error('[GET /palmares]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /palmares]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -63,7 +64,7 @@ router.post('/', requireAuth, requireModo, [
     const [created] = await query('SELECT * FROM palmares WHERE id = ?', [result.insertId]);
     res.status(201).json(created);
   } catch (err) {
-    console.error('[POST /palmares]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /palmares]');
     res.status(500).json({ error: 'Erreur lors de l\'ajout : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -88,7 +89,7 @@ router.put('/:id', requireAuth, requireModo, [
     const [updated] = await query('SELECT * FROM palmares WHERE id = ?', [req.params.id]);
     res.json(updated);
   } catch (err) {
-    console.error('[PUT /palmares/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[PUT /palmares/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -99,7 +100,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     await query('DELETE FROM palmares WHERE id = ?', [req.params.id]);
     res.json({ message: 'Supprimé' });
   } catch (err) {
-    console.error('[DELETE /palmares/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /palmares/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });

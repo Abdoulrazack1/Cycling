@@ -23,19 +23,17 @@
   // d'un test E2E par exemple), ne pas l'écraser.
   if (window.CCS_CONFIG && window.CCS_CONFIG.apiBase) return;
 
-  const host = location.hostname;
-  const isDev = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
-
-  // En dev : on assume que le backend Express tourne sur le port 3000,
-  //          même si la page est servie par Live Server (5500) ou autre.
-  // En prod : same-origin → /api (Nginx ou Express qui sert tout).
-  // Override possible : ?apiBase=https://api.example.com pour pointer
-  //                     vers un backend distant depuis n'importe où.
+  // Politique same-origin : frontend et API sont servis depuis la même origine.
+  // - En dev  : accéder à http://localhost:3000/ (Express sert le statique
+  //             ET l'API). Live Server n'est plus utilisable car cross-origin.
+  // - En prod : nginx reverse-proxy route /api/* vers Express, reste → statique.
+  // Override possible : ?apiBase=https://api.example.com pour tester un
+  //                     backend distant depuis n'importe où.
   const params = new URLSearchParams(location.search);
   const explicit = params.get('apiBase');
 
   window.CCS_CONFIG = Object.assign({
     backend: 'rest',
-    apiBase: explicit || (isDev ? 'http://localhost:3000/api' : '/api'),
+    apiBase: explicit || '/api',
   }, window.CCS_CONFIG || {});
 })();

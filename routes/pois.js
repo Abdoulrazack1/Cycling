@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../lib/logger');
 
 const router = express.Router({ mergeParams: true }); // :sortieId hérité
 
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
     );
     res.json(rows.map(formatPoi));
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -69,7 +70,7 @@ router.post('/', requireAuth, [
     const [row] = await query('SELECT * FROM pois WHERE id = ?', [id]);
     res.status(201).json(formatPoi(row));
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -101,7 +102,7 @@ router.post('/bulk', requireAuth, requireAdmin, async (req, res) => {
     const rows = await query('SELECT * FROM pois WHERE sortie_id = ? ORDER BY km', [sortieId]);
     res.json(rows.map(formatPoi));
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -130,7 +131,7 @@ router.put('/:poiId', requireAuth, async (req, res) => {
     const [updated] = await query('SELECT * FROM pois WHERE id = ?', [poiId]);
     res.json(formatPoi(updated));
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -150,7 +151,7 @@ router.delete('/:poiId', requireAuth, async (req, res) => {
     await query('DELETE FROM pois WHERE id = ?', [poiId]);
     res.json({ message: 'POI supprimé' });
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });

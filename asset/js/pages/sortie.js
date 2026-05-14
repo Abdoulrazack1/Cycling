@@ -1,0 +1,23 @@
+/* ─── Widget météo : se charge dès qu'on connaît lat/lng/date du parcours ─── */
+(function initWeatherWidget() {
+  const tryInit = (attempt = 0) => {
+    const sortie = window.CCS_SORTIE_STATE?.sortie;
+    if (!sortie?.location?.lat) {
+      if (attempt < 80) return setTimeout(() => tryInit(attempt + 1), 200);
+      return;
+    }
+    if (!window.CCS_WEATHER) return;
+
+    const panel = document.getElementById('weather-panel');
+    const container = document.getElementById('weather-widget-container');
+    if (!panel || !container) return;
+
+    const _d = sortie.date;
+    const dateISO = !_d ? null
+      : (_d instanceof Date ? _d.toISOString().slice(0, 10) : String(_d).slice(0, 10));
+    panel.hidden = false;
+    window.CCS_WEATHER.renderInto(container, sortie.location.lat, sortie.location.lng, dateISO)
+      .catch(() => { panel.hidden = true; });
+  };
+  tryInit();
+})();

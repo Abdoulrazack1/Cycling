@@ -3,6 +3,7 @@ const express = require('express');
 const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo, optionalAuth } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 // GET /api/evenements
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
     sql += ' ORDER BY date ASC' + pageClause(limit, offset, { defaultLimit: 20, maxLimit: 100 });
     const rows = await query(sql, params);
     res.json(rows);
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 router.get('/:id', async (req, res) => {
@@ -36,7 +37,7 @@ router.get('/:id', async (req, res) => {
     );
     res.json({ ...ev, inscriptions: inscrits });
   } catch (err) {
-    console.error('[GET /evenements/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /evenements/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -65,7 +66,7 @@ router.post('/', requireAuth, requireModo, [
     );
     const [created] = await query('SELECT * FROM evenements WHERE id = ?', [result.insertId]);
     res.status(201).json(created);
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 router.put('/:id', requireAuth, requireModo, [
@@ -96,14 +97,14 @@ router.put('/:id', requireAuth, requireModo, [
     );
     const [updated] = await query('SELECT * FROM evenements WHERE id = ?', [req.params.id]);
     res.json(updated);
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('DELETE FROM evenements WHERE id = ?', [req.params.id]);
     res.json({ message: 'Événement supprimé' });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 // POST /api/evenements/:id/inscrire
@@ -171,7 +172,7 @@ router.post('/:id/inscrire', optionalAuth, [
     res.status(201).json({ message: 'Inscription confirmée', ...result });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });
-    console.error('[POST /evenements/:id/inscrire]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /evenements/:id/inscrire]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -212,7 +213,7 @@ router.post('/inscriptions/purge', requireAuth, requireAdmin, async (req, res) =
     }
     res.json({ dryRun: false, deleted, days });
   } catch (err) {
-    console.error('[POST /evenements/inscriptions/purge]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /evenements/inscriptions/purge]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });

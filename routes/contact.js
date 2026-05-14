@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 const transporter = nodemailer.createTransport({
@@ -54,12 +55,12 @@ router.post('/', [
                <p><b>Sujet :</b> ${esc(sujet)}</p>
                <hr><p>${esc(message).replace(/\n/g,'<br>')}</p>
                <hr><p style="color:#888;font-size:11px;">IP : ${esc(req.ip)} · ID #${result.insertId}</p>`
-      }).catch(err => console.error('Email error:', err.message));
+      }).catch(err => logger.error({ err: err }, 'Email error:'));
     }
 
     res.status(201).json({ message: 'Message envoyé', id: result.insertId });
   } catch (err) {
-    console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message);
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
   }
 });
@@ -75,7 +76,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
     const rows = await query(sql, params);
     const [{ total }] = await query('SELECT COUNT(*) AS total FROM contacts');
     res.json({ messages: rows, total });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
 
 // PATCH /api/contact/:id/statut
@@ -87,7 +88,7 @@ router.patch('/:id/statut', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('UPDATE contacts SET statut=? WHERE id=?', [statut, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
-  } catch (err) { console.error('[' + req.method + ' ' + req.originalUrl + ']', err.code || '', err.sqlMessage || err.message); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
 
 module.exports = router;

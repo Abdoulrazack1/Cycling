@@ -2,6 +2,7 @@
 const express = require('express');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const logger = require('../lib/logger');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
     ]);
     res.json({ segments: rows, total: cnt });
   } catch (err) {
-    console.error('[GET /segments]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /segments]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -35,7 +36,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     const [created] = await query('SELECT * FROM segments_global WHERE id = ?', [result.insertId]);
     res.status(201).json(created);
   } catch (err) {
-    console.error('[POST /segments]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /segments]');
     res.status(500).json({ error: 'Erreur lors de l\'ajout : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -53,7 +54,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     const [updated] = await query('SELECT * FROM segments_global WHERE id = ?', [req.params.id]);
     res.json(updated);
   } catch (err) {
-    console.error('[PUT /segments/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[PUT /segments/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
@@ -63,7 +64,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     await query('DELETE FROM segments_global WHERE id = ?', [req.params.id]);
     res.json({ message: 'Segment supprimé' });
   } catch (err) {
-    console.error('[DELETE /segments/:id]', err.code || '', err.sqlMessage || err.message);
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /segments/:id]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
   }
 });
