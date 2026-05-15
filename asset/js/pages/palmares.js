@@ -1,5 +1,11 @@
 /* ── Chargement dynamique du palmarès depuis l'API ── */
 (async function loadPalmares() {
+  const earlyContainer = document.querySelector('.section-sm .wrap');
+  if (earlyContainer && !earlyContainer.innerHTML.trim()) {
+    earlyContainer.innerHTML = Array(3).fill(
+      '<div class="skeleton skeleton-row" style="height:80px;margin-bottom:24px;"></div>'
+    ).join('');
+  }
   await new Promise(resolve => {
     const check = (n = 0) => {
       if (window.CCS_DATA) return resolve();

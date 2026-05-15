@@ -4,6 +4,14 @@
 (() => {
   'use strict';
 
+  // ── Service Worker registration (Brief C3 — PWA) ─────────────
+  // Activé uniquement en HTTPS ou localhost (exigence navigateur).
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => { /* silencieux : pas critique */ });
+    });
+  }
+
   const currentPage = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
   const NAV_HTML = `

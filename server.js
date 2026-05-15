@@ -135,6 +135,59 @@ app.post('/csp-report', express.json({ type: 'application/csp-report' }), (req, 
   res.status(204).end();
 });
 
+// ── Sitemap dynamique (Brief C5) ──────────────────────────────
+// Liste les pages publiques + les sorties/évenements/membres dynamiquement.
+// Cache 1 h côté navigateur / CDN.
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const { query } = require('./config/database');
+    const base = (req.headers['x-forwarded-proto'] || req.protocol) + '://' + req.get('host');
+
+    const staticPages = [
+      { loc: '/',                 priority: 1.0, changefreq: 'weekly'  },
+      { loc: '/sorties.html',     priority: 0.9, changefreq: 'daily'   },
+      { loc: '/parcours.html',    priority: 0.8, changefreq: 'weekly'  },
+      { loc: '/evenements.html',  priority: 0.9, changefreq: 'daily'   },
+      { loc: '/palmares.html',    priority: 0.7, changefreq: 'monthly' },
+      { loc: '/segments.html',    priority: 0.6, changefreq: 'monthly' },
+      { loc: '/membres.html',     priority: 0.7, changefreq: 'monthly' },
+      { loc: '/club.html',        priority: 0.8, changefreq: 'monthly' },
+      { loc: '/contact.html',     priority: 0.5, changefreq: 'yearly'  },
+    ];
+
+    const dynamic = [];
+    try {
+      const sorties = await query('SELECT slug, COALESCE(updated_at, date) AS lastmod FROM sorties ORDER BY date DESC LIMIT 500');
+      for (const s of sorties) {
+        if (s.slug) dynamic.push({ loc: `/sortie.html?slug=${encodeURIComponent(s.slug)}`, lastmod: s.lastmod, priority: 0.6 });
+      }
+    } catch {}
+    try {
+      const evs = await query('SELECT id, slug, COALESCE(updated_at, date) AS lastmod FROM evenements ORDER BY date DESC LIMIT 200');
+      for (const e of evs) {
+        const id = e.slug || e.id;
+        dynamic.push({ loc: `/evenement.html?id=${encodeURIComponent(id)}`, lastmod: e.lastmod, priority: 0.6 });
+      }
+    } catch {}
+
+    const all = [...staticPages, ...dynamic];
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${all.map(u => `  <url>
+    <loc>${base}${u.loc}</loc>${u.lastmod ? `\n    <lastmod>${new Date(u.lastmod).toISOString().slice(0,10)}</lastmod>` : ''}
+    <changefreq>${u.changefreq || 'monthly'}</changefreq>
+    <priority>${(u.priority ?? 0.5).toFixed(1)}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (err) {
+    logger.error({ err }, 'sitemap generation failed');
+    res.status(500).send('<!-- sitemap error -->');
+  }
+});
+
 // ── Body parsers ──────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));

@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="asset/css/style.css">
+    <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#B08E4A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="C.C. Salouel">
+  <link rel="apple-touch-icon" href="/asset/img/apple-touch-icon.png">
   <link rel="stylesheet" href="asset/css/polish.css">
   <style>
     /* ── Layout admin ────────────────────────────────────────── */
@@ -119,6 +124,7 @@
   </style>
 </head>
 <body data-requires-auth="true" data-requires-admin="true">
+  <a href="#main" class="skip-link">Aller au contenu</a>
   <main id="main">
     <div class="admin-wrap">
 
@@ -176,6 +182,10 @@
         <button class="admin-nav-item" data-panel="diagnostic">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           Diagnostic
+        </button>
+        <button class="admin-nav-item" data-panel="security">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
+          Sécurité (2FA)
         </button>
         <div style="margin-top:24px; border-top:1px solid var(--line); padding-top:24px;">
           <a href="index.html" class="admin-nav-item" style="opacity:.6;">
@@ -405,6 +415,52 @@
 
           <div class="admin-section-title" style="margin-top:32px;"><span>Process metrics</span><button class="btn btn-ghost btn-sm" id="btn-metrics-refresh">Rafraîchir</button></div>
           <div id="metrics-result" style="margin-top:8px;"><div class="lede" style="opacity:.5;">Cliquer "Rafraîchir" pour charger.</div></div>
+        </div>
+
+        <!-- Sécurité 2FA -->
+        <div id="panel-security" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Sécurité <span class="it">double facteur</span></span>
+          </div>
+          <p class="lede" style="opacity:.7; margin-bottom:24px;">Activer l'authentification à deux facteurs (TOTP — Google Authenticator, Authy, 1Password…) sur votre compte admin. Une fois activée, chaque connexion demandera un code à 6 chiffres en plus du mot de passe.</p>
+
+          <div id="totp-status-wrap" style="margin-bottom:24px;"><div class="loading-spinner"></div></div>
+
+          <!-- État : pas activée -->
+          <div id="totp-inactive" hidden>
+            <button class="btn btn-brass btn-sm" id="btn-totp-setup">Activer 2FA</button>
+          </div>
+
+          <!-- État : setup en cours (QR code + champ code) -->
+          <div id="totp-setup" hidden style="max-width:480px;">
+            <p style="margin-bottom:12px;">1. Scannez ce QR avec votre app TOTP :</p>
+            <img id="totp-qr" alt="QR code TOTP" style="background:#fff; padding:8px; border-radius:4px; margin-bottom:16px;">
+            <p style="margin-bottom:8px; font-size:11px; opacity:.6;">Ou saisissez le secret manuellement : <code id="totp-secret" style="background:var(--ink-2); padding:2px 6px;"></code></p>
+            <p style="margin:16px 0 8px;">2. Saisissez le code à 6 chiffres affiché par l'app :</p>
+            <input type="text" id="totp-activate-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" style="font-family:monospace; font-size:18px; letter-spacing:4px; padding:10px; width:140px; background:var(--ink-2); border:1px solid var(--line); color:var(--parch); text-align:center;">
+            <div style="margin-top:16px;">
+              <button class="btn btn-brass btn-sm" id="btn-totp-activate">Confirmer l'activation</button>
+              <button class="btn btn-ghost btn-sm" id="btn-totp-cancel">Annuler</button>
+            </div>
+            <div id="totp-setup-error" class="auth-error" role="alert" hidden style="margin-top:12px;"></div>
+          </div>
+
+          <!-- État : activée -->
+          <div id="totp-active" hidden>
+            <p style="color:var(--brass);">✓ 2FA activée sur ce compte.</p>
+            <p style="opacity:.6; font-size:12px; margin-top:4px;">Codes de récupération restants : <b id="totp-backup-count">—</b> / 8</p>
+            <div style="margin-top:16px;">
+              <button class="btn btn-ghost btn-sm" id="btn-totp-disable">Désactiver 2FA</button>
+            </div>
+          </div>
+
+          <!-- Codes de récup affichés après activation -->
+          <div id="totp-backup-codes" hidden style="margin-top:32px; padding:20px; background:var(--ink-2); border:1px solid var(--brass);">
+            <p style="font-weight:600; color:var(--brass);">⚠ Imprimez ou notez ces codes de récupération MAINTENANT</p>
+            <p style="opacity:.7; font-size:12px; margin:8px 0 16px;">Ils servent à vous reconnecter si vous perdez votre téléphone. Chaque code n'est utilisable qu'une seule fois. Ils ne seront plus jamais affichés.</p>
+            <pre id="totp-backup-list" style="font-family:monospace; font-size:14px; line-height:1.8; background:var(--ink); padding:16px; user-select:all;"></pre>
+            <button class="btn btn-ghost btn-sm" id="btn-totp-codes-saved" style="margin-top:8px;">J'ai sauvegardé les codes</button>
+          </div>
         </div>
 
       </div><!-- /admin-main -->

@@ -38,3 +38,9 @@ build/
 # ── Tests / coverage ───────────────────────────────────────────
 coverage/
 .nyc_output/
+
+# ── Backups MySQL (contenu sensible) ──────────────────────────
+backups/
+
+# ── Service Worker auto-généré côté workflow (si bumpé en CI) ─
+# (rien pour l'instant)

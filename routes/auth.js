@@ -3,11 +3,37 @@ const express   = require('express');
 const bcrypt    = require('bcryptjs');
 const jwt       = require('jsonwebtoken');
 const crypto    = require('crypto');
+const otp      = require('otplib');
+const qrcode   = require('qrcode');
 const { query, withTransaction } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
 const logger = require('../lib/logger');
+
+// otplib v13 API : on construit notre propre wrapper compatible avec
+// la signature attendue côté code consommateur (verify/generateSecret/keyuri).
+// v13 a TOUT changé : generate/verify sont async (Promise), versions sync
+// = *Sync, verify renvoie { valid, delta, epoch, timeStep }, URI utilise
+// `label` au lieu de `account`.
+const TOTP_OPTS = { algorithm: 'sha1', digits: 6, period: 30 };
+const totpLib = {
+  generateSecret: () => otp.generateSecret({ algorithm: 'sha1' }),
+  verify: ({ token, secret }) => {
+    try {
+      // Vérifier le code courant + ±1 fenêtre (manuel : v13 n'expose plus de window)
+      const opts = TOTP_OPTS;
+      const now = Math.floor(Date.now() / 1000);
+      for (const delta of [0, -opts.period, opts.period]) {
+        const r = otp.verifySync({ token, secret, options: opts, time: now + delta });
+        if (r?.valid) return true;
+      }
+      return false;
+    } catch { return false; }
+  },
+  keyuri: (account, issuer, secret) =>
+    otp.generateURI({ label: account, issuer, secret, options: TOTP_OPTS }),
+};
 
 const router = express.Router();
 
@@ -98,12 +124,13 @@ function userPublic(u) {
 // ── POST /api/auth/login ──────────────────────────────────────
 router.post('/login', [
   body('login').notEmpty().trim(),
-  body('password').notEmpty()
+  body('password').notEmpty(),
+  body('totp').optional().isString(),
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
 
-  const { login, password, remember } = req.body;
+  const { login, password, remember, totp } = req.body;
   const rememberMe = remember !== false; // par défaut on persiste 7 jours
   try {
     const [user] = await query(
@@ -114,6 +141,39 @@ router.post('/login', [
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Identifiants invalides' });
+
+    // ── 2FA TOTP (Brief D2) — challenge si activé sur ce compte ──
+    if (user.totp_enabled && user.totp_secret) {
+      if (!totp) {
+        // Pas de code fourni → demander à l'app
+        return res.status(401).json({ error: 'TOTP requis', mfa_required: true });
+      }
+      const code = String(totp).trim();
+      let mfaOk = false;
+      // Tenter d'abord un code TOTP standard
+      if (/^\d{6}$/.test(code)) {
+        try { mfaOk = totpLib.verify({ token: code, secret: user.totp_secret }); } catch {}
+      }
+      // Sinon, essayer un code de récupération (8 caractères alphanum)
+      if (!mfaOk && /^[a-z0-9]{8,12}$/i.test(code) && user.totp_backup_codes) {
+        const backup = (typeof user.totp_backup_codes === 'string')
+          ? JSON.parse(user.totp_backup_codes) : user.totp_backup_codes;
+        const codeHash = crypto.createHash('sha256').update(code.toLowerCase()).digest('hex');
+        const idx = backup.indexOf(codeHash);
+        if (idx >= 0) {
+          mfaOk = true;
+          // Consumer le code (one-time use)
+          backup.splice(idx, 1);
+          await query('UPDATE users SET totp_backup_codes = ? WHERE id = ?', [JSON.stringify(backup), user.id]);
+          req.user = { id: user.id, username: user.username };
+          audit(req, 'login', 'user', user.id, { method: 'totp-backup-code', remaining: backup.length });
+        }
+      }
+      if (!mfaOk) {
+        logger.warn({ userId: user.id, ip: req.ip }, '2FA verification failed');
+        return res.status(401).json({ error: 'Code 2FA invalide', mfa_required: true });
+      }
+    }
 
     const accessToken  = signAccess(user);
     const refreshToken = signRefresh(user);
@@ -449,6 +509,133 @@ router.post('/reset-password', [
   } catch (err) {
     logger.error({ err }, '[reset-password]');
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  2FA TOTP (Brief D2)
+//
+//  Flow d'activation :
+//    1. POST /api/auth/2fa/setup   → renvoie { secret, qrDataUrl }
+//                                    (génère + sauve un secret en attente,
+//                                     totp_enabled reste à 0)
+//    2. POST /api/auth/2fa/activate { code } → vérifie le code, met
+//                                              totp_enabled=1, génère
+//                                              8 backup codes one-time
+//    3. POST /api/auth/2fa/disable { password, code } → désactive
+// ═══════════════════════════════════════════════════════════════
+
+function genBackupCodes() {
+  // 8 codes de 10 caractères a-z0-9. On stocke les hashs sha256, on
+  // renvoie les codes clairs UNE SEULE FOIS (à imprimer).
+  const codes = [];
+  const hashes = [];
+  for (let i = 0; i < 8; i++) {
+    const c = crypto.randomBytes(6).toString('base64')
+      .replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 10);
+    codes.push(c);
+    hashes.push(crypto.createHash('sha256').update(c).digest('hex'));
+  }
+  return { codes, hashes };
+}
+
+// POST /api/auth/2fa/setup — réservé admin (élargir à tous si tu veux)
+router.post('/2fa/setup', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const [user] = await query('SELECT username, email, totp_enabled FROM users WHERE id = ?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    if (user.totp_enabled) return res.status(409).json({ error: '2FA déjà activée — désactivez d\'abord' });
+
+    const secret = totpLib.generateSecret();
+    await query('UPDATE users SET totp_secret = ?, totp_enabled = 0 WHERE id = ?', [secret, req.user.id]);
+
+    const issuer = 'C.C. Salouel';
+    const label = `${issuer}:${user.email || user.username}`;
+    const otpauth = totpLib.keyuri(user.email || user.username, issuer, secret);
+    const qrDataUrl = await qrcode.toDataURL(otpauth, { errorCorrectionLevel: 'M', margin: 1, width: 280 });
+
+    res.json({ secret, otpauth, qrDataUrl, label });
+  } catch (err) {
+    req.log.error({ err }, '2FA setup failed');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/2fa/activate — { code }
+router.post('/2fa/activate', requireAuth, requireAdmin, [
+  body('code').matches(/^\d{6}$/).withMessage('Code à 6 chiffres requis')
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) return res.status(400).json({ error: errs.array().map(e => e.msg).join(' · ') });
+  try {
+    const [user] = await query('SELECT totp_secret, totp_enabled FROM users WHERE id = ?', [req.user.id]);
+    if (!user?.totp_secret) return res.status(400).json({ error: 'Pas de secret en attente — lancer /2fa/setup d\'abord' });
+    if (user.totp_enabled)   return res.status(409).json({ error: '2FA déjà activée' });
+
+    const ok = totpLib.verify({ token: String(req.body.code), secret: user.totp_secret });
+    if (!ok) return res.status(401).json({ error: 'Code invalide — réessayez' });
+
+    const { codes, hashes } = genBackupCodes();
+    await query(
+      'UPDATE users SET totp_enabled = 1, totp_backup_codes = ? WHERE id = ?',
+      [JSON.stringify(hashes), req.user.id]
+    );
+    audit(req, 'role_change', 'user', req.user.id, { event: '2fa-enabled' });
+    res.json({
+      message: '2FA activée — imprimez vos codes de récupération maintenant, ils ne seront plus jamais affichés.',
+      backup_codes: codes,
+    });
+  } catch (err) {
+    req.log.error({ err }, '2FA activation failed');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/2fa/disable — { password, code } (sécurité : re-prouver l'identité)
+router.post('/2fa/disable', requireAuth, requireAdmin, [
+  body('password').notEmpty(),
+  body('code').optional().matches(/^\d{6}$/),
+], async (req, res) => {
+  try {
+    const [user] = await query('SELECT * FROM users WHERE id = ?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const passOk = await bcrypt.compare(req.body.password, user.password_hash);
+    if (!passOk) return res.status(401).json({ error: 'Mot de passe invalide' });
+
+    // Si TOTP actuellement actif, exiger aussi un code valide
+    if (user.totp_enabled) {
+      const code = String(req.body.code || '');
+      const codeOk = totpLib.verify({ token: code, secret: user.totp_secret });
+      if (!codeOk) return res.status(401).json({ error: 'Code 2FA requis pour désactiver' });
+    }
+
+    await query(
+      'UPDATE users SET totp_secret = NULL, totp_enabled = 0, totp_backup_codes = NULL WHERE id = ?',
+      [req.user.id]
+    );
+    audit(req, 'role_change', 'user', req.user.id, { event: '2fa-disabled' });
+    res.json({ message: '2FA désactivée' });
+  } catch (err) {
+    req.log.error({ err }, '2FA disable failed');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/auth/2fa/status — état pour le frontend
+router.get('/2fa/status', requireAuth, async (req, res) => {
+  try {
+    const [user] = await query(
+      'SELECT totp_enabled, totp_secret IS NOT NULL AS has_secret, JSON_LENGTH(totp_backup_codes) AS backup_remaining FROM users WHERE id = ?',
+      [req.user.id]
+    );
+    res.json({
+      enabled: !!user?.totp_enabled,
+      pending_setup: !user?.totp_enabled && !!user?.has_secret,
+      backup_codes_remaining: user?.backup_remaining || 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

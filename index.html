@@ -9,11 +9,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="asset/css/style.css">
+    <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#B08E4A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="C.C. Salouel">
+  <link rel="apple-touch-icon" href="/asset/img/apple-touch-icon.png">
   <link rel="stylesheet" href="asset/css/polish.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
   
+  <!-- OpenGraph + Twitter Card (Brief C5) -->
+  <meta property="og:title" content="C.C. Salouel — Club de Cyclisme">
+  <meta property="og:description" content="Club de cyclisme fondé en 1978 — 87 licenciés, trois générations, du pavé au gravel. Sorties, événements, calendrier.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cc-salouel.fr/">
+  <meta property="og:image" content="https://cc-salouel.fr/asset/img/hero-peloton.svg">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="C.C. Salouel — Club de Cyclisme">
+  <meta name="twitter:description" content="Club de cyclisme fondé en 1978 — 87 licenciés, trois générations, du pavé au gravel. Sorties, événements, calendrier.">
+  <link rel="canonical" href="https://cc-salouel.fr/">
 </head>
 <body>
+  <a href="#main" class="skip-link">Aller au contenu</a>
   <main id="main">
 
   <!-- HERO -->
@@ -100,7 +117,7 @@
       <div class="story-two" data-reveal data-delay="100">
         <div class="story-img">
           <div class="story-img-stamp">Live · sortie en cours</div>
-          <img src="asset/img/hero-pave.svg" alt="Pavé Paris-Roubaix">
+          <img loading="eager" src="asset/img/hero-pave.svg" alt="Pavé Paris-Roubaix">
           <div class="story-img-frame" aria-hidden="true"></div>
           <div class="story-img-caption">247 — Reconnaissance Paris-Roubaix · 5 avril 2025</div>
         </div>
@@ -278,7 +295,7 @@
       <div class="card-grid" data-reveal data-delay="100">
         <a href="sortie.html?id=arenberg-2025-04-05" class="rc">
           <div class="rc-img">
-            <img src="asset/img/hero-route.svg" alt="">
+            <img loading="lazy" decoding="async" src="asset/img/hero-route.svg" alt="">
             <div class="rc-img-frame" aria-hidden="true"></div>
             <div class="rc-sv-badge">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -301,7 +318,7 @@
 
         <a href="sortie.html?id=monts-flandres-2025-03-28" class="rc">
           <div class="rc-img">
-            <img src="asset/img/hero-route.svg" alt="">
+            <img loading="lazy" decoding="async" src="asset/img/hero-route.svg" alt="">
             <div class="rc-img-frame" aria-hidden="true"></div>
             <div class="rc-sv-badge">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -324,7 +341,7 @@
 
         <a href="sortie.html?id=scarpe-gravel-2025-03-02" class="rc">
           <div class="rc-img">
-            <img src="asset/img/hero-route.svg" alt="">
+            <img loading="lazy" decoding="async" src="asset/img/hero-route.svg" alt="">
             <div class="rc-img-frame" aria-hidden="true"></div>
             <div class="rc-sv-badge">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -347,7 +364,7 @@
 
         <a href="sortie.html?id=opale-2025-02-22" class="rc">
           <div class="rc-img">
-            <img src="asset/img/hero-route.svg" alt="">
+            <img loading="lazy" decoding="async" src="asset/img/hero-route.svg" alt="">
             <div class="rc-img-frame" aria-hidden="true"></div>
             <div class="rc-sv-badge">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -374,7 +391,7 @@
   <!-- MANIFESTO -->
   <section class="manif" data-reveal>
     <div class="manif-bg">
-      <img src="asset/img/hero-route.svg" alt="">
+      <img loading="lazy" decoding="async" src="asset/img/hero-route.svg" alt="">
     </div>
     <div class="manif-inner">
       <div class="manif-mark">«</div>
@@ -451,7 +468,7 @@
   <section class="section-sm">
     <div class="join-band" data-reveal>
       <div class="join-band-bg">
-        <img src="asset/img/hero-route.svg" alt="">
+        <img loading="lazy" decoding="async" src="asset/img/hero-route.svg" alt="">
       </div>
       <div class="join-band-inner">
         <div class="join-band-body">

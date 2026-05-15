@@ -59,6 +59,7 @@
       'auto-import': loadAutoImport,
       audit:        loadAudit,
       diagnostic:   loadDiagnostic,
+      security:     loadSecurity,
     };
     loaders[name]?.();
   }
@@ -1717,6 +1718,79 @@
       } catch (err) {
         out.innerHTML = `<div class="admin-empty"><b>Erreur :</b> ${escHtml(err.message)}</div>`;
       }
+    }
+  });
+
+  // ── Sécurité 2FA ─────────────────────────────────────────────
+  async function loadSecurity() {
+    const wrap = document.getElementById('totp-status-wrap');
+    wrap.innerHTML = '<div class="loading-spinner"></div>';
+    document.getElementById('totp-inactive').hidden = true;
+    document.getElementById('totp-setup').hidden = true;
+    document.getElementById('totp-active').hidden = true;
+    document.getElementById('totp-backup-codes').hidden = true;
+    try {
+      const s = await apiFetch('/auth/2fa/status');
+      wrap.innerHTML = '';
+      if (s.enabled) {
+        document.getElementById('totp-active').hidden = false;
+        document.getElementById('totp-backup-count').textContent = s.backup_codes_remaining;
+      } else {
+        document.getElementById('totp-inactive').hidden = false;
+      }
+    } catch (err) {
+      wrap.innerHTML = `<div class="admin-empty"><b>Erreur :</b> ${escHtml(err.message)}</div>`;
+    }
+  }
+
+  document.addEventListener('click', async (e) => {
+    if (e.target.id === 'btn-totp-setup') {
+      try {
+        const data = await apiFetch('/auth/2fa/setup', { method: 'POST' });
+        document.getElementById('totp-qr').src = data.qrDataUrl;
+        document.getElementById('totp-secret').textContent = data.secret;
+        document.getElementById('totp-inactive').hidden = true;
+        document.getElementById('totp-setup').hidden = false;
+        document.getElementById('totp-setup-error').hidden = true;
+        document.getElementById('totp-activate-code').value = '';
+        document.getElementById('totp-activate-code').focus();
+      } catch (err) { alert('Échec : ' + err.message); }
+    }
+    if (e.target.id === 'btn-totp-cancel') {
+      // On laisse le secret en attente côté serveur ; un nouveau setup l'écrasera
+      document.getElementById('totp-setup').hidden = true;
+      document.getElementById('totp-inactive').hidden = false;
+    }
+    if (e.target.id === 'btn-totp-activate') {
+      const code = document.getElementById('totp-activate-code').value.trim();
+      const errEl = document.getElementById('totp-setup-error');
+      errEl.hidden = true;
+      if (!/^\d{6}$/.test(code)) { errEl.textContent = 'Code à 6 chiffres requis.'; errEl.hidden = false; return; }
+      try {
+        const res = await apiFetch('/auth/2fa/activate', { method: 'POST', body: JSON.stringify({ code }) });
+        document.getElementById('totp-setup').hidden = true;
+        document.getElementById('totp-active').hidden = false;
+        document.getElementById('totp-backup-count').textContent = '8';
+        document.getElementById('totp-backup-codes').hidden = false;
+        document.getElementById('totp-backup-list').textContent = res.backup_codes.join('\n');
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+      }
+    }
+    if (e.target.id === 'btn-totp-codes-saved') {
+      document.getElementById('totp-backup-codes').hidden = true;
+    }
+    if (e.target.id === 'btn-totp-disable') {
+      const password = prompt('Mot de passe pour confirmer la désactivation :');
+      if (!password) return;
+      const code = prompt('Code 2FA actuel (6 chiffres) :');
+      if (!code) return;
+      try {
+        await apiFetch('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ password, code }) });
+        alert('2FA désactivée.');
+        loadSecurity();
+      } catch (err) { alert('Échec : ' + err.message); }
     }
   });
 })();

@@ -55,6 +55,9 @@
     const login = document.getElementById('login-id').value.trim();
     const pw    = document.getElementById('login-pw').value;
     const remember = document.getElementById('login-remember').checked;
+    // Si on est dans l'étape TOTP, récupérer le code saisi
+    const totpInput = document.getElementById('login-totp');
+    const totp = totpInput?.value?.trim() || null;
 
     if (!login || !pw) {
       errEl.textContent = 'Remplissez tous les champs';
@@ -64,7 +67,7 @@
     btn.textContent = 'Connexion…'; btn.disabled = true;
 
     try {
-      await CCS_AUTH.login(login, pw, remember);
+      await CCS_AUTH.login(login, pw, remember, totp);
       if (remember) {
         try {
           localStorage.setItem('ccs_last_login', login);
@@ -82,11 +85,32 @@
       }
       window.location.href = getRedirect();
     } catch (err) {
+      // Si le backend demande un TOTP, afficher le champ et focus
+      if (err.mfaRequired) {
+        revealTotpField();
+        errEl.textContent = totp ? 'Code 2FA invalide — réessayez.' : 'Compte protégé par 2FA — saisissez le code à 6 chiffres.';
+        errEl.hidden = false;
+        btn.textContent = 'Se connecter'; btn.disabled = false;
+        document.getElementById('login-totp')?.focus();
+        return;
+      }
       errEl.textContent = err.message || 'Identifiants invalides';
       errEl.hidden = false;
       btn.textContent = 'Se connecter'; btn.disabled = false;
       document.getElementById('login-pw').focus();
     }
+  }
+
+  function revealTotpField() {
+    if (document.getElementById('login-totp')) return;
+    const pwField = document.getElementById('login-pw').closest('.field');
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    wrap.style.marginTop = '16px';
+    wrap.innerHTML = `
+      <label for="login-totp">Code 2FA (6 chiffres ou code de récupération)</label>
+      <input id="login-totp" name="one-time-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="123456" style="font-family:monospace; letter-spacing:4px; font-size:18px; text-align:center;">`;
+    pwField.parentNode.insertBefore(wrap, pwField.nextSibling);
   }
 
   (function preFillLogin() {
