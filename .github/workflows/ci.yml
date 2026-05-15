@@ -1,52 +1,100 @@
-# GitHub Actions — Cf. AUDIT items #27, #28
+# GitHub Actions — CI Cycling
 #
 # Lance à chaque push/PR :
-#   1. node --test (tests unitaires sur les helpers purs)
-#   2. node scripts/validate-gpx.js (vérifie l'intégrité des GPX)
-#   3. npm audit (alerte si nouvelle CVE dans les deps)
+#   1. node --check sur tous les .js (smoke syntaxique)
+#   2. npm test (unitaires + intégration backend avec MySQL service)
+#   3. node scripts/validate-gpx.js (intégrité des GPX)
+#   4. npm audit (CVE dans les deps de prod)
 #
-# Aucun secret nécessaire — tout tourne en local au runner.
+# Service MySQL provisionné pour les tests d'intégration (Brief B1).
+# Les variables d'env JWT_* sont des dummies suffisamment longs pour
+# passer la validation fail-fast du server.js.
 
 name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, develop]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpw
+          MYSQL_DATABASE: ccs_salouel
+          MYSQL_USER: ccs_user
+          MYSQL_PASSWORD: ccs_pw
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -prootpw"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
     strategy:
       matrix:
-        node-version: [18.17.x, 20.x, 22.x]
+        node-version: ['20.x', '22.x']
+
+    env:
+      NODE_ENV: test
+      LOG_LEVEL: silent
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: ccs_user
+      DB_PASSWORD: ccs_pw
+      DB_NAME: ccs_salouel
+      JWT_SECRET:         dummy_jwt_secret_for_ci_at_least_32_chars_long_xx
+      JWT_REFRESH_SECRET: dummy_refresh_secret_for_ci_at_least_32_chars_different
+      FRONTEND_URL: http://localhost:3000
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      - name: Syntax check (all JS files)
+      - name: Syntax check (all backend + frontend JS)
         run: |
-          for f in routes/*.js services/*.js scripts/*.js middleware/*.js config/*.js seed.js server.js asset/js/*.js; do
+          for f in routes/*.js services/*.js scripts/*.js middleware/*.js config/*.js lib/*.js seed.js server.js asset/js/*.js asset/js/pages/*.js; do
             node --check "$f" || exit 1
           done
 
-      - name: Run unit tests
-        run: npm test
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -prootpw --silent; then
+              echo "MySQL up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL did not become ready"; exit 1
+
+      - name: Apply schema + migrations
+        run: |
+          mysql -h 127.0.0.1 -uroot -prootpw ccs_salouel < schema.sql
+          for f in migrations/*.sql; do
+            echo "Applying $f"
+            mysql -h 127.0.0.1 -uroot -prootpw ccs_salouel < "$f"
+          done
+          mysql -h 127.0.0.1 -uroot -prootpw -e "GRANT ALL ON ccs_salouel.* TO 'ccs_user'@'%'; FLUSH PRIVILEGES;"
+
+      - run: npm test
 
       - name: Validate GPX files (informative)
         run: node scripts/validate-gpx.js || true
-        # `|| true` — pour l'instant les 4 GPX faux signalés par l'audit
-        # ne sont PAS un blocker CI. Retirer le `|| true` quand ils auront
-        # été régénérés via `node scripts/generate-gpx.js --all`.
 
       - name: Security audit (production deps only)
         run: npm audit --omit=dev --audit-level=high

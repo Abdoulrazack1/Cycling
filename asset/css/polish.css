@@ -4,6 +4,53 @@
    Couches après style.css — palette identique
    ═══════════════════════════════════════════════════════════════ */
 
+/* ─── Skip link (a11y — saut au contenu principal) ────────── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 12px 20px;
+  background: var(--brass, #B08E4A);
+  color: #000;
+  text-decoration: none;
+  font-family: var(--f-sans);
+  font-size: 13px;
+  letter-spacing: .06em;
+  font-weight: 600;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  left: 16px;
+  top: 16px;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ─── Skeleton loaders (perçu de chargement) ─────────────── */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--ink-3, #1a1410) 0%,
+    var(--ink-2, #221a14) 50%,
+    var(--ink-3, #1a1410) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
+  border-radius: 2px;
+  display: block;
+}
+.skeleton-text { height: 0.9em; margin: 0.4em 0; }
+.skeleton-text.short { width: 40%; }
+.skeleton-text.long { width: 80%; }
+.skeleton-card { height: 220px; margin-bottom: 16px; }
+.skeleton-row  { height: 56px;  margin-bottom: 8px; }
+@keyframes skeleton-loading {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
 /* ─── Focus visible cohérent (laiton, accessible) ────────── */
 *:focus { outline: none; }
 *:focus-visible {
