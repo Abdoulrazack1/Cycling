@@ -13,7 +13,7 @@ USE ccs_salouel;
 
 CREATE TABLE IF NOT EXISTS audit_log (
   id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  user_id     INT UNSIGNED,                    -- NULL = action publique (inscriptions visiteurs)
+  user_id     INT,                             -- NULL = action publique (inscriptions visiteurs)
   username    VARCHAR(50),                     -- snapshot pour le cas où l'user est supprimé
   action      ENUM('create','update','delete','login','logout','password_reset','role_change')
               NOT NULL,

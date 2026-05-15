@@ -4,7 +4,7 @@ const path    = require('path');
 const fs      = require('fs');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
-const { uploadGpx, handleMulterError, GPX_DIR } = require('../middleware/upload');
+const { uploadGpx, handleMulterError, validateGpxFile, GPX_DIR } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -13,6 +13,7 @@ router.post('/upload',
   requireAuth, requireAdmin,
   uploadGpx.single('gpx'),
   handleMulterError,
+  validateGpxFile,     // sniffing du contenu (Brief B4)
   async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu' });
     res.status(201).json({

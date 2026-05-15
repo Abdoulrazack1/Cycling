@@ -198,19 +198,41 @@ app.use('/api', globalLimiter);
 app.use(compression());
 
 // ── Fichiers statiques du frontend ───────────────────────────
-// Sert les HTML/CSS/JS/GPX directement depuis ce dossier
-// EN PRODUCTION : remplacer par nginx
-app.use(express.static(path.join(__dirname), {
+// Sert les HTML/CSS/JS/GPX directement depuis ce dossier.
+// EN PRODUCTION : remplacer par nginx (cf. nginx.conf.example).
+//
+// Politique de cache :
+//  - HTML  → no-cache (les modifs doivent se propager immédiatement)
+//  - CSS/JS/fonts/images → 7 jours (Cache-Control public, ETag)
+//  - GPX → 1 jour (peuvent être régénérés)
+const STATIC_OPTS = {
   index: 'index.html',
+  etag: true,
+  lastModified: true,
+  maxAge: '7d',
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.gpx')) {
+      res.setHeader('Content-Type', 'application/gpx+xml');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    } else if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+    // CSS/JS/etc utilisent le maxAge: '7d' par défaut.
+  }
+};
+app.use(express.static(path.join(__dirname), STATIC_OPTS));
+
+// ── GPX uploadés via l'admin ───────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  etag: true,
+  lastModified: true,
+  maxAge: '7d',
   setHeaders(res, filePath) {
     if (filePath.endsWith('.gpx')) {
       res.setHeader('Content-Type', 'application/gpx+xml');
     }
   }
 }));
-
-// ── GPX uploadés via l'admin ───────────────────────────────────
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Cache HTTP léger sur les GET publics (AUDIT opt-3) ────────
 // 60 s : assez court pour que les modifs admin se propagent vite,
@@ -237,6 +259,7 @@ app.use('/api/segments',   require('./routes/segments'));
 app.use('/api/palmares',   require('./routes/palmares'));
 app.use('/api/gpx',        require('./routes/gpx'));
 app.use('/api/auto-courses', require('./routes/auto-courses'));
+app.use('/api/admin',      require('./routes/admin'));
 app.use('/api/pois',       require('./routes/pois-admin'));
 
 // ── Routes POI — montage avec mergeParams ─────────────────────
@@ -252,6 +275,7 @@ app.get('/api/health', async (req, res) => {
     status: 'ok',
     version: require('./package.json').version,
     env: process.env.NODE_ENV || 'development',
+    uptime_s: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
   };
   if (req.query.deep) {
@@ -318,6 +342,23 @@ app.listen(PORT, () => {
   setTimeout(runCleanup, 30_000);
   // Puis toutes les 24 h
   setInterval(runCleanup, 24 * 60 * 60 * 1000);
+
+  // ── Purge audit_log (Brief B5) ───────────────────────────────
+  // Rétention configurable via AUDIT_RETENTION_DAYS (défaut 365j).
+  // Lancée 1× au boot puis une fois par jour — le script est idempotent
+  // (DELETE … WHERE created_at < … ne supprime que les rows expirées),
+  // donc l'exécuter quotidiennement coûte rien si rien n'est éligible.
+  // (setInterval limite à ~24.8 jours / 2^31 ms, donc on reste à 24 h.)
+  const runAuditPurge = () => {
+    const { fork } = require('child_process');
+    const proc = fork(require('path').join(__dirname, 'scripts', 'purge-audit-log.js'), [], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+    proc.on('error', err => logger.warn({ err }, '[audit purge] failed'));
+  };
+  setTimeout(runAuditPurge, 60_000);
+  setInterval(runAuditPurge, 24 * 60 * 60 * 1000); // 24 h
 });
 
 module.exports = app;

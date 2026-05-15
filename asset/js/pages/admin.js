@@ -57,6 +57,8 @@
       segments:     loadSegments,
       pois:         loadPois,
       'auto-import': loadAutoImport,
+      audit:        loadAudit,
+      diagnostic:   loadDiagnostic,
     };
     loaders[name]?.();
   }
@@ -1608,4 +1610,113 @@
       }
     });
   }
+
+  // ── Audit log ────────────────────────────────────────────────
+  async function loadAudit() {
+    const wrap = document.getElementById('audit-table-wrap');
+    wrap.innerHTML = '<div class="admin-empty"><div class="loading-spinner"></div></div>';
+    const action = document.getElementById('audit-filter-action').value;
+    const entity = document.getElementById('audit-filter-entity').value;
+    const limit  = document.getElementById('audit-filter-limit').value;
+    const qs = new URLSearchParams();
+    if (action) qs.set('action', action);
+    if (entity) qs.set('entity', entity);
+    if (limit)  qs.set('limit', limit);
+    try {
+      const data = await apiFetch('/admin/audit?' + qs.toString());
+      if (!data.rows?.length) {
+        wrap.innerHTML = '<div class="admin-empty">Aucune entrée pour ces filtres.</div>';
+        return;
+      }
+      const rows = data.rows.map(r => {
+        const payload = r.payload
+          ? `<details><summary style="cursor:pointer;opacity:.6;">payload</summary><pre style="font-size:11px;margin:4px 0;white-space:pre-wrap;">${escHtml(typeof r.payload === 'string' ? r.payload : JSON.stringify(r.payload, null, 2))}</pre></details>`
+          : '<span style="opacity:.4;">—</span>';
+        return `
+          <tr>
+            <td style="font-family:monospace;font-size:11px;opacity:.6;">${escHtml(r.created_at)}</td>
+            <td>${escHtml(r.username || '—')}<br><span style="opacity:.4;font-size:11px;">#${r.user_id || '?'}</span></td>
+            <td><span class="filter-chip">${escHtml(r.action)}</span></td>
+            <td>${escHtml(r.entity)}<br><span style="opacity:.5;font-size:11px;">${escHtml(r.entity_id || '')}</span></td>
+            <td style="font-family:monospace;font-size:11px;opacity:.6;">${escHtml(r.ip_address || '')}</td>
+            <td>${payload}</td>
+          </tr>`;
+      }).join('');
+      wrap.innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th>Quand</th><th>Qui</th><th>Action</th><th>Entité</th><th>IP</th><th>Détails</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="opacity:.5;font-size:11px;margin-top:8px;">${data.count} entrée(s) affichée(s)</div>`;
+    } catch (err) {
+      wrap.innerHTML = `<div class="admin-empty"><b>Erreur :</b> ${escHtml(err.message)}</div>`;
+    }
+  }
+  // Wire les filtres + boutons (au premier load du panel, les éléments existent)
+  document.addEventListener('change', (e) => {
+    if (e.target.matches('#audit-filter-action, #audit-filter-entity, #audit-filter-limit')) loadAudit();
+  });
+  document.addEventListener('click', async (e) => {
+    if (e.target.id === 'btn-audit-refresh') { loadAudit(); return; }
+    if (e.target.id === 'btn-audit-purge') {
+      const days = prompt('Purger les entrées de plus de combien de jours ? (min 30, défaut 365)', '365');
+      if (days == null) return;
+      const n = parseInt(days, 10);
+      if (!Number.isFinite(n) || n < 30) { alert('Minimum 30 jours.'); return; }
+      try {
+        const res = await apiFetch('/admin/audit/purge', { method: 'POST', body: JSON.stringify({ days: n }) });
+        alert(res.message || 'OK');
+        loadAudit();
+      } catch (err) { alert('Échec : ' + err.message); }
+    }
+  });
+
+  // ── Diagnostic (scraper + metrics) ───────────────────────────
+  function loadDiagnostic() {
+    // Lazy : ne charge rien au switch — les boutons déclenchent
+  }
+
+  document.addEventListener('click', async (e) => {
+    if (e.target.id === 'btn-scraper-health') {
+      const out = document.getElementById('scraper-health-result');
+      out.innerHTML = '<div class="loading-spinner"></div> En cours…';
+      try {
+        const data = await apiFetch('/admin/scraper-health');
+        const statusColor = data.status === 'healthy' ? 'var(--brass)' : data.status === 'degraded' ? '#d4a637' : '#c44';
+        const fallbackList = Object.entries(data.fallbacks || {}).map(([k, v]) => `<li><code>${escHtml(k)}</code> × ${v}</li>`).join('');
+        const errorList = (data.errors || []).map(e => `<li><b>${escHtml(e.source)}</b> : ${escHtml(e.error)}</li>`).join('');
+        out.innerHTML = `
+          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:baseline;margin:12px 0;">
+            <div><span style="color:${statusColor};font-weight:600;font-size:18px;text-transform:uppercase;">${escHtml(data.status)}</span></div>
+            <div><b>${data.eventsCount}</b> events scrapés</div>
+            <div><b>${data.errorsCount}</b> erreur(s)</div>
+            <div>en <b>${data.durationMs}</b> ms</div>
+          </div>
+          ${fallbackList ? `<p style="opacity:.7;">Fallbacks regex déclenchés (= structure HTML cible probablement modifiée) :</p><ul>${fallbackList}</ul>` : ''}
+          ${errorList ? `<p style="opacity:.7;">Erreurs :</p><ul>${errorList}</ul>` : ''}
+          <details style="margin-top:12px;"><summary style="cursor:pointer;opacity:.6;">Log complet</summary><pre style="font-size:11px;white-space:pre-wrap;">${escHtml((data.log || []).join('\n'))}</pre></details>`;
+      } catch (err) {
+        out.innerHTML = `<div class="admin-empty"><b>Échec :</b> ${escHtml(err.message)}</div>`;
+      }
+    }
+    if (e.target.id === 'btn-metrics-refresh') {
+      const out = document.getElementById('metrics-result');
+      out.innerHTML = '<div class="loading-spinner"></div>';
+      try {
+        const m = await apiFetch('/admin/metrics');
+        const uptimeH = Math.floor(m.uptime_s / 3600);
+        const uptimeM = Math.floor((m.uptime_s % 3600) / 60);
+        out.innerHTML = `
+          <div class="admin-stats" style="margin-top:12px;">
+            <div class="admin-stat-card"><div class="admin-stat-v">${uptimeH}h${uptimeM}m</div><div class="admin-stat-l">Uptime</div></div>
+            <div class="admin-stat-card"><div class="admin-stat-v">${m.memory.rss_mb}<span style="font-size:14px;"> Mo</span></div><div class="admin-stat-l">RSS</div></div>
+            <div class="admin-stat-card"><div class="admin-stat-v">${m.memory.heapUsed_mb}<span style="font-size:14px;"> Mo</span></div><div class="admin-stat-l">Heap used</div></div>
+            <div class="admin-stat-card"><div class="admin-stat-v" style="font-size:18px;">${escHtml(m.nodeVersion)}</div><div class="admin-stat-l">Node</div></div>
+          </div>
+          <div style="opacity:.5;font-size:11px;margin-top:12px;">PID ${m.pid} · ${escHtml(m.platform)} · env ${escHtml(m.env)}</div>`;
+      } catch (err) {
+        out.innerHTML = `<div class="admin-empty"><b>Erreur :</b> ${escHtml(err.message)}</div>`;
+      }
+    }
+  });
 })();

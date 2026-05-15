@@ -10,17 +10,31 @@ const { parseGpx } = require('../services/gpx-parser');
 const { audit } = require('../services/audit-log');
 // Cf. AUDIT item #8 — un seul dossier GPX partagé entre /api/gpx/upload
 // (multer disque) et /api/sorties/import-gpx (multer mémoire).
-const { GPX_DIR: ASSET_GPX_DIR } = require('../middleware/upload');
+const { GPX_DIR: ASSET_GPX_DIR, isLikelyGpx } = require('../middleware/upload');
 const logger = require('../lib/logger');
 
 const router = express.Router();
 
+const GPX_MIME_TYPES_IMPORT = new Set([
+  'application/gpx+xml', 'application/xml', 'text/xml',
+  'application/octet-stream', '',
+]);
+
 const importUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: (parseInt(process.env.MAX_GPX_SIZE_MB) || 10) * 1024 * 1024 },
+  limits: {
+    fileSize: (parseInt(process.env.MAX_GPX_SIZE_MB) || 10) * 1024 * 1024,
+    files: 1,
+  },
   fileFilter: (req, file, cb) => {
-    const ok = path.extname(file.originalname).toLowerCase() === '.gpx';
-    cb(ok ? null : new Error('Seuls les fichiers .gpx sont acceptés'), ok);
+    if (path.extname(file.originalname).toLowerCase() !== '.gpx') {
+      return cb(new Error('Extension .gpx requise'), false);
+    }
+    const mime = (file.mimetype || '').toLowerCase();
+    if (!GPX_MIME_TYPES_IMPORT.has(mime)) {
+      return cb(new Error(`MIME type invalide : ${file.mimetype}`), false);
+    }
+    cb(null, true);
   }
 });
 
@@ -260,6 +274,7 @@ router.post('/', requireAuth, requireModo, [
     });
 
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [s.id]))[0]);
+    audit(req, 'create', 'sortie', s.id, { title: s.title, date: s.date });
     res.status(201).json(sortie);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /sorties]');
@@ -353,6 +368,7 @@ router.put('/:id', requireAuth, requireModo, [
     });
 
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [id]))[0]);
+    audit(req, 'update', 'sortie', id, { title: s.title, date: s.date, statut: s.statut });
     res.json(sortie);
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
@@ -400,6 +416,11 @@ router.post('/import-gpx',
       if (!req.file) return res.status(400).json({ error: 'Fichier GPX manquant (champ "gpx" du formulaire)' });
       if (!req.file.buffer || req.file.buffer.length === 0) {
         return res.status(400).json({ error: 'Fichier GPX vide' });
+      }
+      // Sniffing du contenu — le MIME et l'extension peuvent être falsifiés,
+      // seul le contenu réel garantit qu'on a bien un GPX (Brief B4).
+      if (!isLikelyGpx(req.file.buffer)) {
+        return res.status(400).json({ error: 'Contenu GPX invalide (XML/<gpx> introuvable dans le fichier)' });
       }
       const title = req.body.title?.trim();
       const date  = req.body.date;
