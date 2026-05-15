@@ -31,16 +31,31 @@ async function waitForServer(url, maxMs = 8000) {
   throw new Error('Server failed to start within ' + maxMs + 'ms');
 }
 
+// Helper : fetch avec retry sur 500/502/503 (résilience face aux flakes
+// transitoires liés au pool MySQL en tests parallèles)
+async function fetchWithRetry(url, opts = {}, maxRetries = 2) {
+  let last;
+  for (let i = 0; i <= maxRetries; i++) {
+    const r = await fetch(url, opts);
+    if (r.status < 500) return r;
+    last = r;
+    await new Promise(rr => setTimeout(rr, 200 * (i + 1)));
+  }
+  return last;
+}
+
 async function startServer() {
   const PORT = await freePort();
   const proc = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
     cwd: path.join(__dirname, '..'),
-    env: { ...process.env, PORT: String(PORT), LOG_LEVEL: 'silent', NODE_ENV: 'test' },
+    // info-level logs pour debug — passe à 'silent' une fois stabilisé
+    env: { ...process.env, PORT: String(PORT), LOG_LEVEL: process.env.TEST_LOG_LEVEL || 'silent', NODE_ENV: 'test' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   // Buffer stdout/stderr for debugging if needed
   let lastErr = '';
   proc.stderr.on('data', d => { lastErr += d.toString(); });
+  if (process.env.TEST_SERVER_LOGS) proc.stdout.on('data', d => process.stdout.write('[srv] ' + d));
 
   try {
     await waitForServer(`http://localhost:${PORT}/api/health`, 8000)
@@ -74,4 +89,4 @@ async function cleanupTestUsers() {
   } finally { await c.end(); }
 }
 
-module.exports = { startServer, dbConn, cleanupTestUsers };
+module.exports = { startServer, dbConn, cleanupTestUsers, fetchWithRetry };

@@ -1,5 +1,11 @@
 /* ── Chargement dynamique des parcours ──────────────────────── */
 (async function loadParcours() {
+  const earlyGrid = document.getElementById('parcours-grid');
+  // Skeleton initial — uniquement si le grid est vide (pas de fallback statique)
+  let staticFallback = earlyGrid?.innerHTML || '';
+  if (earlyGrid && !staticFallback.trim()) {
+    earlyGrid.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
+  }
   await new Promise(resolve => {
     const check = (n = 0) => {
       if (window.CCS_DATA) return resolve();
@@ -12,7 +18,6 @@
 
   const grid = document.getElementById('parcours-grid');
   if (!grid) return;
-  const staticFallback = grid.innerHTML;
 
   function escHtml(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

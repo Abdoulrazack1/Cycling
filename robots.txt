@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /uploads/
+Sitemap: https://cc-salouel.fr/sitemap.xml

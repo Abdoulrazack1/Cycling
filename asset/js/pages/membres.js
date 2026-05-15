@@ -1,4 +1,11 @@
 (async function loadMembres() {
+  const grid = document.getElementById('members-grid');
+  // Skeleton avant l'attente de CCS_DATA (perçu de chargement)
+  if (grid && !grid.innerHTML.trim()) {
+    grid.innerHTML = Array(6).fill(
+      '<div class="member-card" aria-hidden="true"><div class="skeleton" style="width:64px;height:64px;border-radius:50%;margin:0 auto 16px;"></div><div class="skeleton skeleton-text short" style="margin:0 auto 8px;"></div><div class="skeleton skeleton-text long" style="margin:0 auto;"></div></div>'
+    ).join('');
+  }
   await new Promise(resolve => {
     const check = (n = 0) => {
       if (window.CCS_DATA) return resolve();
@@ -8,8 +15,6 @@
     check();
   });
   if (!window.CCS_DATA) return;
-
-  const grid = document.getElementById('members-grid');
   const ROLE_LABELS = { admin: 'Bureau', moderateur: 'Modérateur', membre: 'Membre' };
 
   function escHtml(s) {

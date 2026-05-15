@@ -47,6 +47,11 @@
 
 /* ── Chargement dynamique des sorties depuis l'API ─────────── */
 (async function loadSortiesDynamic() {
+  // Skeleton immédiat (avant l'attente CCS_DATA) — évite le trou blanc
+  const earlyGrid = document.getElementById('sorties-grid');
+  if (earlyGrid && !earlyGrid.innerHTML.trim()) {
+    earlyGrid.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
+  }
   await new Promise(resolve => {
     const check = (n = 0) => {
       if (window.CCS_DATA) return resolve();

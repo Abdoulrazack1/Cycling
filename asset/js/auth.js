@@ -177,19 +177,27 @@
     ready: () => _initPromise || Promise.resolve(),
 
     // ── Login ────────────────────────────────────────────────────
-    async login(login, password, rememberMe = true) {
+    async login(login, password, rememberMe = true, totp = null) {
       try {
         if (rememberMe) localStorage.setItem(REMEMBER_KEY, '1');
         else            localStorage.removeItem(REMEMBER_KEY);
       } catch {}
 
+      const body = { login, password, remember: rememberMe };
+      if (totp) body.totp = totp;
+
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login, password, remember: rememberMe })
+        body: JSON.stringify(body)
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
+      if (!res.ok) {
+        // Surface mfa_required flag so the UI can prompt for TOTP code
+        const err = new Error(data.error || 'Erreur de connexion');
+        if (data.mfa_required) err.mfaRequired = true;
+        throw err;
+      }
       _setSession(data.accessToken, data.user);
       CCS_AUTH._updateNavUI();
       return data.user;
