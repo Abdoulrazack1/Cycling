@@ -10,14 +10,19 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node seed.js",
-    "test": "node --test test/*.test.js",
+    "test": "node --test tests/scraper.test.js tests/integration/",
+    "test:unit": "node --test tests/scraper.test.js",
+    "test:integration": "node --test tests/integration/",
     "scrape": "node scripts/scrape-sorties.js --osm",
     "scrape:save": "node scripts/scrape-sorties.js --osm --save-db",
     "scrape:osm": "node scripts/scrape-sorties.js --osm --save-db",
     "scrape:full": "node scripts/scrape-sorties.js --osm --milesrepublic --save-db",
     "clean": "node scripts/clean-sorties.js",
     "expire": "node scripts/expire-past-sorties.js",
-    "expire:dry": "node scripts/expire-past-sorties.js --dry"
+    "expire:dry": "node scripts/expire-past-sorties.js --dry",
+    "audit:purge": "node scripts/purge-audit-log.js",
+    "audit:purge:dry": "node scripts/purge-audit-log.js --dry",
+    "backup": "node scripts/backup-db.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.0",

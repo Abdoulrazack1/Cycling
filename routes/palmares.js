@@ -3,6 +3,7 @@ const express = require('express');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { audit } = require('../services/audit-log');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -62,6 +63,7 @@ router.post('/', requireAuth, requireModo, [
        p.medaille || null, p.equipe || null, p.sortie_id || null]
     );
     const [created] = await query('SELECT * FROM palmares WHERE id = ?', [result.insertId]);
+    audit(req, 'create', 'palmares', result.insertId, { annee: p.annee, evenement: p.evenement, medaille: p.medaille });
     res.status(201).json(created);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /palmares]');
@@ -87,6 +89,7 @@ router.put('/:id', requireAuth, requireModo, [
        p.medaille || null, p.equipe || null, p.sortie_id || null, req.params.id]
     );
     const [updated] = await query('SELECT * FROM palmares WHERE id = ?', [req.params.id]);
+    audit(req, 'update', 'palmares', req.params.id, { annee: p.annee, evenement: p.evenement });
     res.json(updated);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[PUT /palmares/:id]');
@@ -98,6 +101,7 @@ router.put('/:id', requireAuth, requireModo, [
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('DELETE FROM palmares WHERE id = ?', [req.params.id]);
+    audit(req, 'delete', 'palmares', req.params.id);
     res.json({ message: 'Supprimé' });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /palmares/:id]');
