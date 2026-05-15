@@ -3,6 +3,7 @@ const express = require('express');
 const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo, optionalAuth } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { audit } = require('../services/audit-log');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -65,6 +66,7 @@ router.post('/', requireAuth, requireModo, [
       ]
     );
     const [created] = await query('SELECT * FROM evenements WHERE id = ?', [result.insertId]);
+    audit(req, 'create', 'evenement', result.insertId, { title: e.title, date: e.date, type: e.type });
     res.status(201).json(created);
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
 });
@@ -96,6 +98,7 @@ router.put('/:id', requireAuth, requireModo, [
       ]
     );
     const [updated] = await query('SELECT * FROM evenements WHERE id = ?', [req.params.id]);
+    audit(req, 'update', 'evenement', req.params.id, { title: e.title, date: e.date, statut: e.statut });
     res.json(updated);
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
@@ -103,6 +106,7 @@ router.put('/:id', requireAuth, requireModo, [
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('DELETE FROM evenements WHERE id = ?', [req.params.id]);
+    audit(req, 'delete', 'evenement', req.params.id);
     res.json({ message: 'Événement supprimé' });
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });

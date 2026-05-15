@@ -2,6 +2,7 @@
 const express = require('express');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { audit } = require('../services/audit-log');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -34,6 +35,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
        s.rang_cls||null, s.kom||null, s.sortie_id||null]
     );
     const [created] = await query('SELECT * FROM segments_global WHERE id = ?', [result.insertId]);
+    audit(req, 'create', 'segment', result.insertId, { name: s.name, location: s.location });
     res.status(201).json(created);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /segments]');
@@ -52,6 +54,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
        s.rang_cls||null, s.kom||null, s.sortie_id||null, req.params.id]
     );
     const [updated] = await query('SELECT * FROM segments_global WHERE id = ?', [req.params.id]);
+    audit(req, 'update', 'segment', req.params.id, { name: s.name });
     res.json(updated);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[PUT /segments/:id]');
@@ -62,6 +65,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('DELETE FROM segments_global WHERE id = ?', [req.params.id]);
+    audit(req, 'delete', 'segment', req.params.id);
     res.json({ message: 'Segment supprimé' });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /segments/:id]');

@@ -6,6 +6,7 @@ const crypto    = require('crypto');
 const { query, withTransaction } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { audit } = require('../services/audit-log');
 const logger = require('../lib/logger');
 
 const router = express.Router();
@@ -127,6 +128,10 @@ router.post('/login', [
     // Cookie httpOnly pour le refresh token (sameSite: lax en dev, none en prod)
     res.cookie('refreshToken', refreshToken, cookieOpts(rememberMe));
 
+    // Audit avec user injecté à la main (audit() lit req.user pour user_id/username)
+    req.user = { id: user.id, username: user.username };
+    audit(req, 'login', 'user', user.id, { rememberMe });
+
     res.json({
       accessToken,
       user: userPublic(user)
@@ -196,6 +201,15 @@ router.post('/register', [
 });
 
 // ── POST /api/auth/refresh ────────────────────────────────────
+// Rotation : on supprime l'ancien token DB et on en émet un nouveau.
+// Sécurité supplémentaire — détection de réutilisation :
+//   Si le JWT est valide MAIS le hash n'est plus en base, ça veut dire
+//   qu'il a déjà été rotaté. Deux scénarios :
+//    (a) bug réseau → l'utilisateur a un ancien cookie tournant
+//    (b) compromission → un attaquant a volé le cookie et l'utilise
+//        après que la victime a rafraîchi (ou inversement).
+//   Dans le doute, on invalide TOUTES les sessions de cet utilisateur
+//   et on logge l'incident (Brief refresh-rotation).
 router.post('/refresh', async (req, res) => {
   const token = req.cookies?.refreshToken;
   if (!token) return res.status(401).json({ error: 'Refresh token manquant' });
@@ -208,7 +222,15 @@ router.post('/refresh', async (req, res) => {
       'SELECT * FROM refresh_tokens WHERE token_hash = ? AND expires_at > NOW() AND user_id = ?',
       [hashToken(token), payload.sub]
     );
-    if (!stored) return res.status(401).json({ error: 'Session expirée' });
+    if (!stored) {
+      // JWT valide mais hash absent → réutilisation potentielle. Wipe + audit.
+      await query('DELETE FROM refresh_tokens WHERE user_id = ?', [payload.sub]);
+      req.user = { id: payload.sub };
+      audit(req, 'logout', 'user', payload.sub, { reason: 'refresh-token-reuse-detected' });
+      logger.warn({ userId: payload.sub, ip: req.ip }, 'refresh token reuse — all sessions wiped');
+      res.clearCookie('refreshToken', clearCookieOpts());
+      return res.status(401).json({ error: 'Session invalidée par sécurité — reconnectez-vous' });
+    }
 
     const [user] = await query(
       'SELECT * FROM users WHERE id = ? AND actif = TRUE',
@@ -216,15 +238,18 @@ router.post('/refresh', async (req, res) => {
     );
     if (!user) return res.status(401).json({ error: 'Compte invalide' });
 
-    // Rotation du refresh token
+    // Rotation atomique : DELETE + INSERT dans la même transaction pour
+    // éviter de perdre la session si le serveur crashe entre les deux.
     const newRefresh = signRefresh(user);
     const expiresAt  = new Date(Date.now() + REFRESH_DB_DAYS * 24 * 3600 * 1000);
 
-    await query('DELETE FROM refresh_tokens WHERE id = ?', [stored.id]);
-    await query(
-      'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
-      [user.id, hashToken(newRefresh), expiresAt]
-    );
+    await withTransaction(async (conn) => {
+      await conn.execute('DELETE FROM refresh_tokens WHERE id = ?', [stored.id]);
+      await conn.execute(
+        'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+        [user.id, hashToken(newRefresh), expiresAt]
+      );
+    });
 
     res.cookie('refreshToken', newRefresh, cookieOpts(true));
 
@@ -237,10 +262,23 @@ router.post('/refresh', async (req, res) => {
 // ── POST /api/auth/logout ─────────────────────────────────────
 router.post('/logout', async (req, res) => {
   const token = req.cookies?.refreshToken;
+  let userId = null, username = null;
   if (token) {
+    // Récupérer user_id + username avant suppression pour l'audit
+    const [row] = await query(
+      `SELECT rt.user_id, u.username
+       FROM refresh_tokens rt JOIN users u ON u.id = rt.user_id
+       WHERE rt.token_hash = ?`,
+      [hashToken(token)]
+    );
+    if (row) { userId = row.user_id; username = row.username; }
     await query('DELETE FROM refresh_tokens WHERE token_hash = ?', [hashToken(token)]);
   }
   res.clearCookie('refreshToken', clearCookieOpts());
+  if (userId) {
+    req.user = { id: userId, username };
+    audit(req, 'logout', 'user', userId);
+  }
   res.json({ message: 'Déconnecté' });
 });
 
@@ -284,6 +322,7 @@ router.post('/change-password', requireAuth, [
     // Invalider tous les refresh tokens
     await query('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.id]);
     res.clearCookie('refreshToken', clearCookieOpts());
+    audit(req, 'password_reset', 'user', req.user.id, { source: 'self-change' });
     res.json({ message: 'Mot de passe modifié — reconnectez-vous' });
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
@@ -321,6 +360,8 @@ router.post('/forgot-password', [
           req.ip
         ]
       );
+      // Audit anonyme (pas de req.user en contexte public, mais on trace l'IP)
+      audit(req, 'password_reset', 'user', user.id, { source: 'forgot-form', email });
     }
 
     // Réponse neutre dans tous les cas (anti-énumération)
@@ -350,6 +391,8 @@ router.post('/admin-reset/:userId', requireAuth, requireAdmin, async (req, res) 
     );
     const baseUrl = req.headers.origin || `http://localhost:${process.env.PORT || 3000}`;
     const resetLink = `${baseUrl}/reset-password.html?token=${token}`;
+
+    audit(req, 'password_reset', 'user', user.id, { source: 'admin-reset', adminId: req.user.id });
 
     res.json({
       user: { id: user.id, prenom: user.prenom, nom: user.nom, email: user.email },
@@ -398,6 +441,9 @@ router.post('/reset-password', [
 
     // Invalider les sessions actives
     await query('DELETE FROM refresh_tokens WHERE user_id = ?', [user.id]);
+
+    req.user = { id: user.id };
+    audit(req, 'password_reset', 'user', user.id, { source: 'reset-link' });
 
     res.json({ message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' });
   } catch (err) {

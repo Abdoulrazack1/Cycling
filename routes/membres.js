@@ -4,6 +4,7 @@ const bcrypt  = require('bcryptjs');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { audit } = require('../services/audit-log');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -86,6 +87,7 @@ router.patch('/:id/actif', requireAuth, requireAdmin, [
       }
     }
     await query('UPDATE users SET actif = ? WHERE id = ?', [req.body.actif ? 1 : 0, req.params.id]);
+    audit(req, 'update', 'membre', req.params.id, { field: 'actif', value: req.body.actif });
     res.json({ message: 'Statut mis à jour' });
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
@@ -114,6 +116,7 @@ router.patch('/:id/role', requireAuth, requireAdmin, [
       }
     }
     await query('UPDATE users SET role = ? WHERE id = ?', [req.body.role, req.params.id]);
+    audit(req, 'role_change', 'membre', req.params.id, { newRole: req.body.role });
     res.json({ message: 'Rôle mis à jour' });
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
 });
