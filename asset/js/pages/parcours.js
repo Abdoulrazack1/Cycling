@@ -41,13 +41,26 @@
     autre:  { color: '#B08E4A', label: 'Route' }
   };
 
+  // Banque photos Unsplash par type (fallback SVG local)
+  const PHOTO_BY_TYPE = {
+    pave:   { url: 'https://images.unsplash.com/photo-1493825543344-43c3a90f7c95?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-pave.svg' },
+    mont:   { url: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-monts.svg' },
+    monts:  { url: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-monts.svg' },
+    gravel: { url: 'https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-gravel.svg' },
+    cote:   { url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-cote.svg' },
+    route:  { url: 'https://images.unsplash.com/photo-1518830950923-7d4cf61dbbf6?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-route.svg' },
+    autre:  { url: 'https://images.unsplash.com/photo-1518830950923-7d4cf61dbbf6?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-route.svg' },
+  };
+
   function renderCard(s, i) {
     const type = deduceType(s);
     const style = TYPE_STYLES[type] || TYPE_STYLES.autre;
+    const photo = PHOTO_BY_TYPE[type] || PHOTO_BY_TYPE.autre;
+    const imgSrc = s.card_img || s.hero_img || photo.url;
     return `
       <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="rc" data-type="${type}">
         <div class="rc-img">
-          <img src="${s.card_img || s.hero_img || 'asset/img/hero-route.svg'}" alt="" loading="lazy">
+          <img src="${imgSrc}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${photo.svg}'">
           <div class="rc-img-frame"></div>
           <div class="rc-sv-badge">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
