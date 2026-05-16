@@ -28,6 +28,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 
 const generator = require('../services/course-generator');
@@ -74,7 +75,7 @@ router.get('/scrape', requireAuth, requireAdmin, async (req, res) => {
     });
   } catch (err) {
     logger.error({ err }, '[auto-courses scrape]');
-    res.status(500).json({ error: err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
@@ -129,7 +130,7 @@ router.post('/generate', requireAuth, requireAdmin, async (req, res) => {
     });
   } catch (err) {
     logger.error({ err }, '[auto-courses generate]');
-    res.status(500).json({ error: err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 

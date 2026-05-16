@@ -3,6 +3,7 @@ const express = require('express');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { scrapeAll } = require('../services/course-scraper');
 const { query } = require('../config/database');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -38,8 +39,7 @@ router.get('/scraper-health', requireAuth, requireAdmin, async (req, res) => {
       log,
     });
   } catch (err) {
-    req.log.error({ err }, 'scraper-health failed');
-    res.status(500).json({ status: 'error', error: err.message });
+    errResponse(req, res, err, 500, 'Erreur scraper-health');
   }
 });
 
@@ -86,7 +86,7 @@ router.get('/audit', requireAuth, requireAdmin, async (req, res) => {
       return res.status(503).json({ error: 'Table audit_log absente — appliquer migrations/003_audit_log.sql' });
     }
     req.log.error({ err }, 'audit listing failed');
-    res.status(500).json({ error: err.sqlMessage || err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
@@ -106,7 +106,7 @@ router.post('/audit/purge', requireAuth, requireAdmin, async (req, res) => {
     res.json({ message: `${result.affectedRows} entrées purgées (> ${days} jours)` });
   } catch (err) {
     req.log.error({ err }, 'audit purge failed');
-    res.status(500).json({ error: err.sqlMessage || err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 

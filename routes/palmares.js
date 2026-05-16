@@ -4,6 +4,7 @@ const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /palmares]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -66,8 +67,7 @@ router.post('/', requireAuth, requireModo, [
     audit(req, 'create', 'palmares', result.insertId, { annee: p.annee, evenement: p.evenement, medaille: p.medaille });
     res.status(201).json(created);
   } catch (err) {
-    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /palmares]');
-    res.status(500).json({ error: 'Erreur lors de l\'ajout : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur lors de l\'ajout');
   }
 });
 
@@ -93,7 +93,7 @@ router.put('/:id', requireAuth, requireModo, [
     res.json(updated);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[PUT /palmares/:id]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -105,7 +105,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     res.json({ message: 'Supprimé' });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /palmares/:id]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 

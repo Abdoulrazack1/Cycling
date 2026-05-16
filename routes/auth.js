@@ -9,6 +9,7 @@ const { query, withTransaction } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 
 // otplib v13 API : on construit notre propre wrapper compatible avec
@@ -16,19 +17,14 @@ const logger = require('../lib/logger');
 // v13 a TOUT changé : generate/verify sont async (Promise), versions sync
 // = *Sync, verify renvoie { valid, delta, epoch, timeStep }, URI utilise
 // `label` au lieu de `account`.
-const TOTP_OPTS = { algorithm: 'sha1', digits: 6, period: 30 };
+// Tolérance ±1 fenêtre de 30s pour absorber le drift d'horloge.
+const TOTP_OPTS = { algorithm: 'sha1', digits: 6, period: 30, window: 1 };
 const totpLib = {
   generateSecret: () => otp.generateSecret({ algorithm: 'sha1' }),
   verify: ({ token, secret }) => {
     try {
-      // Vérifier le code courant + ±1 fenêtre (manuel : v13 n'expose plus de window)
-      const opts = TOTP_OPTS;
-      const now = Math.floor(Date.now() / 1000);
-      for (const delta of [0, -opts.period, opts.period]) {
-        const r = otp.verifySync({ token, secret, options: opts, time: now + delta });
-        if (r?.valid) return true;
-      }
-      return false;
+      const r = otp.verifySync({ token, secret, options: TOTP_OPTS });
+      return !!(r && r.valid);
     } catch { return false; }
   },
   keyuri: (account, issuer, secret) =>
@@ -123,9 +119,9 @@ function userPublic(u) {
 
 // ── POST /api/auth/login ──────────────────────────────────────
 router.post('/login', [
-  body('login').notEmpty().trim(),
-  body('password').notEmpty(),
-  body('totp').optional().isString(),
+  body('login').notEmpty().trim().isLength({ max: 254 }),
+  body('password').notEmpty().isLength({ max: 200 }),
+  body('totp').optional().isString().isLength({ max: 20 }),
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
@@ -154,8 +150,8 @@ router.post('/login', [
       if (/^\d{6}$/.test(code)) {
         try { mfaOk = totpLib.verify({ token: code, secret: user.totp_secret }); } catch {}
       }
-      // Sinon, essayer un code de récupération (8 caractères alphanum)
-      if (!mfaOk && /^[a-z0-9]{8,12}$/i.test(code) && user.totp_backup_codes) {
+      // Sinon, essayer un code de récupération (6-12 caractères alphanum)
+      if (!mfaOk && /^[a-z0-9]{6,12}$/i.test(code) && user.totp_backup_codes) {
         const backup = (typeof user.totp_backup_codes === 'string')
           ? JSON.parse(user.totp_backup_codes) : user.totp_backup_codes;
         const codeHash = crypto.createHash('sha256').update(code.toLowerCase()).digest('hex');
@@ -198,7 +194,7 @@ router.post('/login', [
     });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -206,10 +202,12 @@ router.post('/login', [
 router.post('/register', [
   body('username').isLength({ min: 3, max: 30 }).trim().matches(/^[a-zA-Z0-9_.-]+$/)
     .withMessage('Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, points, tirets et underscores'),
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 8 }),
+  body('email').isEmail().normalizeEmail().isLength({ max: 254 }),
+  body('password').isLength({ min: 8, max: 200 }).withMessage('Mot de passe : 8 à 200 caractères'),
   body('prenom').notEmpty().trim().isLength({ max: 50 }),
-  body('nom').notEmpty().trim().isLength({ max: 50 })
+  body('nom').notEmpty().trim().isLength({ max: 50 }),
+  body('licence_ffc').optional({ nullable: true }).trim().isLength({ max: 50 }),
+  body('annee_adhesion').optional({ nullable: true }).isInt({ min: 1900, max: 2100 }),
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) {
@@ -256,7 +254,7 @@ router.post('/register', [
     res.status(201).json({ accessToken, user: userPublic(user) });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[register]');
-    res.status(500).json({ error: 'Erreur lors de l\'inscription : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur lors de l\'inscription');
   }
 });
 
@@ -359,14 +357,14 @@ router.get('/me', requireAuth, async (req, res) => {
     res.json(userPublic(user));
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
 // ── POST /api/auth/change-password ───────────────────────────
 router.post('/change-password', requireAuth, [
-  body('current_password').notEmpty(),
-  body('new_password').isLength({ min: 8 })
+  body('current_password').notEmpty().isLength({ max: 200 }),
+  body('new_password').isLength({ min: 8, max: 200 })
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
@@ -385,7 +383,7 @@ router.post('/change-password', requireAuth, [
     audit(req, 'password_reset', 'user', req.user.id, { source: 'self-change' });
     res.json({ message: 'Mot de passe modifié — reconnectez-vous' });
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -430,7 +428,7 @@ router.post('/forgot-password', [
     });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -461,7 +459,7 @@ router.post('/admin-reset/:userId', requireAuth, requireAdmin, async (req, res) 
     });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -469,8 +467,8 @@ router.post('/admin-reset/:userId', requireAuth, requireAdmin, async (req, res) 
 // L'utilisateur arrive avec un token (lien généré par admin-reset ou
 // envoyé par email) et choisit un nouveau mot de passe.
 router.post('/reset-password', [
-  body('token').notEmpty(),
-  body('new_password').isLength({ min: 8 }).withMessage('Mot de passe : 8 caractères minimum')
+  body('token').notEmpty().isLength({ max: 1024 }),
+  body('new_password').isLength({ min: 8, max: 200 }).withMessage('Mot de passe : 8 à 200 caractères')
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) {
@@ -508,7 +506,7 @@ router.post('/reset-password', [
     res.json({ message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' });
   } catch (err) {
     logger.error({ err }, '[reset-password]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -528,11 +526,14 @@ router.post('/reset-password', [
 function genBackupCodes() {
   // 8 codes de 10 caractères a-z0-9. On stocke les hashs sha256, on
   // renvoie les codes clairs UNE SEULE FOIS (à imprimer).
+  // On itère tant que le code généré ne fait pas pile 10 chars (rare,
+  // ~1 fois sur 100 quand le tirage base64 produit des / ou + filtrés).
   const codes = [];
   const hashes = [];
-  for (let i = 0; i < 8; i++) {
-    const c = crypto.randomBytes(6).toString('base64')
+  while (codes.length < 8) {
+    const c = crypto.randomBytes(8).toString('base64')
       .replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 10);
+    if (c.length !== 10) continue;
     codes.push(c);
     hashes.push(crypto.createHash('sha256').update(c).digest('hex'));
   }
@@ -557,7 +558,7 @@ router.post('/2fa/setup', requireAuth, requireAdmin, async (req, res) => {
     res.json({ secret, otpauth, qrDataUrl, label });
   } catch (err) {
     req.log.error({ err }, '2FA setup failed');
-    res.status(500).json({ error: err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
@@ -587,7 +588,7 @@ router.post('/2fa/activate', requireAuth, requireAdmin, [
     });
   } catch (err) {
     req.log.error({ err }, '2FA activation failed');
-    res.status(500).json({ error: err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
@@ -618,7 +619,7 @@ router.post('/2fa/disable', requireAuth, requireAdmin, [
     res.json({ message: '2FA désactivée' });
   } catch (err) {
     req.log.error({ err }, '2FA disable failed');
-    res.status(500).json({ error: err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
@@ -635,7 +636,7 @@ router.get('/2fa/status', requireAuth, async (req, res) => {
       backup_codes_remaining: user?.backup_remaining || 0,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
