@@ -11,6 +11,7 @@ const { audit } = require('../services/audit-log');
 // Cf. AUDIT item #8 — un seul dossier GPX partagé entre /api/gpx/upload
 // (multer disque) et /api/sorties/import-gpx (multer mémoire).
 const { GPX_DIR: ASSET_GPX_DIR, isLikelyGpx } = require('../middleware/upload');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 
 const router = express.Router();
@@ -169,7 +170,7 @@ router.get('/', async (req, res) => {
     res.json({ sorties, total: cnt });
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -189,7 +190,7 @@ router.get('/:id', async (req, res) => {
     res.json(sortie);
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -372,7 +373,7 @@ router.put('/:id', requireAuth, requireModo, [
     res.json(sortie);
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -387,7 +388,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     res.json({ message: 'Sortie supprimée', id: row.id, title: row.title });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /sorties/:id]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -464,8 +465,7 @@ router.post('/import-gpx',
         fs.writeFileSync(gpxPath, req.file.buffer);
         logger.info(`[import-gpx] GPX écrit dans ${gpxPath}`);
       } catch (err) {
-        logger.error('[import-gpx] fs.writeFileSync error:', err);
-        return res.status(500).json({ error: `Impossible d'écrire le fichier GPX : ${err.message}` });
+        return errResponse(req, res, err, 500, 'Impossible d\'écrire le fichier GPX sur le serveur');
       }
 
       // 5. Construire l'objet sortie
@@ -551,8 +551,7 @@ router.post('/import-gpx',
         }
       });
     } catch (err) {
-      logger.error('[import-gpx] erreur inattendue:', err);
-      res.status(500).json({ error: 'Erreur serveur : ' + (err.message || 'inconnue') });
+      errResponse(req, res, err, 500, 'Erreur lors de l\'import GPX');
     }
   }
 );
@@ -602,7 +601,7 @@ router.get('/orphan-gpx/list', requireAuth, requireAdmin, async (req, res) => {
     res.json({ orphans, total_files: files.length, used_count: used.size });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /orphan-gpx]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.message || err.sqlMessage) });
+    errResponse(req, res, err, 500, 'Erreur serveur');
   }
 });
 
@@ -702,8 +701,7 @@ router.get('/:id/diagnose', requireAuth, requireAdmin, async (req, res) => {
       view_url: `/sortie.html?id=${encodeURIComponent(row.id)}`
     });
   } catch (err) {
-    logger.error({ err }, '[diagnose]');
-    res.status(500).json({ error: 'Erreur diagnostic : ' + (err.message) });
+    errResponse(req, res, err, 500, 'Erreur diagnostic');
   }
 });
 

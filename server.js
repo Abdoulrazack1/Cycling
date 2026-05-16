@@ -338,8 +338,9 @@ app.get('/api/health', async (req, res) => {
       await query('SELECT 1');
       out.db = { ok: true, latency_ms: Date.now() - t0 };
     } catch (err) {
+      logger.error({ err }, 'health check DB ping failed');
       out.status = 'degraded';
-      out.db = { ok: false, error: err.message };
+      out.db = { ok: false }; // pas d'err.message en réponse — log côté serveur uniquement
       return res.status(503).json(out);
     }
   }

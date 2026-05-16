@@ -217,6 +217,20 @@
         </div>
 
         <div class="profile-security-card">
+          <div class="ps-card-title">Confidentialité de mon profil</div>
+          <div class="ps-card-desc">
+            Par défaut, votre <strong>bio</strong> n'est visible que par vous et par les admins du club.
+            Cochez ci-dessous pour la rendre visible sur votre fiche publique.
+          </div>
+          <label class="auth-checkbox" for="bio-public-toggle" style="margin-top:18px;">
+            <input id="bio-public-toggle" type="checkbox">
+            <span class="auth-checkbox-box" aria-hidden="true"></span>
+            <span>Rendre ma bio publique</span>
+          </label>
+          <div id="bio-public-status" style="margin-top:8px; font-size:12px; opacity:.7;"></div>
+        </div>
+
+        <div class="profile-security-card">
           <div class="ps-card-title">Session</div>
           <div class="ps-card-desc">
             Vous êtes connecté en tant que <b id="ps-user-label">—</b>.

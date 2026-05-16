@@ -2,6 +2,7 @@
 const express = require('express');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
     })));
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[GET /pois]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -55,7 +56,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     res.json({ message: 'POI supprimé' });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /pois/:id]');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 

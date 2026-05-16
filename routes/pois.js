@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin, optionalAuth } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 
 const router = express.Router({ mergeParams: true }); // :sortieId hérité
@@ -31,7 +32,7 @@ router.get('/', async (req, res) => {
     res.json(rows.map(formatPoi));
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -71,7 +72,7 @@ router.post('/', requireAuth, [
     res.status(201).json(formatPoi(row));
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -103,7 +104,7 @@ router.post('/bulk', requireAuth, requireAdmin, async (req, res) => {
     res.json(rows.map(formatPoi));
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -132,7 +133,7 @@ router.put('/:poiId', requireAuth, async (req, res) => {
     res.json(formatPoi(updated));
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -152,7 +153,7 @@ router.delete('/:poiId', requireAuth, async (req, res) => {
     res.json({ message: 'POI supprimé' });
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
