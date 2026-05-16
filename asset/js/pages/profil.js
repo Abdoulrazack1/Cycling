@@ -41,6 +41,54 @@
   const bioEl = document.getElementById('profile-bio');
   if (bioEl) bioEl.textContent = profile.bio || '';
 
+  // ── Toggle bio_public (Brief RGPD) ────────────────────────────
+  const bioToggle = document.getElementById('bio-public-toggle');
+  const bioStatus = document.getElementById('bio-public-status');
+  if (bioToggle) {
+    bioToggle.checked = !!profile.bio_public;
+    bioStatus.textContent = profile.bio_public
+      ? '✓ Visible publiquement sur votre fiche /membres/' + profile.id
+      : 'Visible uniquement par vous et les admins.';
+    bioToggle.addEventListener('change', async () => {
+      const newVal = bioToggle.checked;
+      bioToggle.disabled = true;
+      bioStatus.textContent = 'Enregistrement…';
+      try {
+        const API = window.CCS_CONFIG?.apiBase || '/api';
+        const token = window.CCS_AUTH?.getToken?.();
+        const res = await fetch(`${API}/membres/${profile.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: 'Bearer ' + token } : {}),
+          },
+          body: JSON.stringify({
+            bio: profile.bio || null,
+            bio_public: newVal,
+            ftp_w: profile.ftp_w,
+            km_saison: profile.km_saison,
+            elevation_saison: profile.elevation_saison,
+            licence_ffc: profile.licence_ffc,
+            annee_adhesion: profile.annee_adhesion,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'HTTP ' + res.status);
+        }
+        profile.bio_public = newVal;
+        bioStatus.textContent = newVal
+          ? '✓ Visible publiquement sur votre fiche /membres/' + profile.id
+          : '✓ Bio repassée en privée.';
+      } catch (err) {
+        bioToggle.checked = !newVal;
+        bioStatus.textContent = '✗ Erreur : ' + err.message;
+      } finally {
+        bioToggle.disabled = false;
+      }
+    });
+  }
+
   const kmEl = document.getElementById('profile-km');
   if (kmEl) kmEl.innerHTML = `${(profile.km_saison || 0).toLocaleString('fr-FR')}<span class="unit">km</span>`;
 

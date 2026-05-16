@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 const router = express.Router();
 
@@ -61,7 +62,7 @@ router.post('/', [
     res.status(201).json({ message: 'Message envoyé', id: result.insertId });
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
-    res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur serveur :');
   }
 });
 
@@ -76,7 +77,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
     const rows = await query(sql, params);
     const [{ total }] = await query('SELECT COUNT(*) AS total FROM contacts');
     res.json({ messages: rows, total });
-  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message), code: err.code }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); errResponse(req, res, err, 500, 'Erreur serveur :'); }
 });
 
 // PATCH /api/contact/:id/statut
@@ -88,7 +89,7 @@ router.patch('/:id/statut', requireAuth, requireAdmin, async (req, res) => {
   try {
     await query('UPDATE contacts SET statut=? WHERE id=?', [statut, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
-  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); res.status(500).json({ error: 'Erreur serveur : ' + (err.sqlMessage || err.message) }); }
+  } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); errResponse(req, res, err, 500, 'Erreur serveur :'); }
 });
 
 module.exports = router;
