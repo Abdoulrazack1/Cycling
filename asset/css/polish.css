@@ -1997,3 +1997,89 @@ img, video, svg {
   height: auto;
 }
 
+
+/* ═════════════════════════════════════════════════════════════
+   PHOTOS — traitement visuel des images réelles (Unsplash)
+   Ajouté après que les SVG plats ont été remplacés par des photos
+   ═════════════════════════════════════════════════════════════ */
+
+/* Images des cards : object-fit cover, ratio 4/3, transition zoom */
+.rc-img {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink-3, #152A22); /* couleur de fond pendant le chargement */
+}
+.rc-img > img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block;
+  transition: transform 700ms cubic-bezier(.2, .7, .2, 1),
+              filter 400ms ease;
+  filter: saturate(0.92) contrast(1.04);
+}
+.rc:hover .rc-img > img,
+.rc:focus-visible .rc-img > img {
+  transform: scale(1.05);
+  filter: saturate(1) contrast(1.08);
+}
+
+/* Gradient overlay du bas → texte lisible sur photo */
+.rc-img::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 55%;
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 20, 16, 0.55) 60%, rgba(10, 20, 16, 0.85) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+.rc-img-frame,
+.rc-sv-badge,
+.rc-tags,
+.rc-number,
+.rc-caption {
+  z-index: 2; /* au-dessus du gradient */
+}
+
+/* Hero principal — filtre + breathe doux (preserve animation existante) */
+.hero-bg > img,
+.page-head > img,
+.parch-head > img {
+  filter: saturate(0.85) contrast(1.08) brightness(0.92) !important;
+}
+
+/* Image de fond manifesto / join-band — vignettage doux */
+.manif-bg > img,
+.join-band-bg > img,
+.story-img > img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  filter: saturate(0.7) contrast(1.05) brightness(0.55);
+  transition: transform 1.2s var(--smooth, cubic-bezier(.25,.46,.45,.94)),
+              filter 600ms ease;
+}
+.story-img:hover > img,
+.manif:hover > .manif-bg > img {
+  transform: scale(1.03);
+  filter: saturate(0.85) contrast(1.05) brightness(0.62);
+}
+
+/* Skeleton subtil pendant le chargement de la photo */
+.rc-img > img:not([src]),
+.rc-img > img[src=""] {
+  background: linear-gradient(90deg, var(--ink-3) 0%, var(--ink-2) 50%, var(--ink-3) 100%);
+  background-size: 200% 100%;
+  animation: rc-img-shimmer 1.4s linear infinite;
+}
+@keyframes rc-img-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Loading bord brass discret tant que la photo n'est pas chargée */
+.rc-img > img {
+  background-color: var(--ink-3);
+}

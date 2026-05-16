@@ -71,6 +71,25 @@
     return map[type] ?? null;
   }
 
+  // ── Banque de photos Unsplash par thème (fallback SVG local si offline) ──
+  const PHOTO_POOL = {
+    pave:    { url: 'https://images.unsplash.com/photo-1493825543344-43c3a90f7c95?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-pave.svg' },
+    monts:   { url: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-monts.svg' },
+    gravel:  { url: 'https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-gravel.svg' },
+    cote:    { url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-cote.svg' },
+    peloton: { url: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-peloton.svg' },
+    route:   { url: 'https://images.unsplash.com/photo-1518830950923-7d4cf61dbbf6?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-route.svg' },
+  };
+  function pickPhoto(s) {
+    const haystack = ((s.title || '') + ' ' + (s.chapter || '') + ' ' + (s.subtitle || '') + ' ' + (s.slug || '')).toLowerCase();
+    if (/pav[éeè]|roubaix|arenberg/.test(haystack)) return PHOTO_POOL.pave;
+    if (/mont|kemmel|flandre|hellingen/.test(haystack)) return PHOTO_POOL.monts;
+    if (/gravel|chemin|for[êe]t|scarpe/.test(haystack)) return PHOTO_POOL.gravel;
+    if (/c[ôo]te|opale|cap|bord|mer/.test(haystack)) return PHOTO_POOL.cote;
+    if (/peloton|sortie|groupe/.test(haystack)) return PHOTO_POOL.peloton;
+    return PHOTO_POOL.route;
+  }
+
   function renderCard(s) {
     const tags = (s.tags || []).filter(t => t.type === 'live' || t.type === 'brass').slice(0, 1);
     const tagHtml = tags.map(t =>
@@ -80,11 +99,14 @@
     ).join('');
     const lat = s.location?.lat || '';
     const lng = s.location?.lng || '';
+    // Photo prioritaire : card_img/hero_img si DB, sinon photo Unsplash mappée
+    const photo = pickPhoto(s);
+    const imgSrc = s.card_img || s.hero_img || photo.url;
     return `
       <div class="rc-wrap">
         <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="rc">
           <div class="rc-img">
-            <img src="${s.card_img || s.hero_img || 'asset/img/hero-route.svg'}" alt="" loading="lazy">
+            <img src="${imgSrc}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${photo.svg}'">
             <div class="rc-img-frame"></div>
             <div class="rc-sv-badge">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
