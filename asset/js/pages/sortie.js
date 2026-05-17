@@ -21,3 +21,17 @@
   };
   tryInit();
 })();
+
+/* ─── Galerie photos : se charge quand on connaît l'id de la sortie ─── */
+(function initPhotoGallery() {
+  const tryInit = (attempt = 0) => {
+    const sortie = window.CCS_SORTIE_STATE?.sortie;
+    if (!sortie?.id) {
+      if (attempt < 80) return setTimeout(() => tryInit(attempt + 1), 200);
+      return;
+    }
+    if (!window.CCS_GALLERY) return;
+    window.CCS_GALLERY.load(sortie.id);
+  };
+  tryInit();
+})();

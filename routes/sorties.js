@@ -6,7 +6,8 @@ const multer  = require('multer');
 const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');
 const { body, param, query: qv, validationResult } = require('express-validator');
-const { parseGpx } = require('../services/gpx-parser');
+const { parseGpx, haversineMeters } = require('../services/gpx-parser');
+const { parseStravaCueSheet } = require('../utils/parse-strava-cue');
 const { audit } = require('../services/audit-log');
 // Cf. AUDIT item #8 — un seul dossier GPX partagé entre /api/gpx/upload
 // (multer disque) et /api/sorties/import-gpx (multer mémoire).
@@ -392,6 +393,91 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ── Photos de sortie ────────────────────────────────────────────
+// Stockage sur disque dans asset/img/sorties/{sortie_id}/{timestamp}-{originalname}
+const SORTIES_PHOTOS_DIR = path.join(__dirname, '..', 'asset', 'img', 'sorties');
+if (!fs.existsSync(SORTIES_PHOTOS_DIR)) fs.mkdirSync(SORTIES_PHOTOS_DIR, { recursive: true });
+
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024, files: 8 }, // 8 MB / photo, jusqu'à 8 photos / requête
+  fileFilter: (req, file, cb) => {
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) {
+      return cb(new Error('Format image accepté : JPEG, PNG, WebP, GIF'));
+    }
+    cb(null, true);
+  },
+});
+
+router.get('/:id/photos', async (req, res) => {
+  try {
+    const rows = await query(
+      'SELECT id, url, caption, sort_order, created_at FROM sortie_photos WHERE sortie_id = ? ORDER BY sort_order, id',
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur récupération photos');
+  }
+});
+
+router.post('/:id/photos', requireAuth, requireModo,
+  (req, res, next) => {
+    photoUpload.array('photos', 8)(req, res, (err) => {
+      if (err) return res.status(400).json({ error: 'Upload échoué : ' + err.message });
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      const [sortie] = await query('SELECT id FROM sorties WHERE id = ?', [req.params.id]);
+      if (!sortie) return res.status(404).json({ error: 'Sortie introuvable' });
+      if (!req.files?.length) return res.status(400).json({ error: 'Aucune photo' });
+
+      const dir = path.join(SORTIES_PHOTOS_DIR, req.params.id);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+      const [maxRow] = await query('SELECT COALESCE(MAX(sort_order), 0) AS m FROM sortie_photos WHERE sortie_id = ?', [req.params.id]);
+      let sortOrder = (maxRow?.m || 0) + 10;
+
+      const inserted = [];
+      for (const file of req.files) {
+        const ext = (path.extname(file.originalname) || '.jpg').toLowerCase().replace(/[^.a-z0-9]/g, '');
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+        const filepath = path.join(dir, filename);
+        fs.writeFileSync(filepath, file.buffer);
+        const url = `asset/img/sorties/${req.params.id}/${filename}`;
+        const r = await query(
+          'INSERT INTO sortie_photos (sortie_id, url, caption, sort_order, created_by) VALUES (?, ?, ?, ?, ?)',
+          [req.params.id, url, req.body.caption || null, sortOrder, req.user.id]
+        );
+        inserted.push({ id: r.insertId, url, caption: req.body.caption || null, sort_order: sortOrder });
+        sortOrder += 10;
+      }
+      res.status(201).json({ added: inserted.length, photos: inserted });
+    } catch (err) {
+      errResponse(req, res, err, 500, 'Erreur upload photos');
+    }
+  }
+);
+
+router.delete('/:id/photos/:photoId', requireAuth, requireModo, async (req, res) => {
+  try {
+    const rows = await query(
+      'SELECT id, url FROM sortie_photos WHERE id = ? AND sortie_id = ?',
+      [req.params.photoId, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Photo introuvable' });
+    const photo = rows[0];
+    const filepath = path.join(__dirname, '..', photo.url);
+    try { if (fs.existsSync(filepath)) fs.unlinkSync(filepath); } catch {}
+    await query('DELETE FROM sortie_photos WHERE id = ?', [photo.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur suppression photo');
+  }
+});
+
 // ── POST /api/sorties/import-gpx ────────────────────────────────
 // Upload d'un GPX + métadonnées de formulaire → crée la sortie.
 // Le serveur parse le GPX, calcule distance/D+/D-/coords départ
@@ -469,14 +555,24 @@ router.post('/import-gpx',
       }
 
       // 5. Construire l'objet sortie
-      const chapter = req.body.chapter || 'route';
+      // Détection auto du type depuis le titre si possible (override le champ "chapter")
+      const titleLower = title.toLowerCase();
+      let chapter = req.body.chapter || 'route';
+      if (/contre.?la.?montre|\bclm\b|prologue|chrono/.test(titleLower)) chapter = 'clm';
+      else if (/pav[éeè]|roubaix|arenberg/.test(titleLower))             chapter = 'pave';
+      else if (/mont|kemmel|flandre|hellingen/.test(titleLower))         chapter = 'monts';
+      else if (/gravel|chemin|for[êe]t|scarpe/.test(titleLower))         chapter = 'gravel';
+      else if (/c[ôo]te|opale|cap\b|bord de mer/.test(titleLower))       chapter = 'cote';
+
+      // hero_img : photo WebP (rendu réaliste pour la section hero), pas le SVG décoratif
       const heroMap = {
-        route:   'asset/img/hero-route.svg',
-        gravel:  'asset/img/hero-gravel.svg',
-        cote:    'asset/img/hero-cote.svg',
-        monts:   'asset/img/hero-monts.svg',
-        pave:    'asset/img/hero-pave.svg',
-        peloton: 'asset/img/hero-peloton.svg',
+        route:   'asset/img/img-route.webp',
+        gravel:  'asset/img/img-gravel.webp',
+        cote:    'asset/img/img-cote.webp',
+        monts:   'asset/img/img-monts.webp',
+        pave:    'asset/img/img-pave.webp',
+        peloton: 'asset/img/img-peloton.webp',
+        clm:     'asset/img/img-clm.webp',
       };
       const sortieData = {
         id, slug,
@@ -494,7 +590,7 @@ router.post('/import-gpx',
         elevation_max:   metrics.elevation_max,
         elevation_min:   metrics.elevation_min,
         hero_img:        req.body.hero_img || heroMap[chapter] || heroMap.route,
-        card_img:        null,
+        card_img:        req.body.card_img || heroMap[chapter] || heroMap.route,
         location_name:   req.body.location_name?.trim() || null,
         location_lat:    metrics.start.lat,
         location_lng:    metrics.start.lng,
@@ -535,7 +631,50 @@ router.post('/import-gpx',
         });
       }
 
-      // 7. Retourner la sortie créée
+      // 7. Cue sheet Strava (optionnel) → POIs directions
+      let poisCreated = 0;
+      const cueSheet = req.body.cue_sheet?.trim();
+      if (cueSheet) {
+        const directions = parseStravaCueSheet(cueSheet);
+        if (directions.length > 0) {
+          // Index km cumulés sur le tracé GPX pour mapper chaque direction → coord
+          const pts = metrics.points;
+          const kmAt = new Float64Array(pts.length);
+          let acc = 0;
+          for (let i = 1; i < pts.length; i++) {
+            acc += haversineMeters(pts[i - 1], pts[i]);
+            kmAt[i] = acc / 1000;
+          }
+          const gpxTotalKm = kmAt[pts.length - 1] || metrics.distance_km;
+          const cueTotalKm = directions[directions.length - 1].km || gpxTotalKm;
+          const scale = cueTotalKm > 0 ? gpxTotalKm / cueTotalKm : 1;
+
+          for (let i = 0; i < directions.length; i++) {
+            const d = directions[i];
+            const targetKm = Math.min(d.km * scale, gpxTotalKm);
+            let bestIdx = 0, bestDiff = Math.abs(kmAt[0] - targetKm);
+            for (let j = 1; j < kmAt.length; j++) {
+              const diff = Math.abs(kmAt[j] - targetKm);
+              if (diff < bestDiff) { bestDiff = diff; bestIdx = j; }
+            }
+            const pt = pts[bestIdx];
+            const poiId = `${slug}-d${String(i + 1).padStart(2, '0')}`;
+            try {
+              await query(
+                `INSERT INTO pois (id, sortie_id, type, label, description, km, lat, lng, user_added, created_by)
+                 VALUES (?,?,?,?,?,?,?,?,FALSE,?)`,
+                [poiId, id, d.type, d.label, d.desc, d.km, pt.lat, pt.lng, req.user.id]
+              );
+              poisCreated++;
+            } catch (poiErr) {
+              logger.error('[import-gpx] POI insert error:', poiErr.code, poiErr.sqlMessage || poiErr.message);
+            }
+          }
+          logger.info(`[import-gpx] ${poisCreated}/${directions.length} POI(s) directions créés`);
+        }
+      }
+
+      // 8. Retourner la sortie créée
       const [row] = await query('SELECT * FROM sorties WHERE id = ?', [id]);
       const sortie = await buildSortie(row);
       res.status(201).json({
@@ -548,7 +687,8 @@ router.post('/import-gpx',
           start:          metrics.start,
           end:            metrics.end,
           bbox:           metrics.bbox,
-        }
+        },
+        pois_created: poisCreated,
       });
     } catch (err) {
       errResponse(req, res, err, 500, 'Erreur lors de l\'import GPX');

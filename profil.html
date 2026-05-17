@@ -90,6 +90,7 @@
         <div class="sec-head-right">
           <h2 class="d-l sec-head-title">Équipement</h2>
           <p class="sec-head-desc">Matériel actuel — vélos, cockpit, GPS, home trainer. Mis à jour après chaque acquisition significative.</p>
+          <button class="btn btn-ghost btn-sm" id="equip-add-btn" type="button" style="margin-top:14px;">+ Ajouter un équipement</button>
         </div>
       </div>
       <div class="equip-grid" id="equip-grid" data-reveal data-delay="100">
@@ -245,6 +246,27 @@
   </section>
 
   </main>
+
+  <!-- Modal édition équipement -->
+  <div id="equip-modal" hidden style="position:fixed; inset:0; background:rgba(8,14,11,.85); backdrop-filter:blur(8px); z-index:1500; display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--ink-2); border:1px solid var(--line); padding:28px 32px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto;">
+      <div style="font-family:var(--f-disp); font-size:24px; color:var(--brass); margin-bottom:18px;" id="equip-modal-title">Nouvel équipement</div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Titre <span style="color:var(--brass);">*</span></label>
+        <input id="equip-titre" type="text" maxlength="200" placeholder="Ex : Canyon Ultimate CF SLX" style="width:100%; padding:10px 14px; font-family:var(--f-sans); font-size:13px; background:var(--ink-3); border:1px solid var(--line); color:var(--t-cream);">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Description</label>
+        <textarea id="equip-desc" rows="4" maxlength="1000" placeholder="Cadre carbone · 7,2 kg · Shimano Dura-Ace Di2 12v · roues Zipp 303" style="width:100%; padding:10px 14px; font-family:var(--f-sans); font-size:13px; background:var(--ink-3); border:1px solid var(--line); color:var(--t-cream); resize:vertical;"></textarea>
+      </div>
+      <div id="equip-modal-err" hidden style="color:#c08080; font-family:var(--f-sans); font-size:12px; margin-bottom:12px;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-ghost btn-sm" type="button" id="equip-modal-cancel">Annuler</button>
+        <button class="btn btn-brass btn-sm" type="button" id="equip-modal-save">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <script src="asset/js/config.js"></script>
   <script src="asset/js/utils.js"></script>
   <script src="asset/js/data-static.js"></script>

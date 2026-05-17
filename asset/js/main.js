@@ -134,6 +134,14 @@
     if (!document.querySelector('.site-footer')) {
       document.body.insertAdjacentHTML('beforeend', FOOTER_HTML);
     }
+    // Charge la palette de recherche globale (Cmd+K / Ctrl+K) si absente
+    if (!window.CCS_SEARCH && !document.querySelector('script[data-search-palette]')) {
+      const s = document.createElement('script');
+      s.src = 'asset/js/search-palette.js';
+      s.defer = true;
+      s.dataset.searchPalette = '1';
+      document.head.appendChild(s);
+    }
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');
     });

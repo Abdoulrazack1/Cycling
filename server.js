@@ -71,6 +71,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'",
+                  "'wasm-unsafe-eval'",                // Tesseract.js OCR WebAssembly
                   'https://cdnjs.cloudflare.com',
                   'https://unpkg.com',
                   'https://cdn.jsdelivr.net'],
@@ -83,13 +84,19 @@ app.use(helmet({
                   'https://cdnjs.cloudflare.com'],
       imgSrc:    ["'self'", 'data:', 'blob:', 'https:'], // tuiles + Unsplash + favicons
       connectSrc:["'self'",
+                  'data:',                               // Tesseract.js WASM embedded as data URI
+                  'blob:',                               // pdf.js worker (blob URLs)
                   'https://router.project-osrm.org',
                   'https://api.open-meteo.com',
+                  'https://archive-api.open-meteo.com',
                   'https://nominatim.openstreetmap.org',
                   'https://maps.googleapis.com',
                   'https://*.tile.openstreetmap.org',
                   'https://*.basemaps.cartocdn.com',
-                  'https://server.arcgisonline.com'],
+                  'https://server.arcgisonline.com',
+                  'https://tessdata.projectnaptha.com',  // OCR Tesseract.js lang models
+                  'https://unpkg.com',                   // OCR Tesseract.js worker/wasm
+                  'https://cdn.jsdelivr.net'],           // OCR Tesseract.js + pdf.js
       frameSrc:  ["'self'",
                   'https://www.google.com',
                   'https://maps.google.com',
@@ -129,7 +136,17 @@ app.use(cors({
 }));
 
 // ── CSP violation reports ─────────────────────────────────────
-app.post('/csp-report', express.json({ type: 'application/csp-report' }), (req, res) => {
+// Les violations arrivent en burst (jusqu'à 9 par pageload). On limite à 20/min
+// par IP avec silent-drop (204 sans log ni parse) pour éviter de saturer l'event
+// loop avec le body-parsing de gros payloads en parallèle.
+const cspLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: false,
+  legacyHeaders: false,
+  handler: (req, res) => res.status(204).end()
+});
+app.post('/csp-report', cspLimiter, express.json({ type: 'application/csp-report' }), (req, res) => {
   const report = req.body?.['csp-report'] || req.body;
   logger.warn({ report }, 'CSP violation');
   res.status(204).end();
@@ -202,12 +219,16 @@ app.use(cookieParser());
 // sauvages.
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,                                 // bumped from 300
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !!req.headers.authorization, // skip if Bearer token present
+  skip: (req) =>
+    !!req.headers.authorization ||        // admins/membres authentifiés
+    req.path.startsWith('/asset/') ||     // fichiers statiques (défense en profondeur)
+    req.path.startsWith('/uploads/'),     // GPX uploadés
   message: { error: 'Trop de requêtes, réessayez dans 15 minutes' }
 });
+
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -313,6 +334,7 @@ app.use('/api/palmares',   require('./routes/palmares'));
 app.use('/api/gpx',        require('./routes/gpx'));
 app.use('/api/auto-courses', require('./routes/auto-courses'));
 app.use('/api/admin',      require('./routes/admin'));
+app.use('/api/search',     require('./routes/search'));
 app.use('/api/pois',       require('./routes/pois-admin'));
 
 // ── Routes POI — montage avec mergeParams ─────────────────────
