@@ -7,7 +7,7 @@ const otp      = require('otplib');
 const qrcode   = require('qrcode');
 const { query, withTransaction } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
 const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
@@ -344,8 +344,8 @@ router.post('/logout', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const [user] = await query(
-      `SELECT u.*, 
-        JSON_ARRAYAGG(JSON_OBJECT('num', e.num, 'titre', e.titre, 'description', e.description))
+      `SELECT u.*,
+        JSON_ARRAYAGG(JSON_OBJECT('id', e.id, 'num', e.num, 'titre', e.titre, 'description', e.description, 'sort_order', e.sort_order))
           AS equipment
        FROM users u
        LEFT JOIN user_equipment e ON e.user_id = u.id
@@ -358,6 +358,73 @@ router.get('/me', requireAuth, async (req, res) => {
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
     errResponse(req, res, err, 500, 'Erreur serveur :');
+  }
+});
+
+// ── POST /api/auth/equipment ─────────────────────────────────
+// Création d'un équipement pour l'utilisateur connecté
+router.post('/equipment', requireAuth, [
+  body('titre').trim().isLength({ min: 1, max: 200 }),
+  body('description').optional({ checkFalsy: true }).isLength({ max: 1000 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
+  try {
+    const [maxRow] = await query(
+      'SELECT COALESCE(MAX(sort_order), 0) AS m, COALESCE(MAX(num), 0) AS n FROM user_equipment WHERE user_id = ?',
+      [req.user.id]
+    );
+    const sortOrder = (maxRow?.m || 0) + 10;
+    const num       = (maxRow?.n || 0) + 1;
+    const result = await query(
+      'INSERT INTO user_equipment (user_id, num, titre, description, sort_order) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, num, req.body.titre.trim(), req.body.description?.trim() || null, sortOrder]
+    );
+    res.status(201).json({
+      id: result.insertId,
+      num,
+      titre: req.body.titre.trim(),
+      description: req.body.description?.trim() || null,
+      sort_order: sortOrder,
+    });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur création équipement');
+  }
+});
+
+// ── PUT /api/auth/equipment/:id ──────────────────────────────
+router.put('/equipment/:id', requireAuth, [
+  param('id').isInt({ min: 1 }),
+  body('titre').trim().isLength({ min: 1, max: 200 }),
+  body('description').optional({ checkFalsy: true }).isLength({ max: 1000 }),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
+  try {
+    const result = await query(
+      'UPDATE user_equipment SET titre = ?, description = ? WHERE id = ? AND user_id = ?',
+      [req.body.titre.trim(), req.body.description?.trim() || null, req.params.id, req.user.id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Équipement introuvable' });
+    res.json({ ok: true });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur mise à jour');
+  }
+});
+
+// ── DELETE /api/auth/equipment/:id ───────────────────────────
+router.delete('/equipment/:id', requireAuth, [
+  param('id').isInt({ min: 1 }),
+], async (req, res) => {
+  try {
+    const result = await query(
+      'DELETE FROM user_equipment WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Équipement introuvable' });
+    res.json({ ok: true });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur suppression');
   }
 });
 

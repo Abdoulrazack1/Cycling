@@ -531,6 +531,14 @@ ul { list-style: none; }
   transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(176,142,74,.4);
 }
+.btn:disabled,
+.btn[disabled] {
+  opacity: .4;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  transform: none;
+}
 
 .btn-ghost {
   background: transparent;
@@ -2562,6 +2570,7 @@ ul { list-style: none; }
 .poi-pin.type-secteur   { color: var(--brass); }
 .poi-pin.type-depart    { color: var(--cream-3); }
 .poi-pin.type-arrivee   { color: var(--cream-3); }
+.poi-pin.type-direction { color: #7A9BB5; }
 
 /* Popup */
 .poi-popup-head {
@@ -2745,6 +2754,7 @@ ul { list-style: none; }
 .poi-item-num.type-secteur::after   { background: var(--brass); }
 .poi-item-num.type-depart::after    { background: var(--cream-3); }
 .poi-item-num.type-arrivee::after   { background: var(--cream-3); }
+.poi-item-num.type-direction::after { background: #7A9BB5; }
 
 .poi-item-body { min-width: 0; }
 .poi-item-type {

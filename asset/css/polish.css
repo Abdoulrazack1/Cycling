@@ -1462,20 +1462,54 @@ body[data-role="moderateur"] .admin-only { display: block !important; }
 }
 
 /* ════════════════════════════════════════════════════════════════
-   NAV — fix logo (affichage cohérent sur tous écrans)
-   Le monogramme et le texte ne doivent jamais se chevaucher,
-   et le sous-titre ne doit pas wrapper.
+   NAV — refonte propre
+   - Fond opaque dès le départ (le contenu ne traverse plus la barre)
+   - Logo bien centré verticalement, sous-titre dans la barre
+   - Monogramme sans décorations parasites
+   - Liens et bouton CTA alignés à la même baseline
    ════════════════════════════════════════════════════════════════ */
+#main-nav {
+  background: rgba(10, 20, 16, 0.78) !important;
+  backdrop-filter: blur(12px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.2) !important;
+  border-bottom: 1px solid rgba(176, 142, 74, 0.12) !important;
+  /* Hauteur figée : le shrink au scroll créait un saut visuel
+     qui révélait une lichette du contenu sous la nav. */
+  height: var(--nav-h) !important;
+}
+#main-nav.scrolled {
+  background: rgba(10, 20, 16, 0.94) !important;
+  border-bottom-color: var(--line) !important;
+  height: var(--nav-h) !important;
+}
+
+/* Logo : alignement strict et pas de débordement */
 .nav-logo {
   flex-shrink: 0;
   min-width: 0;
+  align-self: center;
+  text-decoration: none;
 }
 .nav-monogram {
   flex-shrink: 0;
 }
+/* Supprime les traits décoratifs qui débordent à l'extérieur du cercle au hover */
+.nav-monogram::before,
+.nav-monogram::after { display: none !important; }
+
+.nav-monogram-inner {
+  line-height: 1 !important;
+  transform: translateY(-1px); /* compensation visuelle de l'italique */
+}
+
 .nav-logo-text {
   min-width: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.05 !important;
+  gap: 3px;
 }
 .nav-logo-name,
 .nav-logo-sub {
@@ -1483,18 +1517,42 @@ body[data-role="moderateur"] .admin-only { display: block !important; }
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+  margin: 0 !important;
+}
+.nav-logo-name {
+  font-size: 19px !important;
+}
+.nav-logo-sub {
+  font-size: 8.5px !important;
+  letter-spacing: 0.22em !important;
+  opacity: .85;
 }
 
-/* En écran moyen, garder seulement le monogramme + le nom court */
-@media (max-width: 1100px) {
+/* Liens centre : meilleur centrage vertical + soulignement net */
+#main-nav .nav-links { align-self: center; }
+#main-nav .nl {
+  padding: 8px 14px !important;
+  line-height: 1 !important;
+}
+#main-nav .nl::after {
+  bottom: -2px !important;
+  height: 1.5px !important;
+}
+
+/* Bouton CTA + hamburger : alignement strict */
+#main-nav .nav-right { align-self: center; }
+#main-nav .nav-cta { line-height: 1; }
+
+/* Écran moyen : retirer le sous-titre pour libérer de la place */
+@media (max-width: 1200px) {
   .nav-logo-sub { display: none; }
-  .nav-logo-name { font-size: 17px; }
+  .nav-logo-name { font-size: 17px !important; }
 }
 /* Très petit : monogramme seul */
 @media (max-width: 720px) {
   .nav-logo-text { display: none; }
   .nav-monogram { width: 36px; height: 36px; }
-  .nav-monogram-inner { font-size: 16px; }
+  .nav-monogram-inner { font-size: 16px !important; }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2044,11 +2102,25 @@ img, video, svg {
 }
 
 /* Hero principal — filtre + breathe doux (preserve animation existante) */
-.hero-bg > img,
-.page-head > img,
-.parch-head > img {
+.hero-bg > img {
   filter: saturate(0.85) contrast(1.08) brightness(0.92) !important;
 }
+
+/* Hero de section — photo de fond en couche basse */
+.page-head > img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  z-index: 0;
+  filter: saturate(0.8) contrast(1.05) brightness(0.38) !important;
+  transition: opacity .4s ease;
+}
+.page-head > img:not([src]),
+.page-head > img[src=""] { opacity: 0; pointer-events: none; }
+.page-head .wrap { position: relative; z-index: 2; }
+.page-head::before { z-index: 1; }
 
 /* Image de fond manifesto / join-band — vignettage doux */
 .manif-bg > img,
@@ -2082,4 +2154,59 @@ img, video, svg {
 /* Loading bord brass discret tant que la photo n'est pas chargée */
 .rc-img > img {
   background-color: var(--ink-3);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   POI action chip — petit badge avant le titre montrant l'action
+   ("Poursuivre", "Droite", "Gauche", "Demi-tour"…)
+   Extrait du desc par sortie.js pour éviter la redondance verbeuse
+   ════════════════════════════════════════════════════════════════ */
+.poi-action-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-right: 8px;
+  font-family: var(--f-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--brass);
+  background: rgba(176, 142, 74, 0.08);
+  border: 1px solid rgba(176, 142, 74, 0.32);
+  border-radius: 999px;
+  vertical-align: middle;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   POI list — densification des items "direction" (roadbook)
+   Quand une sortie a 25+ directions, le rendu standard est trop
+   espacé. On compacte spécifiquement pour le type direction
+   sans toucher au rendu des autres types (signaleur, ravito, etc.)
+   ════════════════════════════════════════════════════════════════ */
+.poi-item.poi-item--direction {
+  padding: 11px 0 !important;
+  grid-template-columns: 44px 1fr auto !important;
+  gap: 14px !important;
+}
+.poi-item.poi-item--direction .poi-item-num {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 15px !important;
+}
+.poi-item.poi-item--direction .poi-item-num::after {
+  display: none !important; /* le petit dot bleu sous le cercle (type indicator) — redondant pour direction */
+}
+.poi-item.poi-item--direction .poi-item-title {
+  font-size: 16px !important;
+  line-height: 1.25 !important;
+}
+.poi-item.poi-item--direction .poi-item-desc {
+  font-size: 11.5px !important;
+  margin-top: 2px !important;
+  opacity: .75;
+}
+.poi-item.poi-item--direction .poi-item-km {
+  font-size: 16px !important;
 }

@@ -130,6 +130,7 @@
               <td style="display:flex;gap:6px;align-items:center;">
                 <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="btn-xs" target="_blank">↗</a>
                 <button class="btn-xs btn-edit-sortie" data-id="${escHtml(s.id)}">Éditer</button>
+                <button class="btn-xs btn-photos-sortie" data-id="${escHtml(s.id)}" title="Gérer les photos">📷</button>
                 <button class="btn-xs btn-diag-sortie" data-id="${escHtml(s.id)}" title="Diagnostiquer cette sortie (pourquoi la page apparaît vide ?)">⚕</button>
                 <button class="btn-xs btn-xs-danger btn-del-sortie" data-id="${escHtml(s.id)}">✕</button>
               </td>
@@ -156,6 +157,9 @@
       });
       wrap.querySelectorAll('.btn-edit-sortie').forEach(btn => {
         btn.addEventListener('click', () => openSortieModal(btn.dataset.id));
+      });
+      wrap.querySelectorAll('.btn-photos-sortie').forEach(btn => {
+        btn.addEventListener('click', () => openPhotosModal(btn.dataset.id));
       });
       wrap.querySelectorAll('.btn-diag-sortie').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1355,14 +1359,103 @@
     }
   }
 
+  async function openPhotosModal(sortieId) {
+    openModal(`
+      <h2 class="admin-modal-title">Photos de <span class="it">${escHtml(sortieId)}</span></h2>
+      <p style="color:var(--parch-2); font-family:var(--f-sans); font-size:12px; line-height:1.6; margin-bottom:18px;">
+        Photos affichées dans la section « Souvenirs de sortie » de la page publique.<br>
+        Formats : JPEG, PNG, WebP, GIF · max 8 Mo par photo · max 8 photos par envoi.
+      </p>
+      <div style="display:flex; gap:8px; align-items:stretch; margin-bottom:14px;">
+        <input type="file" id="ph-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="flex:1; font-family:var(--f-sans); font-size:12px;">
+        <input type="text" id="ph-caption" placeholder="Légende commune (optionnel)" maxlength="300" style="flex:1.5; padding:8px 12px; font-family:var(--f-sans); font-size:12px; background:var(--ink-3); border:1px solid var(--line); color:var(--t-cream);">
+        <button class="btn btn-brass btn-sm" id="ph-upload-btn" type="button">Uploader</button>
+      </div>
+      <div id="ph-status" style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3); margin-bottom:10px;"></div>
+      <div id="ph-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; max-height:55vh; overflow-y:auto; padding:4px;"></div>
+      <div class="admin-modal-actions">
+        <button class="btn btn-ghost btn-sm" data-close-modal>Fermer</button>
+      </div>
+    `);
+
+    const grid    = document.getElementById('ph-grid');
+    const status  = document.getElementById('ph-status');
+    const fileEl  = document.getElementById('ph-files');
+    const capEl   = document.getElementById('ph-caption');
+    const upBtn   = document.getElementById('ph-upload-btn');
+
+    async function reload() {
+      status.textContent = 'Chargement…';
+      try {
+        const photos = await apiFetch(`/sorties/${encodeURIComponent(sortieId)}/photos`);
+        if (!photos.length) {
+          grid.innerHTML = `<div style="grid-column:1/-1; padding:24px; text-align:center; color:var(--parch-3); font-family:var(--f-sans); font-size:12px;">Aucune photo pour cette sortie.</div>`;
+          status.textContent = '';
+          return;
+        }
+        status.textContent = `${photos.length} photo(s)`;
+        grid.innerHTML = photos.map(p => `
+          <figure style="position:relative; margin:0; aspect-ratio:4/3; overflow:hidden; background:var(--ink-3);">
+            <img src="${escHtml(p.url)}" alt="${escHtml(p.caption || '')}" style="width:100%; height:100%; object-fit:cover;">
+            <button class="btn-xs btn-xs-danger ph-del" data-pid="${p.id}" title="Supprimer" style="position:absolute; top:6px; right:6px;">✕</button>
+          </figure>
+        `).join('');
+        grid.querySelectorAll('.ph-del').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Supprimer cette photo ?')) return;
+            try {
+              await apiFetch(`/sorties/${encodeURIComponent(sortieId)}/photos/${btn.dataset.pid}`, { method: 'DELETE' });
+              toast('Photo supprimée', 'success');
+              reload();
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+      } catch (err) {
+        status.textContent = 'Erreur : ' + err.message;
+      }
+    }
+
+    upBtn.addEventListener('click', async () => {
+      const files = fileEl.files;
+      if (!files?.length) { status.textContent = 'Sélectionnez au moins une photo.'; return; }
+      const fd = new FormData();
+      for (const f of files) fd.append('photos', f);
+      if (capEl.value.trim()) fd.append('caption', capEl.value.trim());
+      status.textContent = `Upload de ${files.length} photo(s)…`;
+      upBtn.disabled = true;
+      try {
+        const token = window.CCS_AUTH?.getToken();
+        const res = await fetch(`${API}/sorties/${encodeURIComponent(sortieId)}/photos`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token },
+          body: fd,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        toast(`${data.added} photo(s) ajoutée(s)`, 'success');
+        fileEl.value = '';
+        capEl.value  = '';
+        reload();
+      } catch (err) {
+        status.textContent = 'Erreur : ' + err.message;
+      } finally {
+        upBtn.disabled = false;
+      }
+    });
+
+    reload();
+  }
+
   function openImportGpxModal() {
     openModal(`
       <h2 class="admin-modal-title">Importer une sortie depuis un GPX</h2>
       <p style="color:var(--parch-2); font-family:var(--f-sans); font-size:12px; line-height:1.6; margin-bottom:24px;">
         Téléversez un fichier <code>.gpx</code> (Strava, RideWithGPS, Komoot, organisateur).
         <b>Le formulaire se remplit automatiquement</b> à partir des métadonnées du GPX :
-        titre, date, type de parcours, description, et lieu de départ (via géocodage inverse).
-        Vous pouvez ensuite ajuster les champs avant d'importer.
+        titre, date, type de parcours, description, lieu de départ (via géocodage inverse),
+        distance, dénivelé, coordonnées.
+        Optionnellement, colle le <b>cue sheet Strava</b> en bas pour générer aussi les
+        POIs de direction (un par tournant). Tu pourras ajuster les champs avant d'importer.
       </p>
 
       <div class="admin-form-row">
@@ -1412,6 +1505,7 @@
             <option value="monts">Monts (collines)</option>
             <option value="pave">Pavé</option>
             <option value="peloton">Peloton (course)</option>
+            <option value="clm">CLM (contre-la-montre)</option>
           </select>
         </div>
       </div>
@@ -1435,11 +1529,29 @@
         <input type="checkbox" id="ig-featured"> Mettre en avant sur la page d'accueil
       </label>
 
+      <details style="margin-top:20px; border:1px solid var(--line); padding:12px 16px; background:var(--ink-2);">
+        <summary style="cursor:pointer; font-family:var(--f-sans); font-size:12px; color:var(--brass); letter-spacing:.06em; text-transform:uppercase;">
+          Cue sheet Strava (optionnel) — PDF, texte collé, pour auto-créer les POIs directions
+        </summary>
+        <p style="color:var(--parch-2); font-family:var(--f-sans); font-size:11px; line-height:1.6; margin:10px 0 14px;">
+          <b>Option 1 — PDF :</b> dépose le PDF Strava ci-dessous, le texte est extrait automatiquement (OCR si PDF image).<br>
+          <b>Option 2 — Texte :</b> copie le tableau "Direction / Distance" depuis la page Strava et colle dans la zone texte.<br>
+          Le parser détecte chaque <code>X,X km</code> et crée un POI de type "direction" à la bonne position GPS.
+        </p>
+        <div style="display:flex; gap:8px; align-items:stretch; margin-bottom:10px;">
+          <input type="file" id="ig-pdf" accept=".pdf,application/pdf" style="font-family:var(--f-sans); font-size:12px; color:var(--parch); flex:1;">
+          <button type="button" class="btn btn-ghost btn-sm" id="ig-pdf-clear" style="white-space:nowrap;">Vider</button>
+        </div>
+        <div id="ig-pdf-status" style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3); margin-bottom:10px;"></div>
+        <textarea id="ig-cue" rows="6" placeholder="Poursuivre sur Grande Rue 0,0 km&#10;Droite sur Place de l'Église 0,0 km&#10;Continuer sur CR 3 0,4 km&#10;...&#10;Arrivée 9,2 km" style="font-family:var(--f-mono); font-size:11px; width:100%;"></textarea>
+        <div id="ig-cue-preview" style="margin-top:8px; font-family:var(--f-sans); font-size:11px; color:var(--parch-3);"></div>
+      </details>
+
       <div id="ig-err" hidden style="color:#c08080; margin-top:16px; font-family:var(--f-sans); font-size:12px;"></div>
 
       <div class="admin-modal-actions">
         <button class="btn btn-ghost btn-sm" data-close-modal>Annuler</button>
-        <button class="btn btn-brass btn-sm" id="ig-submit" disabled>Importer</button>
+        <button class="btn btn-brass btn-sm" id="ig-submit">Importer</button>
       </div>
     `);
 
@@ -1455,7 +1567,6 @@
       errEl.hidden = true;
       preview.hidden = true;
       parsedFile = null;
-      submitBtn.disabled = true;
       const f = fileInput.files?.[0];
       if (!f) return;
       if (!f.name.toLowerCase().endsWith('.gpx')) {
@@ -1472,7 +1583,6 @@
         document.getElementById('ig-p-start').textContent = m.start.lat.toFixed(4) + ', ' + m.start.lng.toFixed(4);
         preview.hidden = false;
         parsedFile = { file: f, metrics: m };
-        submitBtn.disabled = false;
 
         const titleField = document.getElementById('ig-title');
         if (!titleField.value.trim()) {
@@ -1552,6 +1662,83 @@
       if (!slugTouched) slugEl.value = slugifyClient(titleEl.value);
     });
 
+    // Compteur en direct sur le textarea cue sheet
+    const cueEl = document.getElementById('ig-cue');
+    const cuePreview = document.getElementById('ig-cue-preview');
+    function refreshCuePreview() {
+      if (!cueEl || !cuePreview) return;
+      const matches = (cueEl.value.match(/\d+[.,]\d+\s*km\b/gi) || []).length;
+      cuePreview.textContent = matches > 0
+        ? `↳ ${matches} direction(s) détectée(s) — seront créées comme POIs au submit.`
+        : '';
+    }
+    if (cueEl) cueEl.addEventListener('input', refreshCuePreview);
+
+    // Import PDF → OCR client-side → remplit le textarea
+    const pdfEl     = document.getElementById('ig-pdf');
+    const pdfStatus = document.getElementById('ig-pdf-status');
+    const pdfClear  = document.getElementById('ig-pdf-clear');
+
+    if (pdfClear) {
+      pdfClear.addEventListener('click', () => {
+        if (pdfEl) pdfEl.value = '';
+        if (pdfStatus) pdfStatus.textContent = '';
+      });
+    }
+    if (pdfEl) {
+      pdfEl.addEventListener('change', async () => {
+        const f = pdfEl.files?.[0];
+        if (!f) { pdfStatus.textContent = ''; return; }
+        if (!/\.pdf$/i.test(f.name)) {
+          pdfStatus.style.color = '#c08080';
+          pdfStatus.textContent = 'Format invalide — PDF requis';
+          return;
+        }
+        if (!window.CCS_OCR) {
+          pdfStatus.style.color = '#c08080';
+          pdfStatus.textContent = 'Module OCR non chargé — recharge la page.';
+          return;
+        }
+        pdfStatus.style.color = 'var(--brass)';
+        pdfStatus.textContent = `Analyse de ${f.name}…`;
+
+        try {
+          const onProgress = (stage, ratio) => {
+            const pct = Math.round(ratio * 100);
+            let label = 'Traitement…';
+            if (stage === 'load-pdf')          label = 'Chargement PDF…';
+            else if (stage === 'native-text')  label = 'Recherche texte natif…';
+            else if (stage === 'load-ocr')     label = 'Chargement Tesseract.js…';
+            else if (stage.startsWith('render-'))                                      label = 'Rendu de la page…';
+            else if (stage.startsWith('ocr-loading-tesseract-core'))                   label = 'Chargement du moteur OCR…';
+            else if (stage.startsWith('ocr-initializing-tesseract'))                   label = 'Initialisation OCR…';
+            else if (stage.startsWith('ocr-loading-language-traineddata'))             label = 'Téléchargement du modèle français (~30 Mo, 1ère fois uniquement)…';
+            else if (stage.startsWith('ocr-initializing-api'))                         label = 'Préparation OCR…';
+            else if (stage.startsWith('ocr-recognizing-text'))                         label = 'Reconnaissance du texte…';
+            else if (stage.startsWith('ocr-init-'))                                    label = 'Démarrage OCR…';
+            else if (stage === 'done')                                                 label = 'Terminé.';
+            pdfStatus.textContent = `${label} ${pct}%`;
+          };
+          const result = await window.CCS_OCR.extractPdfText(f, { onProgress, lang: 'fra' });
+          if (result.text && result.text.trim()) {
+            if (cueEl) {
+              cueEl.value = result.text;
+              refreshCuePreview();
+            }
+            pdfStatus.style.color = 'var(--brass)';
+            pdfStatus.textContent = `✓ Texte extrait (${result.source === 'native' ? 'texte natif' : 'OCR'}) — revois et corrige dans la zone ci-dessous si besoin.`;
+          } else {
+            pdfStatus.style.color = '#c08080';
+            pdfStatus.textContent = 'Aucun texte détecté dans le PDF. Colle le texte manuellement.';
+          }
+        } catch (err) {
+          pdfStatus.style.color = '#c08080';
+          pdfStatus.textContent = 'Erreur OCR : ' + (err.message || err);
+          console.error('[OCR]', err);
+        }
+      });
+    }
+
     submitBtn.addEventListener('click', async () => {
       errEl.hidden = true;
       if (!parsedFile) {
@@ -1573,6 +1760,8 @@
       fd.append('location_name', document.getElementById('ig-location').value.trim());
       fd.append('description', document.getElementById('ig-desc').value.trim());
       fd.append('featured', document.getElementById('ig-featured').checked ? 'true' : 'false');
+      const cueText = document.getElementById('ig-cue')?.value.trim();
+      if (cueText) fd.append('cue_sheet', cueText);
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Import…';
@@ -1600,7 +1789,8 @@
           throw new Error('Réponse serveur incomplète');
         }
         closeModal();
-        toast(`Sortie « ${data.sortie.title} » importée — ${data.gpx_metrics.distance_km} km, D+${data.gpx_metrics.elevation_gain} m`, 'success');
+        const poiSuffix = data.pois_created > 0 ? ` · ${data.pois_created} POI(s) directions` : '';
+        toast(`Sortie « ${data.sortie.title} » importée — ${data.gpx_metrics.distance_km} km, D+${data.gpx_metrics.elevation_gain} m${poiSuffix}`, 'success');
         loadSorties();
       } catch (err) {
         errEl.innerHTML = '<b>Échec de l\'import :</b> ' + (err.message || err) +

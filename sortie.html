@@ -35,6 +35,7 @@
   <main id="main">
 
   <section class="page-head">
+    <img id="sortie-head-hero" class="page-head-hero" src="" alt="" loading="eager" onerror="this.style.opacity=0">
     <div class="wrap">
       <nav class="breadcrumb">
         <a href="index.html">Accueil</a>
@@ -291,6 +292,18 @@
       <div id="weather-widget-container"></div>
     </section>
 
+    <!-- GALERIE PHOTOS -->
+    <section class="photos-panel" id="photos-panel" hidden>
+      <div class="photos-panel-head">
+        <div>
+          <div class="photos-panel-chapter"><em>Souvenirs de sortie</em></div>
+          <div class="photos-panel-title">Photos <span class="it">du jour</span></div>
+        </div>
+        <span class="label" id="photos-head-meta">—</span>
+      </div>
+      <div class="photos-grid" id="photos-grid"></div>
+    </section>
+
     <!-- SEGMENTS -->
     <section class="segments-panel">
       <div class="segments-panel-head">
@@ -334,6 +347,7 @@
   <script src="asset/js/auth.js"></script>
   <script src="asset/js/main.js"></script>
   <script src="asset/js/weather.js"></script>
+  <script src="asset/js/sortie-gallery.js"></script>
   <script src="asset/js/sortie.js"></script>
   <script src="asset/js/pages/sortie.js" defer></script>
 </body>

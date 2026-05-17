@@ -1,4 +1,4 @@
-/* ── Street View modal (sorties.html) ── */
+﻿/* ── Street View modal (sorties.html) ── */
 (function () {
   const modal   = document.getElementById('gsv-modal');
   const backdrop= document.getElementById('gsv-modal-backdrop');
@@ -71,17 +71,18 @@
     return map[type] ?? null;
   }
 
-  // ── Banque de photos Unsplash par thème (fallback SVG local si offline) ──
   const PHOTO_POOL = {
-    pave:    { url: 'https://images.unsplash.com/photo-1493825543344-43c3a90f7c95?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-pave.svg' },
-    monts:   { url: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-monts.svg' },
-    gravel:  { url: 'https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-gravel.svg' },
-    cote:    { url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-cote.svg' },
-    peloton: { url: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-peloton.svg' },
-    route:   { url: 'https://images.unsplash.com/photo-1518830950923-7d4cf61dbbf6?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-route.svg' },
+    pave:    { url: 'asset/img/img-pave.webp',    svg: 'asset/img/hero-pave.svg' },
+    monts:   { url: 'asset/img/img-monts.webp',   svg: 'asset/img/hero-monts.svg' },
+    gravel:  { url: 'asset/img/img-gravel.webp',  svg: 'asset/img/hero-gravel.svg' },
+    cote:    { url: 'asset/img/img-cote.webp',    svg: 'asset/img/hero-cote.svg' },
+    peloton: { url: 'asset/img/img-peloton.webp', svg: 'asset/img/hero-peloton.svg' },
+    route:   { url: 'asset/img/img-route.webp',   svg: 'asset/img/hero-route.svg' },
+    clm:     { url: 'asset/img/img-clm.webp',     svg: 'asset/img/hero-route.svg' },
   };
   function pickPhoto(s) {
     const haystack = ((s.title || '') + ' ' + (s.chapter || '') + ' ' + (s.subtitle || '') + ' ' + (s.slug || '')).toLowerCase();
+    if (/clm|contre.la.montre|prologue|chrono/.test(haystack)) return PHOTO_POOL.clm;
     if (/pav[éeè]|roubaix|arenberg/.test(haystack)) return PHOTO_POOL.pave;
     if (/mont|kemmel|flandre|hellingen/.test(haystack)) return PHOTO_POOL.monts;
     if (/gravel|chemin|for[êe]t|scarpe/.test(haystack)) return PHOTO_POOL.gravel;
@@ -99,7 +100,6 @@
     ).join('');
     const lat = s.location?.lat || '';
     const lng = s.location?.lng || '';
-    // Photo prioritaire : card_img/hero_img si DB, sinon photo Unsplash mappée
     const photo = pickPhoto(s);
     const imgSrc = s.card_img || s.hero_img || photo.url;
     return `
