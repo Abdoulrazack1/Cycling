@@ -1543,6 +1543,42 @@ body[data-role="moderateur"] .admin-only { display: block !important; }
 #main-nav .nav-right { align-self: center; }
 #main-nav .nav-cta { line-height: 1; }
 
+/* Bouton recherche dans la navbar */
+.nav-search-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 12px 9px 11px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--t-cream-2);
+  font-family: var(--f-sans);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s;
+  line-height: 1;
+}
+.nav-search-btn:hover {
+  color: var(--brass);
+  border-color: var(--brass);
+  background: rgba(176, 142, 74, 0.08);
+}
+.nav-search-btn svg { display: block; }
+.nav-search-kbd {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: .05em;
+  color: var(--parch-3);
+  padding: 2px 5px;
+  border: 1px solid rgba(176, 142, 74, 0.22);
+  border-radius: 3px;
+}
+.nav-search-btn:hover .nav-search-kbd { color: var(--brass); border-color: var(--brass); }
+
+/* Sur écran moyen : on cache le badge clavier, on garde juste l'icône */
+@media (max-width: 1100px) {
+  .nav-search-kbd { display: none; }
+  .nav-search-btn { padding: 9px 11px; }
+}
+
 /* Écran moyen : retirer le sous-titre pour libérer de la place */
 @media (max-width: 1200px) {
   .nav-logo-sub { display: none; }
@@ -2154,6 +2190,131 @@ img, video, svg {
 /* Loading bord brass discret tant que la photo n'est pas chargée */
 .rc-img > img {
   background-color: var(--ink-3);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Roadbook PDF — impression sortie en fiche A4 propre
+   Active via @media print OU body.print-roadbook
+   ════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Cacher tous les éléments non-essentiels */
+  #main-nav, .mobile-nav,
+  .site-footer,
+  .explorer, .minimap-wrap,
+  .scrub-bar, .poi-add,
+  .weather-panel, .photos-panel, .segments-panel,
+  .sortie-head-actions,
+  .filter-row, .sortie-head-hero,
+  .page-head::before, .page-head::after,
+  .skip-to-content,
+  #ccs-search-palette, #ccs-lightbox,
+  #poi-summary-list,
+  .floating-cta, [data-pwa-install-btn],
+  .poi-del-btn, .poi-item-num::after {
+    display: none !important;
+  }
+
+  /* Fond blanc, texte noir pour économiser l'encre */
+  body, .page-head, .sortie-head-stats, .poi-panel, .poi-item {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .page-head {
+    padding: 20px 0 16px !important;
+    border-bottom: 2px solid #111 !important;
+  }
+  .sortie-head-title, .sortie-head-title .it {
+    color: #111 !important;
+    font-size: 28pt !important;
+  }
+  .sortie-head-sub, .sortie-head-chapter {
+    color: #444 !important;
+  }
+  .sortie-head-stats {
+    display: flex !important; gap: 24px !important;
+    border-top: 1px solid #888; padding-top: 12px !important;
+  }
+  .sh-stat-v { color: #111 !important; }
+  .sh-stat-l { color: #666 !important; }
+
+  /* Liste des directions, format roadbook compact */
+  .poi-panel { padding: 16px 0 !important; }
+  .poi-panel-head { display: none !important; }
+  .poi-item {
+    grid-template-columns: 32px 1fr auto !important;
+    gap: 10px !important;
+    padding: 6px 0 !important;
+    border-bottom: 1px solid #ddd !important;
+    page-break-inside: avoid;
+  }
+  .poi-item-num {
+    width: 26px !important; height: 26px !important;
+    background: #fff !important; color: #111 !important;
+    border-color: #111 !important;
+    font-size: 12pt !important;
+  }
+  .poi-item-title { color: #111 !important; font-size: 11pt !important; }
+  .poi-item-desc { color: #555 !important; font-size: 9pt !important; }
+  .poi-item-km { color: #111 !important; font-size: 11pt !important; }
+  .poi-action-chip {
+    color: #111 !important; background: #fff !important;
+    border-color: #111 !important;
+    font-size: 8pt !important;
+  }
+  .poi-item-type { color: #666 !important; font-size: 8pt !important; }
+
+  /* Toujours imprimer les URL des liens en clair */
+  a[href]:after { content: '' !important; }
+
+  /* Format A4 + marges */
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Stats grid — panneau "Ma saison & le club" sur profil
+   ════════════════════════════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.stat-card {
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+  transition: border-color .3s, transform .3s;
+}
+.stat-card:hover {
+  border-color: var(--brass);
+  transform: translateY(-2px);
+}
+.stat-card-label {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--parch-3);
+  margin-bottom: 10px;
+}
+.stat-card-value {
+  font-family: var(--f-disp);
+  font-size: 38px;
+  color: var(--t-cream);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-card-value .unit {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--brass);
+  margin-left: 6px;
+  letter-spacing: .1em;
+}
+.stat-card-sub {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  color: var(--parch-3);
 }
 
 /* ════════════════════════════════════════════════════════════════

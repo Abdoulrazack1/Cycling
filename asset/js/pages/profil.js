@@ -89,6 +89,38 @@
     });
   }
 
+  // Stats étendues (rang club, agrégats saison) → panneau "Ma saison & le club"
+  try {
+    const token = window.CCS_AUTH?.getToken();
+    const r = await fetch(`${window.CCS_CFG.API}/auth/my-stats`, { headers: { Authorization: 'Bearer ' + token } });
+    if (r.ok) {
+      const s = await r.json();
+      const section = document.getElementById('my-stats-section');
+      if (section) section.hidden = false;
+      const yEl = document.getElementById('stats-year');
+      if (yEl) yEl.textContent = s.year;
+      const rankEl = document.getElementById('stat-rank');
+      if (rankEl) rankEl.innerHTML = `${s.rank.position}<span class="unit">/ ${s.rank.total}</span>`;
+      const rankSub = document.getElementById('stat-rank-sub');
+      if (rankSub && s.rank.percentile != null) rankSub.textContent = `Top ${100 - s.rank.percentile}% des sociétaires`;
+      const avgEl = document.getElementById('stat-club-avg');
+      if (avgEl) avgEl.innerHTML = `${s.rank.club_avg_km.toLocaleString('fr-FR')}<span class="unit">km</span>`;
+      const avgSub = document.getElementById('stat-club-avg-sub');
+      if (avgSub) {
+        const diff = (s.me.km_saison || 0) - s.rank.club_avg_km;
+        avgSub.textContent = diff >= 0 ? `+${diff.toLocaleString('fr-FR')} km au-dessus` : `${diff.toLocaleString('fr-FR')} km en dessous`;
+      }
+      const sorEl = document.getElementById('stat-sorties-done');
+      if (sorEl) sorEl.textContent = s.club_year.sorties_done;
+      const sorSub = document.getElementById('stat-sorties-sub');
+      if (sorSub) sorSub.textContent = `${s.club_year.total_km.toLocaleString('fr-FR')} km · D+ ${s.club_year.total_dplus.toLocaleString('fr-FR')} m`;
+      const upEl = document.getElementById('stat-upcoming');
+      if (upEl) upEl.textContent = s.club_year.upcoming_events;
+    }
+  } catch (err) {
+    console.warn('[my-stats]', err);
+  }
+
   const kmEl = document.getElementById('profile-km');
   if (kmEl) kmEl.innerHTML = `${(profile.km_saison || 0).toLocaleString('fr-FR')}<span class="unit">km</span>`;
 

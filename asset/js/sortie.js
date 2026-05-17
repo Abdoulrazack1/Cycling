@@ -1264,6 +1264,19 @@
     }
     const stravaBtn = document.getElementById('open-strava');
     if (stravaBtn) stravaBtn.addEventListener('click', () => window.open('https://www.strava.com/routes', '_blank', 'noopener'));
+
+    const rbBtn = document.getElementById('export-roadbook');
+    if (rbBtn) {
+      rbBtn.addEventListener('click', () => {
+        // Marque le mode impression : un CSS dédié va masquer tout sauf le hero + directions
+        document.body.classList.add('print-roadbook');
+        // Petit délai pour laisser le browser appliquer les styles avant la dialog
+        setTimeout(() => {
+          window.print();
+          document.body.classList.remove('print-roadbook');
+        }, 80);
+      });
+    }
   }
 
   /* ─── Rendu dynamique du header & sections ──────────────── */

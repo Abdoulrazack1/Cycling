@@ -690,6 +690,61 @@ router.post('/2fa/disable', requireAuth, requireAdmin, [
   }
 });
 
+// ── GET /api/auth/my-stats ───────────────────────────────────
+// Stats personnelles + agrégats club pour le panneau "Ma saison" sur profil
+router.get('/my-stats', requireAuth, async (req, res) => {
+  try {
+    const me = req.user.id;
+    const year = new Date().getFullYear();
+    const yearStart = `${year}-01-01`;
+    const yearEnd   = `${year}-12-31`;
+
+    const [me_row]  = await query('SELECT km_saison, elevation_saison, ftp_w FROM users WHERE id = ?', [me]);
+    if (!me_row) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const [rank_row] = await query(
+      `SELECT (SELECT COUNT(*) + 1 FROM users WHERE actif = TRUE AND km_saison > ?) AS rank,
+              (SELECT COUNT(*) FROM users WHERE actif = TRUE) AS total_members,
+              (SELECT AVG(km_saison) FROM users WHERE actif = TRUE AND km_saison > 0) AS club_avg_km`,
+      [me_row.km_saison || 0]
+    );
+
+    const [sorties_row] = await query(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(distance_km), 0) AS total_km, COALESCE(SUM(elevation_gain), 0) AS total_dplus
+       FROM sorties WHERE statut = 'passee' AND date BETWEEN ? AND ?`,
+      [yearStart, yearEnd]
+    );
+
+    const [events_row] = await query(
+      `SELECT COUNT(*) AS upcoming
+       FROM evenements WHERE date >= CURDATE() AND statut IN ('ouvert', 'complet')`
+    ).catch(() => [{ upcoming: 0 }]);
+
+    res.json({
+      me: {
+        km_saison:        me_row.km_saison || 0,
+        elevation_saison: me_row.elevation_saison || 0,
+        ftp_w:            me_row.ftp_w || null,
+      },
+      rank: {
+        position:         rank_row.rank,
+        total:            rank_row.total_members,
+        percentile:       rank_row.total_members ? Math.round(100 - (rank_row.rank / rank_row.total_members * 100)) : null,
+        club_avg_km:      Math.round(rank_row.club_avg_km || 0),
+      },
+      club_year: {
+        sorties_done:     sorties_row.n || 0,
+        total_km:         Math.round(sorties_row.total_km || 0),
+        total_dplus:      Math.round(sorties_row.total_dplus || 0),
+        upcoming_events:  events_row.upcoming || 0,
+      },
+      year,
+    });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur stats');
+  }
+});
+
 // GET /api/auth/2fa/status — état pour le frontend
 router.get('/2fa/status', requireAuth, async (req, res) => {
   try {
