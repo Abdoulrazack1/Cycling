@@ -70,8 +70,115 @@
     if (metas.length >= 2) metas[1].textContent = participants.toLocaleString('fr-FR');
     const futurs = evs.filter(e => new Date(e.date) > new Date()).sort((a, b) => new Date(a.date) - new Date(b.date));
     if (futurs.length && metas.length >= 4) metas[3].textContent = daysDiff(futurs[0].date);
+
+    // ─── Vue calendrier ──────────────────────────────────────
+    initCalendarView(evs);
   } catch (err) {
     console.warn('[CCS] événements dynamique :', err.message);
+  }
+
+  function initCalendarView(events) {
+    const toggle  = document.getElementById('ev-view-toggle');
+    const listC   = document.querySelector('.list-ornate');
+    const calC    = document.getElementById('ev-calendar');
+    const prevBtn = document.getElementById('ev-cal-prev');
+    const nextBtn = document.getElementById('ev-cal-next');
+    const grid    = document.getElementById('ev-cal-grid');
+    const label   = document.getElementById('ev-cal-month-label');
+    if (!toggle || !grid) return;
+
+    // Démarre sur le premier mois ayant un événement futur, sinon mois courant
+    const nextEvent = events.filter(e => new Date(e.date) >= new Date(new Date().setHours(0,0,0,0)))
+      .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+    const seed = nextEvent ? new Date(nextEvent.date) : new Date();
+    let curYear = seed.getFullYear();
+    let curMonth = seed.getMonth(); // 0–11
+
+    const MONTH_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+    function renderCalendar() {
+      label.textContent = `${MONTH_FR[curMonth]} ${curYear}`;
+
+      // Calcul du premier jour (lundi = 0) et nb de jours du mois
+      const firstDay = new Date(curYear, curMonth, 1);
+      const lastDay  = new Date(curYear, curMonth + 1, 0);
+      const startWeekday = (firstDay.getDay() + 6) % 7; // 0=Lun ... 6=Dim
+      const daysInMonth = lastDay.getDate();
+
+      // Map des événements de ce mois indexés par jour
+      const evByDay = {};
+      for (const ev of events) {
+        const d = new Date(ev.date);
+        if (d.getFullYear() === curYear && d.getMonth() === curMonth) {
+          const day = d.getDate();
+          (evByDay[day] = evByDay[day] || []).push(ev);
+        }
+      }
+
+      const cells = [];
+      const todayKey = `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`;
+
+      // Cellules vides du début (mois précédent)
+      for (let i = 0; i < startWeekday; i++) {
+        cells.push(`<div class="ev-cal-cell ev-cal-empty" style="min-height:84px; border-top:1px solid var(--line); border-right:1px solid var(--line); background:rgba(0,0,0,.18);"></div>`);
+      }
+      // Jours du mois
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayKey = `${curYear}-${curMonth}-${d}`;
+        const isToday = dayKey === todayKey;
+        const evs = evByDay[d] || [];
+        const dayLabel = `<div style="font-family:var(--f-disp); font-size:14px; ${isToday ? 'color:var(--brass);' : 'color:var(--t-cream);'} margin-bottom:6px;">${d}${isToday ? '<span style="font-size:9px; letter-spacing:.12em; margin-left:6px;">AUJ.</span>' : ''}</div>`;
+        const evsHtml = evs.map(ev => {
+          const isOpen = ev.statut === 'ouvert';
+          const color = isOpen ? 'var(--brass)' : 'var(--parch-3)';
+          return `<a href="evenement.html?id=${encodeURIComponent(ev.id)}" class="ev-cal-chip" style="display:block; padding:4px 6px; margin-bottom:3px; background:rgba(176,142,74,.10); border-left:2px solid ${color}; color:var(--t-cream); font-family:var(--f-sans); font-size:10px; line-height:1.25; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(ev.title)} · ${escHtml(TYPE_LABELS[ev.type] || '')}">
+            <b>${escHtml((ev.heure || '').slice(0,5) || '')}</b> ${escHtml(ev.title || '')}
+          </a>`;
+        }).join('');
+        cells.push(`<div class="ev-cal-cell" style="min-height:84px; padding:6px 8px; border-top:1px solid var(--line); border-right:1px solid var(--line); ${isToday ? 'background:rgba(176,142,74,.06);' : ''}">${dayLabel}${evsHtml}</div>`);
+      }
+      // Compléter la dernière semaine
+      const totalCells = startWeekday + daysInMonth;
+      const trailing = (7 - (totalCells % 7)) % 7;
+      for (let i = 0; i < trailing; i++) {
+        cells.push(`<div class="ev-cal-cell ev-cal-empty" style="min-height:84px; border-top:1px solid var(--line); border-right:1px solid var(--line); background:rgba(0,0,0,.18);"></div>`);
+      }
+      grid.innerHTML = cells.join('');
+      // Retire la bordure droite des cellules en fin de ligne
+      grid.querySelectorAll('.ev-cal-cell:nth-child(7n)').forEach(el => el.style.borderRight = '0');
+    }
+
+    toggle.querySelectorAll('.view-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggle.querySelectorAll('.view-toggle-btn').forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'transparent';
+          b.style.color = 'var(--t-cream-2)';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'var(--brass)';
+        btn.style.color = 'var(--ink)';
+        if (btn.dataset.view === 'calendar') {
+          if (listC) listC.style.display = 'none';
+          if (calC)  calC.hidden = false;
+          renderCalendar();
+        } else {
+          if (listC) listC.style.display = '';
+          if (calC)  calC.hidden = true;
+        }
+      });
+    });
+
+    prevBtn?.addEventListener('click', () => {
+      curMonth--;
+      if (curMonth < 0) { curMonth = 11; curYear--; }
+      renderCalendar();
+    });
+    nextBtn?.addEventListener('click', () => {
+      curMonth++;
+      if (curMonth > 11) { curMonth = 0; curYear++; }
+      renderCalendar();
+    });
   }
 
   document.getElementById('btn-register-saloueloise')?.addEventListener('click', async () => {
