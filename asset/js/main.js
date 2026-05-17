@@ -36,6 +36,13 @@
         <li><a href="contact.html"    class="nl" data-page="contact.html">Contact</a></li>
       </ul>
       <div class="nav-right">
+        <button class="nav-search-btn" id="nav-search-btn" type="button" aria-label="Rechercher (Ctrl+K)" title="Rechercher · Ctrl+K">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <span class="nav-search-kbd" aria-hidden="true">⌘K</span>
+        </button>
         <a href="sortie.html" class="nav-cta" data-nav-sortie>
           <span class="nav-cta-dot" aria-hidden="true"></span>
           <span>Dernière sortie</span>
@@ -198,6 +205,23 @@
     });
   }
 
+  function initNavSearch() {
+    const btn = document.getElementById('nav-search-btn');
+    if (!btn) return;
+    // Affiche le bon raccourci selon l'OS
+    const isMac = /Mac|iPad|iPhone|iPod/.test(navigator.platform);
+    const kbd   = btn.querySelector('.nav-search-kbd');
+    if (kbd) kbd.textContent = isMac ? '⌘K' : 'Ctrl K';
+    btn.addEventListener('click', () => {
+      // search-palette.js peut être chargé en defer ; on attend qu'il soit prêt
+      const tryOpen = (attempt = 0) => {
+        if (window.CCS_SEARCH?.open) return window.CCS_SEARCH.open();
+        if (attempt < 20) setTimeout(() => tryOpen(attempt + 1), 80);
+      };
+      tryOpen();
+    });
+  }
+
   function startLiveTime() {
     const ids = ['live-time', 'live-time-footer', 'live-time-mobile'];
     const els = ids.map(i => document.getElementById(i)).filter(Boolean);
@@ -272,6 +296,7 @@
     injectChrome();
     initNavScroll();
     initMobileNav();
+    initNavSearch();
     startLiveTime();
     initReveal();
     initPowerBars();
