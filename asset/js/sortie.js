@@ -35,7 +35,8 @@
     danger:    'Danger',
     secteur:   'Secteur',
     depart:    'Départ',
-    arrivee:   'Arrivée'
+    arrivee:   'Arrivée',
+    direction: 'Direction'
   };
   const POI_COLORS = {
     signaleur: '#8B3726',
@@ -43,7 +44,8 @@
     danger:    '#CAA35B',
     secteur:   '#B08E4A',
     depart:    '#C7BC9E',
-    arrivee:   '#C7BC9E'
+    arrivee:   '#C7BC9E',
+    direction: '#7A9BB5'
   };
 
   const state = {
@@ -244,19 +246,27 @@
   }
 
   function drawRoute(map) {
-    if (!state.routePoints.length) return;
+    if (!map || !state.routePoints.length) return;
+    // Nettoyage des polylines existantes pour éviter les doublons après re-draw
+    if (map._ccsRouteLayers) {
+      map._ccsRouteLayers.forEach(l => map.removeLayer(l));
+    }
     const coords = state.routePoints.map(p => [p.lat, p.lng]);
     // Triple polyline pour un effet "halo + ombre + tracé" très visible :
     // 1) Ombre noire large pour ressortir sur fond clair
     // 2) Halo jaune doux pour visibilité sur fond foncé
     // 3) Trait jaune vif fin au centre
-    L.polyline(coords, { color: '#000',     opacity: .55, weight: 9,  lineJoin: 'round', lineCap: 'round' }).addTo(map);
-    L.polyline(coords, { color: '#FFD93D', opacity: .35, weight: 7,  lineJoin: 'round', lineCap: 'round' }).addTo(map);
-    L.polyline(coords, { color: '#FFD93D', opacity: 1,   weight: 3.5, lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    const l1 = L.polyline(coords, { color: '#000',    opacity: .55, weight: 9,   lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    const l2 = L.polyline(coords, { color: '#FFD93D', opacity: .35, weight: 7,   lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    const l3 = L.polyline(coords, { color: '#FFD93D', opacity: 1,   weight: 3.5, lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    map._ccsRouteLayers = [l1, l2, l3];
     try { map.fitBounds(L.latLngBounds(coords).pad(0.1)); } catch {}
   }
 
   function drawPois(map, interactive) {
+    if (!map) return;
+    // Nettoyer les markers POI existants (mais préserver le pos-marker mobile)
+    map.eachLayer(l => { if (l instanceof L.Marker && !l._isPosMarker) map.removeLayer(l); });
     const list = filteredPois();
     list.forEach((poi, idx) => {
       const m = L.marker([poi.lat, poi.lng], { icon: buildMarker(poi, idx + 1) }).addTo(map);
@@ -592,27 +602,63 @@
     // SÉCURITÉ : les POIs sont créés par n'importe quel membre via
     // POST /api/sorties/:sortieId/pois — sans escape on aurait du
     // stored-XSS (cf. AUDIT item #5). Utiliser esc() partout.
-    list.innerHTML = pois.map((p, i) => `
-      <div class="poi-item" data-poi-id="${esc(p.id)}" role="button" tabindex="0">
+    list.innerHTML = pois.map((p, i) => {
+      // 1) Masquer le type "DIRECTION" répétitif : il n'apparaît que pour
+      //    les types saillants (départ, arrivée, signaleur, ravito, danger, secteur)
+      const showType = p.type !== 'direction';
+
+      // 2) Extraire l'action (verbe) et la transformer en chip court.
+      //    Ex: desc "Poursuivre sur Grande Rue" + label "Grande Rue"
+      //         → chip "Poursuivre", on masque la phrase complète redondante
+      //    Si desc ajoute de l'info (ex. "Passage hors route", "Salouel · départ contre-la-montre"),
+      //    on garde la desc complète sans chip.
+      const cleanLabel = (p.label || '').replace(/^[→←↺⇗⇖↗⇒\s]+/, '').trim();
+      let actionChip = '';
+      let descToShow = p.desc || '';
+      if (p.desc && cleanLabel) {
+        const re = new RegExp(
+          '^(continuer|poursuivre|droite|gauche|faites\\s+demi-tour|demi-tour|l[ée]g[èe]re?\\s+(droite|gauche)|prendre(?:\\s+(?:la\\s+)?sortie|\\s+direction)?)\\s+(?:sur\\s+)?' +
+          cleanLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$',
+          'i'
+        );
+        const m = p.desc.match(re);
+        if (m) {
+          // Normalise le verbe à une forme courte
+          const verb = m[1].toLowerCase();
+          if (/faites\s+demi-tour|demi-tour/.test(verb)) actionChip = 'Demi-tour';
+          else if (/^l[ée]g[èe]re?\s+droite/.test(verb)) actionChip = 'Légère droite';
+          else if (/^l[ée]g[èe]re?\s+gauche/.test(verb)) actionChip = 'Légère gauche';
+          else if (/^prendre/.test(verb))                actionChip = 'Sortie';
+          else                                            actionChip = verb.charAt(0).toUpperCase() + verb.slice(1);
+          descToShow = '';
+        }
+      }
+
+      return `
+      <div class="poi-item poi-item--${esc(p.type)}" data-poi-id="${esc(p.id)}" role="button" tabindex="0">
         <div class="poi-item-num type-${esc(p.type)}">${i + 1}</div>
         <div class="poi-item-body">
-          <div class="poi-item-type">${esc(POI_LABELS[p.type] || p.type)}</div>
-          <div class="poi-item-title">${esc(p.label || '—')}</div>
-          ${p.desc ? `<div class="poi-item-desc">${esc(p.desc)}</div>` : ''}
+          ${showType ? `<div class="poi-item-type">${esc(POI_LABELS[p.type] || p.type)}</div>` : ''}
+          <div class="poi-item-title">
+            ${actionChip ? `<span class="poi-action-chip">${esc(actionChip)}</span>` : ''}
+            ${esc(p.label || '—')}
+          </div>
+          ${descToShow ? `<div class="poi-item-desc">${esc(descToShow)}</div>` : ''}
           ${p.contact ? `<div class="poi-item-contact"><b>${esc(p.contact.name || '')}</b>${p.contact.phone ? ' · <a href="tel:' + esc(String(p.contact.phone).replace(/\s/g,'')) + '">' + esc(p.contact.phone) + '</a>' : ''}</div>` : ''}
         </div>
         <div class="poi-item-right">
           <div class="poi-item-km">${numKm(p.km).toFixed(1)}<span class="unit">km</span></div>
           ${p._userAdded ? `<button class="poi-del-btn" data-del="${esc(p.id)}" aria-label="Supprimer">✕</button>` : ''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     const counter = document.getElementById('poi-counter');
     if (counter) counter.innerHTML = `<b>${pois.length}</b> point${pois.length > 1 ? 's' : ''} · total ${state.pois.length}`;
 
     const summary = document.getElementById('poi-summary-list');
     if (summary) {
-      const types = ['signaleur', 'ravito', 'secteur', 'danger', 'depart', 'arrivee'];
+      const types = ['direction', 'signaleur', 'ravito', 'secteur', 'danger', 'depart', 'arrivee'];
       summary.innerHTML = types.map(t => {
         const c = state.pois.filter(p => p.type === t).length;
         if (!c) return '';
@@ -694,6 +740,13 @@
       if (map) {
         requestAnimationFrame(() => {
           map.invalidateSize(true);
+          // Re-dessiner le tracé après invalidateSize :
+          // les polylines ajoutées dans un conteneur masqué/zéro-sized peuvent ne pas
+          // s'afficher correctement même après invalidateSize. On re-injecte proprement.
+          drawRoute(map);
+          if (mode === 'sat' && map === state.satMap) {
+            drawPois(map, false);
+          }
           const pos = currentLatLng();
           if (pos) map.setView([pos.lat, pos.lng], zoom, { animate: false });
         });
@@ -1220,6 +1273,13 @@
     document.title = s.number
       ? `${s.title} · № ${s.number} — Club de Cyclisme de Salouel`
       : `${s.title} — Club de Cyclisme de Salouel`;
+
+    // Hero image dans le page-head
+    const heroEl = document.getElementById('sortie-head-hero');
+    if (heroEl) {
+      const src = s.hero_img || s.card_img;
+      if (src) heroEl.src = src;
+    }
 
     // Breadcrumb sortie nº
     const crumb = document.getElementById('crumb-current');

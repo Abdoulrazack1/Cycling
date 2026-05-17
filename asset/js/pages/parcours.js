@@ -1,4 +1,4 @@
-/* ── Chargement dynamique des parcours ──────────────────────── */
+﻿/* ── Chargement dynamique des parcours ──────────────────────── */
 (async function loadParcours() {
   const earlyGrid = document.getElementById('parcours-grid');
   // Skeleton initial — uniquement si le grid est vide (pas de fallback statique)
@@ -26,6 +26,8 @@
   function deduceType(s) {
     const ch = (s.chapter || '').toLowerCase();
     const tags = (s.tags || []).map(t => (t.label || '').toLowerCase()).join(' ');
+    const title = (s.title || '').toLowerCase();
+    if (/clm|contre.la.montre|prologue|chrono/.test(title + ' ' + ch)) return 'clm';
     if (s.pave_km > 0 || /pavé|pave|roubaix/.test(ch + ' ' + tags)) return 'pave';
     if (/mont|flandre|cassel/.test(ch + ' ' + tags)) return 'monts';
     if (/gravel|scarpe|raismes/.test(ch + ' ' + tags)) return 'gravel';
@@ -38,18 +40,19 @@
     monts:  { color: '#B08E4A', label: 'Monts' },
     gravel: { color: '#CAA35B', label: 'Gravel' },
     cote:   { color: '#C7BC9E', label: 'Côte' },
+    clm:    { color: '#4A6B8B', label: 'CLM' },
     autre:  { color: '#B08E4A', label: 'Route' }
   };
 
-  // Banque photos Unsplash par type (fallback SVG local)
   const PHOTO_BY_TYPE = {
-    pave:   { url: 'https://images.unsplash.com/photo-1493825543344-43c3a90f7c95?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-pave.svg' },
-    mont:   { url: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-monts.svg' },
-    monts:  { url: 'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-monts.svg' },
-    gravel: { url: 'https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-gravel.svg' },
-    cote:   { url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-cote.svg' },
-    route:  { url: 'https://images.unsplash.com/photo-1518830950923-7d4cf61dbbf6?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-route.svg' },
-    autre:  { url: 'https://images.unsplash.com/photo-1518830950923-7d4cf61dbbf6?auto=format&fit=crop&w=1200&q=80', svg: 'asset/img/hero-route.svg' },
+    pave:   { url: 'asset/img/img-pave.webp',   svg: 'asset/img/hero-pave.svg' },
+    mont:   { url: 'asset/img/img-monts.webp',  svg: 'asset/img/hero-monts.svg' },
+    monts:  { url: 'asset/img/img-monts.webp',  svg: 'asset/img/hero-monts.svg' },
+    gravel: { url: 'asset/img/img-gravel.webp', svg: 'asset/img/hero-gravel.svg' },
+    cote:   { url: 'asset/img/img-cote.webp',   svg: 'asset/img/hero-cote.svg' },
+    route:  { url: 'asset/img/img-route.webp',  svg: 'asset/img/hero-route.svg' },
+    autre:  { url: 'asset/img/img-route.webp',  svg: 'asset/img/hero-route.svg' },
+    clm:    { url: 'asset/img/img-clm.webp',    svg: 'asset/img/hero-route.svg' },
   };
 
   function renderCard(s, i) {

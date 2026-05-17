@@ -125,17 +125,128 @@
     }
   }
 
-  if (profile.equipment?.length) {
+  function renderEquipGrid(items) {
     const grid = document.getElementById('equip-grid');
-    if (grid) {
-      grid.innerHTML = profile.equipment.map((e, i) => `
-        <div class="equip-card">
-          <div class="equip-card-num">${String(i + 1).padStart(2, '0')}</div>
-          <div class="equip-card-title">${e.titre}</div>
-          <div class="equip-card-body">${e.description || ''}</div>
-        </div>`).join('');
+    if (!grid) return;
+    if (!items?.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1; padding:32px; text-align:center; font-family:var(--f-sans); font-size:13px; color:var(--parch-3); border:1px dashed var(--line);">Aucun équipement renseigné. Cliquez sur <b>+ Ajouter un équipement</b>.</div>`;
+      return;
     }
+    grid.innerHTML = items.map((e, i) => `
+      <div class="equip-card" data-eid="${e.id}" style="position:relative;">
+        <div class="equip-card-num">${String(i + 1).padStart(2, '0')}</div>
+        <div class="equip-card-title">${esc(e.titre)}</div>
+        <div class="equip-card-body">${esc(e.description || '')}</div>
+        <div style="position:absolute; top:10px; right:10px; display:flex; gap:4px;">
+          <button class="equip-edit" data-eid="${e.id}" title="Éditer" aria-label="Éditer" style="background:rgba(176,142,74,.12); border:1px solid var(--brass); width:28px; height:28px; color:var(--brass); cursor:pointer; font-size:13px;">✎</button>
+          <button class="equip-del" data-eid="${e.id}" title="Supprimer" aria-label="Supprimer" style="background:rgba(192,128,128,.08); border:1px solid #c08080; width:28px; height:28px; color:#c08080; cursor:pointer; font-size:14px;">✕</button>
+        </div>
+      </div>`).join('');
   }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  let currentEquip = Array.isArray(profile.equipment) ? profile.equipment.filter(e => e.id) : [];
+  renderEquipGrid(currentEquip);
+
+  /* ─── Modal équipement (création/édition) ──────────────────── */
+  const modal      = document.getElementById('equip-modal');
+  const modalTitle = document.getElementById('equip-modal-title');
+  const inputTitre = document.getElementById('equip-titre');
+  const inputDesc  = document.getElementById('equip-desc');
+  const modalErr   = document.getElementById('equip-modal-err');
+  const btnSave    = document.getElementById('equip-modal-save');
+  const btnCancel  = document.getElementById('equip-modal-cancel');
+  const btnAdd     = document.getElementById('equip-add-btn');
+  let editingId    = null;
+
+  function openModal(item) {
+    editingId = item?.id || null;
+    modalTitle.textContent = editingId ? 'Modifier l\'équipement' : 'Nouvel équipement';
+    inputTitre.value = item?.titre || '';
+    inputDesc.value  = item?.description || '';
+    modalErr.hidden  = true;
+    modal.hidden = false;
+    setTimeout(() => inputTitre.focus(), 50);
+  }
+  function closeModal() { modal.hidden = true; editingId = null; }
+
+  btnAdd?.addEventListener('click', () => openModal(null));
+  btnCancel?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+
+  document.getElementById('equip-grid')?.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('.equip-edit');
+    const delBtn  = e.target.closest('.equip-del');
+    if (editBtn) {
+      const id = parseInt(editBtn.dataset.eid, 10);
+      const it = currentEquip.find(x => x.id === id);
+      if (it) openModal(it);
+    } else if (delBtn) {
+      const id = parseInt(delBtn.dataset.eid, 10);
+      const it = currentEquip.find(x => x.id === id);
+      if (!it) return;
+      if (!confirm(`Supprimer "${it.titre}" ?`)) return;
+      try {
+        const token = window.CCS_AUTH?.getToken();
+        const r = await fetch(`${window.CCS_CFG.API}/auth/equipment/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token },
+        });
+        if (!r.ok) throw new Error((await r.json()).error || `HTTP ${r.status}`);
+        currentEquip = currentEquip.filter(x => x.id !== id);
+        renderEquipGrid(currentEquip);
+        if (window.toast) window.toast('Équipement supprimé', 'success');
+      } catch (err) {
+        if (window.toast) window.toast('Erreur : ' + err.message, 'error');
+      }
+    }
+  });
+
+  btnSave?.addEventListener('click', async () => {
+    modalErr.hidden = true;
+    const titre = inputTitre.value.trim();
+    const desc  = inputDesc.value.trim();
+    if (!titre) { modalErr.textContent = 'Le titre est obligatoire'; modalErr.hidden = false; return; }
+
+    btnSave.disabled = true;
+    btnSave.textContent = 'Enregistrement…';
+    try {
+      const token = window.CCS_AUTH?.getToken();
+      const url   = editingId
+        ? `${window.CCS_CFG.API}/auth/equipment/${editingId}`
+        : `${window.CCS_CFG.API}/auth/equipment`;
+      const method = editingId ? 'PUT' : 'POST';
+      const r = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ titre, description: desc || undefined }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${r.status}`);
+      }
+      if (editingId) {
+        const it = currentEquip.find(x => x.id === editingId);
+        if (it) { it.titre = titre; it.description = desc || null; }
+      } else {
+        const created = await r.json();
+        currentEquip.push(created);
+      }
+      renderEquipGrid(currentEquip);
+      closeModal();
+      if (window.toast) window.toast(editingId ? 'Équipement modifié' : 'Équipement ajouté', 'success');
+    } catch (err) {
+      modalErr.textContent = err.message;
+      modalErr.hidden = false;
+    } finally {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Enregistrer';
+    }
+  });
 
   const userLabel = document.getElementById('ps-user-label');
   if (userLabel) userLabel.textContent = `${profile.prenom} ${profile.nom} (${profile.email || profile.username})`;
