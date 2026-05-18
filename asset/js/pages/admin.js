@@ -60,28 +60,151 @@
       audit:        loadAudit,
       diagnostic:   loadDiagnostic,
       security:     loadSecurity,
+      strava:       loadStravaAdmin,
     };
     loaders[name]?.();
   }
+
+  // ── Strava admin config ──────────────────────────────────────
+  async function loadStravaAdmin() {
+    const statusEl = document.getElementById('strava-config-status');
+    const activeEl = document.getElementById('strava-config-active');
+    const formEl   = document.getElementById('strava-config-form');
+    if (!statusEl) return;
+
+    statusEl.innerHTML = '<div class="loading-spinner"></div>';
+    activeEl.hidden = true;
+    formEl.hidden = true;
+
+    try {
+      const cfg = await apiFetch('/admin/strava-config');
+      statusEl.innerHTML = '';
+      // Pré-rempli les hints avec la valeur runtime
+      const host = location.host || 'localhost:3000';
+      const proto = location.protocol || 'http:';
+      const websiteHint = document.getElementById('sc-hint-website');
+      if (websiteHint) websiteHint.textContent = `${proto}//${host}`;
+      const domainHint = document.getElementById('sc-hint-domain');
+      if (domainHint) domainHint.textContent = host.split(':')[0];
+
+      if (cfg.configured) {
+        document.getElementById('sc-cid').textContent = cfg.client_id || '—';
+        document.getElementById('sc-uri').textContent = cfg.redirect_uri || '—';
+        document.getElementById('sc-src').textContent = cfg.source === 'db' ? 'Base de données (modifié via UI)' : 'Fichier .env';
+        activeEl.hidden = false;
+      } else {
+        // Pré-remplir le redirect URI avec une valeur par défaut sensée
+        const uriInput = document.getElementById('sc-input-uri');
+        if (uriInput && !uriInput.value) uriInput.placeholder = `${proto}//${host}/api/strava/callback`;
+        formEl.hidden = false;
+      }
+    } catch (err) {
+      statusEl.innerHTML = '<div style="color:#c08080;">Erreur chargement : ' + escHtml(err.message) + '</div>';
+    }
+  }
+
+  // Boutons (event delegation, attachés une fois)
+  document.addEventListener('click', async (e) => {
+    if (e.target?.id === 'btn-sc-edit') {
+      document.getElementById('strava-config-active').hidden = true;
+      document.getElementById('strava-config-form').hidden = false;
+      document.getElementById('btn-sc-cancel').hidden = false;
+      try {
+        const cfg = await apiFetch('/admin/strava-config');
+        document.getElementById('sc-input-cid').value = cfg.client_id || '';
+        document.getElementById('sc-input-uri').value = cfg.redirect_uri || '';
+      } catch {}
+    }
+    if (e.target?.id === 'btn-sc-cancel') loadStravaAdmin();
+    if (e.target?.id === 'btn-sc-disable') {
+      if (!confirm('Désactiver Strava ? Les membres déjà connectés gardent leur lien, mais aucun nouveau ne pourra se relier tant que tu ne reconfigures pas.')) return;
+      try {
+        await apiFetch('/admin/strava-config', { method: 'DELETE' });
+        toast('Strava désactivé', 'info');
+        loadStravaAdmin();
+      } catch (err) { toast('Erreur : ' + err.message, 'error'); }
+    }
+    if (e.target?.id === 'btn-sc-save') {
+      const cid    = document.getElementById('sc-input-cid').value.trim();
+      const secret = document.getElementById('sc-input-secret').value.trim();
+      const uri    = document.getElementById('sc-input-uri').value.trim();
+      const errEl  = document.getElementById('sc-err');
+      errEl.hidden = true;
+      if (!/^\d+$/.test(cid))      { errEl.textContent = 'Client ID doit être un nombre.'; errEl.hidden = false; return; }
+      if (secret.length < 20)      { errEl.textContent = 'Client Secret semble trop court (~40 chars normalement).'; errEl.hidden = false; return; }
+      const btn = e.target;
+      btn.disabled = true; btn.textContent = 'Enregistrement…';
+      try {
+        await apiFetch('/admin/strava-config', {
+          method: 'POST',
+          body: JSON.stringify({ client_id: cid, client_secret: secret, redirect_uri: uri || undefined }),
+        });
+        toast('Strava configuré ✓ — actif immédiatement pour tout le club', 'success');
+        loadStravaAdmin();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+      } finally {
+        btn.disabled = false; btn.textContent = 'Enregistrer';
+      }
+    }
+  });
 
   // ── Dashboard ────────────────────────────────────────────────
   async function loadDashboard() {
     const wrap = document.getElementById('dashboard-stats');
     try {
-      const [sorties, evenements, membres, contacts] = await Promise.all([
-        apiFetch('/sorties?limit=3'),
-        apiFetch('/evenements?limit=3'),
-        apiFetch('/membres'),
-        apiFetch('/contact?limit=1'),
-      ]);
-      const total = sorties.total || (sorties.sorties||[]).length;
-      const nouveaux = contacts.messages?.filter(m => m.statut === 'nouveau').length || 0;
+      // Endpoint /admin/dashboard-live agrège tout en un appel (v13.4)
+      let live = null;
+      try { live = await apiFetch('/admin/dashboard-live'); } catch {}
+
+      let users, sortiesObj, eventsObj, contactsObj;
+      if (live) {
+        users      = live.users      || {};
+        sortiesObj = live.sorties    || {};
+        eventsObj  = live.events     || {};
+        contactsObj= live.contacts   || {};
+      } else {
+        // Fallback : ancien chemin (multi-call)
+        const [sorties, evenements, membres, contacts] = await Promise.all([
+          apiFetch('/sorties?limit=3'),
+          apiFetch('/evenements?limit=3'),
+          apiFetch('/membres'),
+          apiFetch('/contact?limit=1'),
+        ]);
+        users      = { total: membres.length || 0, actifs: null };
+        sortiesObj = { total: sorties.total || (sorties.sorties||[]).length };
+        eventsObj  = { total: evenements.length || 0 };
+        contactsObj= { nouveaux: contacts.messages?.filter(m => m.statut === 'nouveau').length || 0 };
+      }
+      const nouveaux = contactsObj.nouveaux || 0;
 
       wrap.innerHTML = `
-        <div class="admin-stat-card"><div class="admin-stat-v">${total}</div><div class="admin-stat-l">Sorties</div></div>
-        <div class="admin-stat-card"><div class="admin-stat-v">${evenements.length || 0}</div><div class="admin-stat-l">Événements</div></div>
-        <div class="admin-stat-card"><div class="admin-stat-v">${membres.length || 0}</div><div class="admin-stat-l">Membres</div></div>
-        <div class="admin-stat-card"><div class="admin-stat-v" style="${nouveaux > 0 ? 'color:#c08080' : ''}">${nouveaux}</div><div class="admin-stat-l">Messages non lus</div></div>`;
+        <div class="admin-stat-card">
+          <div class="admin-stat-v">${sortiesObj.total || 0}</div>
+          <div class="admin-stat-l">Sorties · ${sortiesObj.upcoming || 0} à venir</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-v">${eventsObj.total || 0}</div>
+          <div class="admin-stat-l">Événements · ${eventsObj.ouverts || 0} ouverts · ${eventsObj.total_inscrits || 0} inscrits</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-v">${users.actifs ?? users.total ?? 0}</div>
+          <div class="admin-stat-l">Membres actifs · ${users.admins || 0} admin · ${users.new_30d || 0} nouveaux (30j)</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-v" style="${nouveaux > 0 ? 'color:#c08080' : ''}">${nouveaux}</div>
+          <div class="admin-stat-l">Messages non lus · ${contactsObj.last_7d || 0} sur 7j</div>
+        </div>
+        ${live ? `
+        <div class="admin-stat-card">
+          <div class="admin-stat-v">${live.strava_linked || 0}</div>
+          <div class="admin-stat-l">Membres liés Strava</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-v">${live.recent_signups_7d || 0}</div>
+          <div class="admin-stat-l">Inscriptions (7j)</div>
+        </div>` : ''}`;
 
       if (nouveaux > 0) {
         const badge = document.getElementById('contacts-badge');
@@ -89,7 +212,9 @@
       }
 
       const recentWrap = document.getElementById('dashboard-recent');
-      const recentSorties = (sorties.sorties || sorties).slice(0,3);
+      let sortiesData;
+      try { sortiesData = await apiFetch('/sorties?limit=3'); } catch { sortiesData = { sorties: [] }; }
+      const recentSorties = (sortiesData.sorties || sortiesData || []).slice(0,3);
       recentWrap.innerHTML = `
         <h3 style="font-family:var(--f-disp);font-size:16px;margin-bottom:16px;">Dernières <span class="it">sorties</span></h3>
         <table class="admin-table">

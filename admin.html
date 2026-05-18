@@ -187,6 +187,10 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
           Sécurité (2FA)
         </button>
+        <button class="admin-nav-item" data-panel="strava">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+          Strava
+        </button>
         <div style="margin-top:24px; border-top:1px solid var(--line); padding-top:24px;">
           <a href="index.html" class="admin-nav-item" style="opacity:.6;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -460,6 +464,90 @@
             <p style="opacity:.7; font-size:12px; margin:8px 0 16px;">Ils servent à vous reconnecter si vous perdez votre téléphone. Chaque code n'est utilisable qu'une seule fois. Ils ne seront plus jamais affichés.</p>
             <pre id="totp-backup-list" style="font-family:monospace; font-size:14px; line-height:1.8; background:var(--ink); padding:16px; user-select:all;"></pre>
             <button class="btn btn-ghost btn-sm" id="btn-totp-codes-saved" style="margin-top:8px;">J'ai sauvegardé les codes</button>
+          </div>
+        </div>
+
+        <!-- ═══ PANEL STRAVA ═══ -->
+        <div id="panel-strava" class="admin-panel">
+          <div class="admin-section-title">
+            <span>Intégration <span class="it">Strava</span></span>
+          </div>
+          <p class="lede" style="opacity:.7; margin-bottom:24px;">Permet à chaque membre du club de relier son compte Strava et d'importer ses activités. Configure une fois ici — tout le club en bénéficie immédiatement, sans redémarrage du serveur.</p>
+
+          <div id="strava-config-status" style="margin-bottom:24px;"><div class="loading-spinner"></div></div>
+
+          <!-- État : configuré -->
+          <div id="strava-config-active" hidden style="margin-bottom:32px; padding:18px 22px; background:var(--ink-2); border-left:3px solid var(--brass);">
+            <div style="display:flex; gap:12px; align-items:center; margin-bottom:8px;">
+              <span style="font-size:18px;">✓</span>
+              <b style="color:var(--brass);">Strava activé pour ce serveur</b>
+            </div>
+            <div style="font-family:var(--f-sans); font-size:12px; color:var(--parch-2); line-height:1.7;">
+              <div>Client ID : <code id="sc-cid">—</code></div>
+              <div>Redirect URI : <code id="sc-uri">—</code></div>
+              <div>Source : <span id="sc-src" style="opacity:.7;">—</span></div>
+            </div>
+            <div style="margin-top:14px; display:flex; gap:8px;">
+              <button class="btn btn-ghost btn-sm" id="btn-sc-edit">Modifier</button>
+              <button class="btn btn-ghost btn-sm" id="btn-sc-disable" style="color:#c08080;">Désactiver</button>
+            </div>
+          </div>
+
+          <!-- Formulaire (visible si non config OU mode édition) -->
+          <div id="strava-config-form" hidden>
+            <!-- ─── Mini-guide visuel toujours visible, pas dans un <details> ─── -->
+            <div style="background:var(--ink-2); padding:18px 22px; border-left:3px solid var(--brass); margin-bottom:18px;">
+              <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+                <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" class="btn btn-brass btn-sm">
+                  ↗ Ouvrir Strava settings/api
+                </a>
+                <button class="btn btn-ghost btn-sm" id="btn-copy-domain" type="button">
+                  📋 Copier "<span id="sc-copy-domain">localhost</span>"
+                </button>
+                <button class="btn btn-ghost btn-sm" id="btn-copy-website" type="button">
+                  📋 Copier "<span id="sc-copy-website">http://localhost:3000</span>"
+                </button>
+              </div>
+              <p style="font-family:var(--f-sans); font-size:12px; color:var(--parch-2); margin-bottom:8px;">
+                <b>1.</b> Clique "↗ Ouvrir Strava" → connecte-toi avec ton compte Strava perso → "Create &amp; Manage Your App".
+              </p>
+              <p style="font-family:var(--f-sans); font-size:12px; color:var(--parch-2); margin-bottom:8px;">
+                <b>2.</b> Remplis le formulaire Strava :<br>
+                &nbsp;&nbsp;• Application Name = <code>CCS Salouel</code><br>
+                &nbsp;&nbsp;• Category = <code>Visualizer</code><br>
+                &nbsp;&nbsp;• Website = paste avec le bouton 📋 ci-dessus<br>
+                &nbsp;&nbsp;• <b>Authorization Callback Domain</b> = paste avec le bouton 📋 ci-dessus
+              </p>
+              <p style="font-family:var(--f-sans); font-size:12px; color:var(--parch-2); margin-bottom:0;">
+                <b>3.</b> Une fois créée, Strava affiche <b>Client ID</b> (visible direct) et <b>Client Secret</b> (clique "show" pour le révéler).
+                Colle-les ci-dessous → <b>Enregistrer</b> → c'est actif <em>immédiatement</em> pour tout le club, sans redémarrer le serveur.
+              </p>
+              <p style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3); margin-top:14px; opacity:.7;">
+                Astuces : tu peux garder cet onglet ouvert et l'onglet Strava côte-à-côte. Au pire, tu peux corriger les creds plus tard, l'écran d'édition est toujours dispo.
+              </p>
+            </div>
+
+            <div style="display:grid; gap:14px; max-width:560px;">
+              <div>
+                <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Client ID *</label>
+                <input type="text" id="sc-input-cid" inputmode="numeric" pattern="[0-9]+" placeholder="123456" style="width:100%; padding:10px 14px; font-family:var(--f-mono); background:var(--ink-3); border:1px solid var(--line); color:var(--parch);">
+              </div>
+              <div>
+                <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Client Secret *</label>
+                <input type="password" id="sc-input-secret" autocomplete="off" placeholder="40 caractères" style="width:100%; padding:10px 14px; font-family:var(--f-mono); background:var(--ink-3); border:1px solid var(--line); color:var(--parch);">
+                <div style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3); margin-top:4px;">Stocké chiffré côté serveur. Jamais renvoyé en clair à l'UI.</div>
+              </div>
+              <div>
+                <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Redirect URI</label>
+                <input type="text" id="sc-input-uri" placeholder="auto-rempli si vide" style="width:100%; padding:10px 14px; font-family:var(--f-mono); background:var(--ink-3); border:1px solid var(--line); color:var(--parch);">
+                <div style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3); margin-top:4px;">Doit pointer vers <code>/api/strava/callback</code> sur ce serveur. Match exact requis avec Strava.</div>
+              </div>
+              <div id="sc-err" hidden style="color:#c08080; font-family:var(--f-sans); font-size:12px;"></div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-brass btn-sm" id="btn-sc-save">Enregistrer</button>
+                <button class="btn btn-ghost btn-sm" id="btn-sc-cancel" hidden>Annuler</button>
+              </div>
+            </div>
           </div>
         </div>
 

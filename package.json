@@ -24,7 +24,10 @@
     "audit:purge:dry": "node scripts/purge-audit-log.js --dry",
     "backup": "node scripts/backup-db.js && node scripts/backup-cleanup.js",
     "backup:cleanup": "node scripts/backup-cleanup.js",
-    "backup:cleanup:dry": "node scripts/backup-cleanup.js --dry"
+    "backup:cleanup:dry": "node scripts/backup-cleanup.js --dry",
+    "migrate": "node scripts/migrate.js",
+    "migrate:status": "node scripts/migrate.js --status",
+    "migrate:dry": "node scripts/migrate.js --dry-run"
   },
   "dependencies": {
     "bcryptjs": "^3.0.0",
