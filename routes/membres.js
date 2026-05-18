@@ -83,6 +83,104 @@ router.put('/:id', requireAuth, [
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); errResponse(req, res, err, 500, 'Erreur serveur :'); }
 });
 
+// ── GET /api/membres/me/dashboard ───────────────────────────────
+// Dashboard perso : km/D+/temps cette saison vs club, ranking, dernières activités.
+router.get('/me/dashboard', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const year = new Date().getFullYear();
+
+    // 1. Stats personnelles (cumul activités Strava importées + déclarations users)
+    const [me] = await query(
+      `SELECT km_saison, elevation_saison, ftp_w FROM users WHERE id = ?`,
+      [userId]
+    );
+
+    // Strava (si lié)
+    const [stravaAgg] = await query(
+      `SELECT
+        COUNT(*) AS rides,
+        ROUND(SUM(distance_m)/1000) AS km_strava,
+        ROUND(SUM(elevation_gain_m)) AS dplus_strava,
+        ROUND(SUM(moving_time_s)/3600, 1) AS hours_strava,
+        ROUND(AVG(average_speed_ms)*3.6, 1) AS avg_kmh
+       FROM strava_activities
+       WHERE user_id = ? AND YEAR(start_date) = ?`,
+      [userId, year]
+    ).catch(() => [{}]);
+
+    // 2. Moyennes club (sur tous membres actifs avec km_saison déclaré)
+    const [clubAvg] = await query(
+      `SELECT
+        COUNT(*) AS members,
+        ROUND(AVG(NULLIF(km_saison, 0))) AS avg_km,
+        ROUND(AVG(NULLIF(elevation_saison, 0))) AS avg_dplus,
+        ROUND(AVG(NULLIF(ftp_w, 0))) AS avg_ftp
+       FROM users WHERE actif = TRUE AND role IN ('admin', 'moderateur', 'membre')`
+    );
+
+    // 3. Rank du user sur les km_saison + nb total de membres ranked
+    const [rankRow] = await query(
+      `SELECT (COUNT(*) + 1) AS rank
+       FROM users
+       WHERE actif = TRUE AND km_saison > (SELECT IFNULL(km_saison, 0) FROM users WHERE id = ?)`,
+      [userId]
+    );
+    const [totalRanked] = await query(
+      `SELECT COUNT(*) AS total FROM users WHERE actif = TRUE AND km_saison > 0`
+    );
+
+    // 4. Activités Strava récentes (5 dernières)
+    const recentActivities = await query(
+      `SELECT id, name, type, distance_m, elevation_gain_m, start_date
+       FROM strava_activities WHERE user_id = ?
+       ORDER BY start_date DESC LIMIT 5`,
+      [userId]
+    ).catch(() => []);
+
+    // 5. Sorties club auxquelles le user est inscrit (à venir)
+    const upcomingEvents = await query(
+      `SELECT e.id, e.slug, e.title, e.date, e.lieu, ei.statut
+       FROM evenement_inscriptions ei
+       JOIN evenements e ON e.id = ei.evenement_id
+       WHERE ei.user_id = ? AND e.date >= CURDATE() AND ei.statut != 'annule'
+       ORDER BY e.date ASC LIMIT 5`,
+      [userId]
+    );
+
+    res.json({
+      year,
+      personal: {
+        km_declared:        me?.km_saison || 0,
+        elevation_declared: me?.elevation_saison || 0,
+        ftp_w:              me?.ftp_w || null,
+        strava: stravaAgg && stravaAgg.rides > 0 ? {
+          rides:    stravaAgg.rides,
+          km:       stravaAgg.km_strava,
+          dplus:    stravaAgg.dplus_strava,
+          hours:    stravaAgg.hours_strava,
+          avg_kmh:  stravaAgg.avg_kmh,
+        } : null,
+      },
+      club: {
+        members:   clubAvg?.members || 0,
+        avg_km:    clubAvg?.avg_km || 0,
+        avg_dplus: clubAvg?.avg_dplus || 0,
+        avg_ftp:   clubAvg?.avg_ftp || null,
+      },
+      ranking: {
+        rank:  rankRow?.rank || null,
+        total: totalRanked?.total || 0,
+      },
+      recent_activities: recentActivities,
+      upcoming_events:   upcomingEvents,
+    });
+  } catch (err) {
+    req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[dashboard]');
+    errResponse(req, res, err, 500, 'Erreur dashboard');
+  }
+});
+
 // Admin: désactiver un membre
 router.patch('/:id/actif', requireAuth, requireAdmin, [
   body('actif').isBoolean().withMessage('actif doit être true ou false')

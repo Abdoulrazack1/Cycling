@@ -4,6 +4,7 @@ const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo, optionalAuth } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
+const mailer    = require('../services/mailer');
 const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 const router = express.Router();
@@ -172,9 +173,19 @@ router.post('/:id/inscrire', optionalAuth, [
         [newCnt, newStatut, ev.id]
       );
 
-      return { id: ins.insertId, inscrits: newCnt, complet: newStatut === 'complet' };
+      return { id: ins.insertId, inscrits: newCnt, complet: newStatut === 'complet', email, prenom, evTitle: ev.title, evDate: ev.date, evLieu: ev.lieu };
     });
-    res.status(201).json({ message: 'Inscription confirmée', ...result });
+    // Fire-and-forget : envoi de la confirmation par mail (ne bloque pas la réponse)
+    if (result.email) {
+      mailer.sendInscriptionConfirmation({
+        to: result.email,
+        prenom: result.prenom,
+        evenementTitle: result.evTitle,
+        evenementDate:  result.evDate,
+        lieu:           result.evLieu,
+      }).catch(err => logger.warn({ err: err.message }, '[inscription] mail échec'));
+    }
+    res.status(201).json({ message: 'Inscription confirmée', id: result.id, inscrits: result.inscrits, complet: result.complet });
   } catch (err) {
     if (err.status) return res.status(err.status).json({ error: err.message });
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /evenements/:id/inscrire]');

@@ -1,15 +1,15 @@
 /* sw.js — Service Worker C.C. Salouel (Brief C3)
  *
- * Stratégies :
- *   - Assets statiques (HTML/CSS/JS/SVG/fonts) → cache-first avec fallback réseau
+ * Stratégies (v13 — anti-stale-html) :
+ *   - HTML pages (.html, navigate)               → network-first, fallback cache (évite les UI obsolètes)
+ *   - Assets versionnables (CSS/JS/SVG/fonts)    → cache-first avec fallback réseau
  *   - API /api/*                                 → network-first avec fallback cache
- *   - Reste                                      → network-first
  *
  * À bumper CACHE_VERSION à chaque déploiement majeur pour évincer les
  * anciens caches.
  */
 
-const CACHE_VERSION = 'ccs-v11';
+const CACHE_VERSION = 'ccs-v14';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 
@@ -70,6 +70,28 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // HTML pages → NETWORK-FIRST pour éviter les UI obsolètes après déploiement
+  // (cf. AUDIT — anti-stale-html : sinon un Ctrl+Shift+R ne suffit pas car le SW
+  // sert l'ancien HTML cached avant même que le navigateur ne tente le réseau)
+  const isHtml = req.mode === 'navigate' ||
+                 url.pathname.endsWith('.html') ||
+                 url.pathname === '/' ||
+                 url.pathname.endsWith('/');
+  if (isHtml) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_RUNTIME).then((c) => c.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then(c => c || caches.match('/index.html')))
     );
     return;
   }

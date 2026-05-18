@@ -322,6 +322,26 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// ── Maintenance mode middleware ───────────────────────────────
+// Si maintenance_mode = '1' en BDD/env, bloque les écritures (POST/PUT/PATCH/DELETE)
+// pour les non-admins. Les GET restent autorisés (le site lit normalement).
+// Les admins authentifiés peuvent toujours tout faire (pour fixer le serveur).
+app.use('/api', (req, res, next) => {
+  if (process.env.MAINTENANCE_MODE !== '1') return next();
+  // GET et HEAD : toujours OK
+  if (req.method === 'GET' || req.method === 'HEAD') return next();
+  // Routes auth + admin (login, check session) toujours autorisées pour rester gérables
+  if (req.path.startsWith('/auth/') || req.path.startsWith('/admin/')) return next();
+  // Pour les autres écritures, on bloque les non-authentifiés
+  if (!req.headers.authorization) {
+    return res.status(503).json({
+      error: 'Site en maintenance',
+      message: process.env.MAINTENANCE_MESSAGE || 'Site en maintenance. Reviens dans quelques minutes.',
+    });
+  }
+  next();
+});
+
 // ── Routes API ────────────────────────────────────────────────
 app.use('/api/auth',       authLimiter, require('./routes/auth'));
 app.use('/api/sorties',    require('./routes/sorties'));
@@ -335,6 +355,7 @@ app.use('/api/gpx',        require('./routes/gpx'));
 app.use('/api/auto-courses', require('./routes/auto-courses'));
 app.use('/api/admin',      require('./routes/admin'));
 app.use('/api/search',     require('./routes/search'));
+app.use('/api/strava',     require('./routes/strava'));
 app.use('/api/pois',       require('./routes/pois-admin'));
 
 // ── Routes POI — montage avec mergeParams ─────────────────────
@@ -402,6 +423,26 @@ app.listen(PORT, () => {
     db: `${process.env.DB_NAME}@${process.env.DB_HOST}`,
     frontend: process.env.FRONTEND_URL,
   }, '🚴 API C.C. Salouel démarrée');
+
+  // Charger les credentials Strava depuis club_settings si absents du .env
+  // Permet à l'admin de configurer Strava depuis l'UI sans toucher au fichier .env
+  (async () => {
+    try {
+      const { query } = require('./config/database');
+      const rows = await query("SELECT cle, valeur FROM club_settings WHERE cle LIKE 'strava_%' OR cle LIKE 'maintenance_%'");
+      for (const r of rows) {
+        if (r.cle === 'strava_client_id'      && !process.env.STRAVA_CLIENT_ID)      process.env.STRAVA_CLIENT_ID = r.valeur;
+        if (r.cle === 'strava_client_secret'  && !process.env.STRAVA_CLIENT_SECRET)  process.env.STRAVA_CLIENT_SECRET = r.valeur;
+        if (r.cle === 'strava_redirect_uri'   && !process.env.STRAVA_REDIRECT_URI)   process.env.STRAVA_REDIRECT_URI = r.valeur;
+        if (r.cle === 'maintenance_mode')     process.env.MAINTENANCE_MODE = r.valeur;
+        if (r.cle === 'maintenance_message')  process.env.MAINTENANCE_MESSAGE = r.valeur;
+      }
+      if (process.env.STRAVA_CLIENT_ID)  logger.info('[strava] config chargée depuis club_settings (BDD)');
+      if (process.env.MAINTENANCE_MODE === '1') logger.warn('⚠ [maintenance] mode actif au démarrage');
+    } catch (err) {
+      logger.warn({ err: err.message }, '[strava] impossible de charger config depuis BDD');
+    }
+  })();
 
   // ── Auto-expire les courses passées (BDD + GPX) ──────────────
   // Lance en arrière-plan, sans bloquer le démarrage.

@@ -9,6 +9,7 @@ const { query, withTransaction } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { body, param, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
+const mailer    = require('../services/mailer');
 const { errResponse } = require('../lib/errors');
 const logger = require('../lib/logger');
 
@@ -454,6 +455,192 @@ router.post('/change-password', requireAuth, [
   }
 });
 
+// ── GET /api/auth/sessions ────────────────────────────────────
+// Liste les sessions actives de l'user (refresh tokens valides).
+// Ne renvoie PAS le hash complet — juste 8 derniers chars pour identification.
+router.get('/sessions', requireAuth, async (req, res) => {
+  try {
+    const rows = await query(
+      `SELECT id, token_hash, expires_at, created_at
+       FROM refresh_tokens
+       WHERE user_id = ? AND expires_at > NOW()
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    // Détecte la session courante via le cookie refreshToken si dispo
+    const currentHash = req.cookies?.refreshToken ? hashToken(req.cookies.refreshToken) : null;
+    res.json({
+      sessions: rows.map(r => ({
+        id: r.id,
+        short_hash: r.token_hash.slice(-8),
+        expires_at: r.expires_at,
+        created_at: r.created_at,
+        is_current: r.token_hash === currentHash,
+      })),
+    });
+  } catch (err) { errResponse(req, res, err, 500, 'Erreur listing sessions'); }
+});
+
+// ── DELETE /api/auth/sessions/:id ─────────────────────────────
+router.delete('/sessions/:id', requireAuth, async (req, res) => {
+  try {
+    const r = await query(
+      `DELETE FROM refresh_tokens WHERE id = ? AND user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (r.affectedRows === 0) return res.status(404).json({ error: 'Session introuvable' });
+    audit(req, 'logout', 'session', req.params.id, { source: 'self-revoke' });
+    res.json({ ok: true, revoked: 1 });
+  } catch (err) { errResponse(req, res, err, 500, 'Erreur révocation'); }
+});
+
+// ── DELETE /api/auth/sessions/all ─────────────────────────────
+// Déconnecte l'user de TOUS les appareils SAUF celui courant (si possible)
+router.delete('/sessions', requireAuth, async (req, res) => {
+  try {
+    const currentHash = req.cookies?.refreshToken ? hashToken(req.cookies.refreshToken) : null;
+    let r;
+    if (currentHash) {
+      r = await query(
+        `DELETE FROM refresh_tokens WHERE user_id = ? AND token_hash != ?`,
+        [req.user.id, currentHash]
+      );
+    } else {
+      r = await query(`DELETE FROM refresh_tokens WHERE user_id = ?`, [req.user.id]);
+    }
+    audit(req, 'logout', 'session', null, { source: 'self-revoke-all', count: r.affectedRows });
+    res.json({ ok: true, revoked: r.affectedRows });
+  } catch (err) { errResponse(req, res, err, 500, 'Erreur révocation globale'); }
+});
+
+// ── DELETE /api/auth/account ──────────────────────────────────
+// RGPD Article 17 — Droit à l'oubli / effacement.
+// L'user doit confirmer avec son mot de passe actuel.
+// Cascade : équipements, inscriptions, strava link, refresh tokens (FK ON DELETE CASCADE).
+router.delete('/account', requireAuth, [
+  body('password').notEmpty().withMessage('Mot de passe requis pour confirmer'),
+  body('confirm').equals('SUPPRIMER').withMessage('Tapez SUPPRIMER pour confirmer'),
+], async (req, res) => {
+  const errs = validationResult(req);
+  if (!errs.isEmpty()) return res.status(400).json({ error: errs.array()[0].msg });
+  try {
+    // Verif password
+    const [user] = await query('SELECT id, role, password_hash, username, email FROM users WHERE id = ?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    const ok = await bcrypt.compare(req.body.password, user.password_hash);
+    if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
+
+    // Sécurité : interdire la suppression du dernier admin actif
+    if (user.role === 'admin') {
+      const [{ cnt }] = await query(`SELECT COUNT(*) AS cnt FROM users WHERE role='admin' AND actif=TRUE`);
+      if (cnt <= 1) {
+        return res.status(409).json({ error: 'Vous êtes le dernier administrateur. Désignez un autre admin avant de supprimer votre compte.' });
+      }
+    }
+
+    // Audit AVANT effacement (sinon FK cascade efface aussi l'audit_log)
+    audit(req, 'delete', 'user', user.id, {
+      reason: 'rgpd-article-17',
+      username_was: user.username,
+      email_was:    user.email,
+    });
+
+    // DELETE — cascade FK fait le reste (equipment, inscriptions, strava_link, refresh_tokens, satellites...)
+    await query('DELETE FROM users WHERE id = ?', [user.id]);
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict' });
+    res.json({ ok: true, message: 'Compte supprimé. Vous avez été déconnecté.' });
+  } catch (err) { errResponse(req, res, err, 500, 'Erreur suppression compte'); }
+});
+
+// ── GET /api/auth/export-data ─────────────────────────────────
+// RGPD Article 20 — Droit à la portabilité.
+// Exporte au format JSON toutes les données personnelles de l'user :
+// profil, équipement, inscriptions événements, palmarès, satellites Strava,
+// audit log de ses propres actions.
+router.get('/export-data', requireAuth, async (req, res) => {
+  try {
+    const id = req.user.id;
+    const [user] = await query(
+      `SELECT id, numero, username, email, prenom, nom, role, bio, bio_public,
+              ftp_w, km_saison, elevation_saison, licence_ffc, annee_adhesion,
+              actif, created_at, updated_at
+       FROM users WHERE id = ?`,
+      [id]
+    );
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const [equipment, inscriptions, stravaLink, stravaActivities, palmares, auditLog, refreshTokens] = await Promise.all([
+      query('SELECT id, num, titre, description, sort_order FROM user_equipment WHERE user_id = ?', [id]),
+      query(
+        `SELECT ei.id, ei.prenom, ei.nom, ei.email, ei.categorie, ei.distance, ei.statut, ei.created_at,
+                e.title AS evenement_title, e.date AS evenement_date, e.lieu AS evenement_lieu
+         FROM evenement_inscriptions ei
+         JOIN evenements e ON e.id = ei.evenement_id
+         WHERE ei.user_id = ?`,
+        [id]
+      ),
+      query(
+        `SELECT strava_athlete_id, athlete_firstname, athlete_lastname, scope,
+                connected_at, last_sync_at FROM user_strava_link WHERE user_id = ?`,
+        [id]
+      ).catch(() => []),
+      query(
+        `SELECT id, name, type, distance_m, moving_time_s, elevation_gain_m,
+                start_date, start_lat, start_lng FROM strava_activities WHERE user_id = ?`,
+        [id]
+      ).catch(() => []),
+      query(
+        `SELECT id, annee, titre, evenement, categorie, rang, medaille FROM palmares
+         WHERE LOWER(coureur) LIKE LOWER(?)`,
+        [`%${user.prenom} ${user.nom}%`]
+      ).catch(() => []),
+      query(
+        `SELECT action, entity, entity_id, payload, ip_address, created_at FROM audit_log
+         WHERE user_id = ? ORDER BY created_at DESC LIMIT 500`,
+        [id]
+      ).catch(() => []),
+      query(
+        `SELECT id, expires_at FROM refresh_tokens WHERE user_id = ?`,
+        [id]
+      ).catch(() => []),
+    ]);
+
+    const payload = {
+      export_metadata: {
+        generated_at: new Date().toISOString(),
+        rgpd_article: 'Article 20 — Droit à la portabilité',
+        scope: 'Toutes les données personnelles associées à cet utilisateur, à l\'exclusion des secrets (mot de passe, tokens, 2FA secret) et des données techniques internes.',
+        retention_note: 'Pour exercer votre droit à l\'effacement (Article 17), contactez le bureau du club.',
+      },
+      profile: {
+        ...user,
+        password_hash:        '[redacted]',
+        two_factor_secret:    '[redacted]',
+      },
+      equipment,
+      inscriptions_events: inscriptions,
+      strava_link:         stravaLink[0] || null,
+      strava_activities:   stravaActivities,
+      palmares,
+      audit_log:           auditLog.map(a => ({
+        ...a,
+        payload: typeof a.payload === 'string' ? (() => { try { return JSON.parse(a.payload); } catch { return a.payload; } })() : a.payload,
+      })),
+      active_sessions: refreshTokens.length,
+    };
+
+    // Filename avec timestamp pour download
+    const filename = `ccs-export-${user.username}-${new Date().toISOString().slice(0, 10)}.json`;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    audit(req, 'export_data', 'user', id, { reason: 'rgpd-portability' });
+    res.send(JSON.stringify(payload, null, 2));
+  } catch (err) {
+    logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[export-data]');
+    errResponse(req, res, err, 500, 'Erreur export données');
+  }
+});
+
 // ── POST /api/auth/forgot-password ────────────────────────────
 // Enregistre la demande comme un message de contact (type "mot de passe oublié").
 // Pour une vraie implémentation, il faudrait envoyer un mail avec un token
@@ -475,23 +662,32 @@ router.post('/forgot-password', [
     );
 
     if (user) {
-      await query(
-        `INSERT INTO contacts (prenom, nom, email, sujet, message, ip_address)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          user.prenom, user.nom, email,
-          'Demande de réinitialisation de mot de passe',
-          `L'utilisateur « ${user.prenom} ${user.nom} » (id ${user.id}) a demandé la réinitialisation de son mot de passe. Merci de lui envoyer un lien ou un nouveau mot de passe temporaire.`,
-          req.ip
-        ]
-      );
-      // Audit anonyme (pas de req.user en contexte public, mais on trace l'IP)
-      audit(req, 'password_reset', 'user', user.id, { source: 'forgot-form', email });
+      // Génère un token JWT valable 1h pour le reset (type 'reset' — vérifié dans /reset-password)
+      const token = jwt.sign({ sub: user.id, type: 'reset' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const baseUrl = req.headers.origin || `http://localhost:${process.env.PORT || 3000}`;
+      const resetUrl = `${baseUrl}/reset-password.html?token=${token}`;
+
+      if (mailer.isConfigured()) {
+        // Envoi direct du mail à l'utilisateur (fire-and-forget)
+        mailer.sendPasswordReset({
+          to: email, prenom: user.prenom, resetUrl, expiresMinutes: 60
+        }).catch(err => logger.warn({ err: err.message }, '[forgot-password] mail échec'));
+        audit(req, 'password_reset', 'user', user.id, { source: 'forgot-form-mail', email });
+      } else {
+        // Fallback : notification admin via contact form (legacy)
+        await query(
+          `INSERT INTO contacts (prenom, nom, email, sujet, message, ip_address) VALUES (?, ?, ?, ?, ?, ?)`,
+          [user.prenom, user.nom, email, 'Demande de réinitialisation de mot de passe',
+           `L'utilisateur « ${user.prenom} ${user.nom} » (id ${user.id}) a demandé la réinitialisation de son mot de passe. SMTP non configuré — envoyer le lien manuellement.`,
+           req.ip]
+        );
+        audit(req, 'password_reset', 'user', user.id, { source: 'forgot-form-fallback', email });
+      }
     }
 
     // Réponse neutre dans tous les cas (anti-énumération)
     res.json({
-      message: 'Si un compte existe avec cette adresse, un administrateur vous contactera sous 48 h.'
+      message: 'Si un compte existe avec cette adresse, un email de réinitialisation vient d\'être envoyé. Vérifiez votre boîte (et les spams).'
     });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');

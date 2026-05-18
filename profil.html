@@ -118,6 +118,68 @@
     </div>
   </section>
 
+  <!-- ═══ Strava OAuth + stats ═══ -->
+  <section class="section-sm" id="strava-section">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <div class="sec-head-number">
+          <div class="sec-head-chapter"><em>Connecté.</em></div>
+          <div class="sec-head-marker">Strava</div>
+        </div>
+        <div class="sec-head-right">
+          <h2 class="d-l sec-head-title">Mon <span class="it">Strava</span></h2>
+          <p class="sec-head-desc">Connecte ton compte Strava pour importer automatiquement tes activités et alimenter tes stats personnelles.</p>
+        </div>
+      </div>
+
+      <div id="strava-panel" style="border:1px solid var(--line); padding:24px 28px; margin-top:14px;">
+        <!-- État 1 : pas configuré côté serveur -->
+        <div id="strava-notconfigured" hidden style="font-family:var(--f-sans); font-size:13px; color:var(--parch-2);">
+          <p style="margin-bottom:14px;">⚙️ <b>L'intégration Strava n'est pas configurée sur ce serveur.</b></p>
+          <div id="strava-admin-help" hidden style="background:var(--ink-3); border-left:3px solid var(--brass); padding:14px 18px; margin-bottom:14px; font-size:12px; line-height:1.7;">
+            <b style="color:var(--brass);">Configuration admin (à faire 1 fois) :</b>
+            <ol style="margin:8px 0 0 18px; padding:0;">
+              <li>Crée une app sur <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener" style="color:var(--brass);">strava.com/settings/api</a></li>
+              <li>Configure le <i>Authorization Callback Domain</i> : <code>localhost</code> (dev) ou ton domaine</li>
+              <li>Copie <code>Client ID</code> et <code>Client Secret</code> dans le fichier <code>.env</code> du serveur :
+                <pre style="background:var(--ink); padding:8px 12px; margin-top:6px; font-size:11px; overflow-x:auto;">STRAVA_CLIENT_ID=12345
+STRAVA_CLIENT_SECRET=abc123...
+STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback</pre>
+              </li>
+              <li>Redémarre le serveur (<code>npm start</code>) → cette section affichera le bouton "Connecter mon Strava".</li>
+            </ol>
+          </div>
+          <p style="font-size:11px; color:var(--parch-3);">Une fois configuré, <b>tous les membres</b> (admin compris) pourront relier leur compte Strava en un clic depuis cette page.</p>
+        </div>
+
+        <!-- État 2 : configuré mais pas connecté -->
+        <div id="strava-disconnected" hidden>
+          <p style="font-family:var(--f-sans); font-size:13px; color:var(--parch-2); margin-bottom:14px;">
+            Ton compte Strava n'est pas encore lié. Clique pour autoriser le Club à lire tes activités (read + activity:read uniquement, aucune écriture).
+          </p>
+          <a href="/api/strava/connect" class="btn btn-brass btn-sm">↗ Connecter mon Strava</a>
+        </div>
+
+        <!-- État 3 : connecté -->
+        <div id="strava-connected" hidden>
+          <div style="display:flex; gap:14px; align-items:center; margin-bottom:18px;">
+            <img id="strava-avatar" src="" alt="" style="width:48px; height:48px; border-radius:50%; border:1px solid var(--brass);">
+            <div>
+              <div id="strava-name" style="font-family:var(--f-disp); font-size:18px; color:var(--t-cream);">—</div>
+              <div id="strava-meta" style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3);">—</div>
+            </div>
+          </div>
+          <div id="strava-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:18px;"></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-brass btn-sm" id="strava-sync-btn" type="button">↻ Synchroniser</button>
+            <button class="btn btn-ghost btn-sm" id="strava-disconnect-btn" type="button">Déconnecter</button>
+          </div>
+          <div id="strava-msg" style="margin-top:14px; font-family:var(--f-sans); font-size:11px; color:var(--parch-3);"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section-sm" id="my-stats-section" hidden>
     <div class="wrap">
       <div class="sec-head" data-reveal>
@@ -278,6 +340,66 @@
             ↗ Se déconnecter
           </button>
         </div>
+
+        <!-- ═══ Sessions actives (refresh tokens) ═══ -->
+        <div class="profile-security-card">
+          <div class="ps-card-title">Sessions actives</div>
+          <div class="ps-card-desc">
+            Liste des appareils/navigateurs où vous êtes actuellement connecté. Révoquez ceux que vous ne reconnaissez pas.
+          </div>
+          <div id="sessions-list" style="margin-top:14px; font-family:var(--f-sans); font-size:12px;">
+            <div style="opacity:.6;">Chargement…</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="sessions-revoke-all-btn" type="button" style="margin-top:14px; color:#c08080;" hidden>
+            Déconnecter tous les autres appareils
+          </button>
+        </div>
+
+        <!-- ═══ Suppression de compte (RGPD article 17) ═══ -->
+        <div class="profile-security-card" style="border-color:#c0808055;">
+          <div class="ps-card-title" style="color:#c08080;">Supprimer mon compte</div>
+          <div class="ps-card-desc">
+            <strong style="color:#c08080;">Action irréversible.</strong> Supprime votre compte et toutes les données associées :
+            équipements, inscriptions événements, lien Strava, activités importées, satellites Claude.<br>
+            <em>RGPD Article 17 — Droit à l'oubli.</em> Avant suppression, pensez à <a href="#" id="ps-export-link" style="color:var(--brass);">exporter vos données</a>.
+          </div>
+          <button class="btn btn-ghost btn-sm" id="ps-delete-btn" type="button" style="margin-top:18px; color:#c08080; border-color:#c08080;">
+            🗑 Supprimer mon compte définitivement
+          </button>
+        </div>
+
+        <!-- Modal de confirmation suppression -->
+        <div id="delete-modal" hidden style="position:fixed; inset:0; background:rgba(8,14,11,.92); backdrop-filter:blur(8px); z-index:1500; align-items:center; justify-content:center; padding:20px;">
+          <div style="background:var(--ink-2); border:2px solid #c08080; padding:32px 36px; max-width:520px; width:100%;">
+            <div style="font-family:var(--f-disp); font-size:22px; color:#c08080; margin-bottom:8px;">Confirmer la suppression de votre compte</div>
+            <p style="font-family:var(--f-sans); font-size:13px; line-height:1.6; color:var(--parch-2); margin-bottom:20px;">
+              Cette action est <strong>irréversible</strong>. Vos données seront effacées immédiatement et ne peuvent pas être restaurées.
+            </p>
+            <div style="margin-bottom:14px;">
+              <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Mot de passe actuel <span style="color:#c08080;">*</span></label>
+              <input type="password" id="dm-pw" autocomplete="current-password" style="width:100%; padding:10px 14px; background:var(--ink-3); border:1px solid var(--line); color:var(--parch);">
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="display:block; font-family:var(--f-sans); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--parch-2); margin-bottom:6px;">Tapez <code style="color:#c08080;">SUPPRIMER</code> pour confirmer</label>
+              <input type="text" id="dm-confirm" autocomplete="off" placeholder="SUPPRIMER" style="width:100%; padding:10px 14px; background:var(--ink-3); border:1px solid var(--line); color:var(--parch); font-family:var(--f-mono);">
+            </div>
+            <div id="dm-err" hidden style="color:#c08080; font-family:var(--f-sans); font-size:12px; margin-bottom:14px;"></div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button class="btn btn-ghost btn-sm" id="dm-cancel" type="button">Annuler</button>
+              <button class="btn btn-ghost btn-sm" id="dm-confirm-btn" type="button" style="color:#c08080; border-color:#c08080;">Supprimer définitivement</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ps-card">
+          <div class="ps-card-title">Mes données (RGPD)</div>
+          <div class="ps-card-desc">
+            Exportez l'intégralité de vos données personnelles au format JSON (profil, équipements, inscriptions, activités Strava, palmarès, audit). <em>Article 20 — Droit à la portabilité.</em>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="export-data-btn" type="button" style="margin-top:18px;">
+            ⬇ Télécharger mes données
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -285,7 +407,7 @@
   </main>
 
   <!-- Modal édition équipement -->
-  <div id="equip-modal" hidden style="position:fixed; inset:0; background:rgba(8,14,11,.85); backdrop-filter:blur(8px); z-index:1500; display:flex; align-items:center; justify-content:center; padding:20px;">
+  <div id="equip-modal" hidden style="position:fixed; inset:0; background:rgba(8,14,11,.85); backdrop-filter:blur(8px); z-index:1500; align-items:center; justify-content:center; padding:20px;">
     <div style="background:var(--ink-2); border:1px solid var(--line); padding:28px 32px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto;">
       <div style="font-family:var(--f-disp); font-size:24px; color:var(--brass); margin-bottom:18px;" id="equip-modal-title">Nouvel équipement</div>
       <div style="margin-bottom:14px;">

@@ -201,9 +201,16 @@
     inputDesc.value  = item?.description || '';
     modalErr.hidden  = true;
     modal.hidden = false;
+    modal.style.display = 'flex'; // ne s'applique QUE quand visible
     setTimeout(() => inputTitre.focus(), 50);
   }
-  function closeModal() { modal.hidden = true; editingId = null; }
+  function closeModal() {
+    modal.hidden = true;
+    modal.style.display = 'none';
+    editingId = null;
+  }
+  // Sécurité : forcer le state fermé au chargement (au cas où le CSS triche)
+  closeModal();
 
   btnAdd?.addEventListener('click', () => openModal(null));
   btnCancel?.addEventListener('click', closeModal);
@@ -319,6 +326,330 @@
     } catch (err) {
       errEl.textContent = err.message || 'Erreur lors de la modification'; errEl.hidden = false;
       btn.textContent = 'Modifier le mot de passe'; btn.disabled = false;
+    }
+  });
+
+  // ═════════════════════════════════════════════════════════════════
+  // STRAVA — état connexion / sync / stats
+  // ═════════════════════════════════════════════════════════════════
+  async function _stravaApi(p, init = {}) {
+    const token = window.CCS_AUTH?.getToken();
+    if (!token) throw new Error('non authentifié');
+    const r = await fetch(window.CCS_CFG.API + p, {
+      ...init,
+      headers: { ...(init.headers || {}), Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    return data;
+  }
+
+  function _fmtKm(m)   { return m ? (m / 1000).toFixed(1) + ' km'  : '—'; }
+  function _fmtElev(m) { return m ? Math.round(m) + ' m'           : '—'; }
+  function _fmtH(s)    { if (!s) return '—'; const h = Math.floor(s/3600); const m = Math.floor((s%3600)/60); return h ? h + 'h' + String(m).padStart(2,'0') : m + ' min'; }
+
+  function renderStravaState(s, stats) {
+    const notC = document.getElementById('strava-notconfigured');
+    const disc = document.getElementById('strava-disconnected');
+    const conn = document.getElementById('strava-connected');
+    if (notC) notC.hidden = true;
+    if (disc) disc.hidden = true;
+    if (conn) conn.hidden = true;
+
+    if (!s.configured) {
+      if (notC) notC.hidden = false;
+      // Si user admin, afficher le guide de config
+      const adminHelp = document.getElementById('strava-admin-help');
+      if (adminHelp && profile?.role === 'admin') adminHelp.hidden = false;
+      return;
+    }
+    if (!s.connected)  { if (disc) disc.hidden = false; return; }
+
+    if (conn) conn.hidden = false;
+    const ath = s.athlete || {};
+    const avatar = document.getElementById('strava-avatar');
+    if (avatar) avatar.src = ath.profile_url || '';
+    const name = document.getElementById('strava-name');
+    if (name) name.textContent = (ath.firstname || '') + ' ' + (ath.lastname || '');
+    const meta = document.getElementById('strava-meta');
+    if (meta) meta.textContent = `${s.activities_count || 0} activités importées · dernière sync : ${s.last_sync_at ? new Date(s.last_sync_at).toLocaleDateString('fr-FR') + ' ' + new Date(s.last_sync_at).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : 'jamais'}`;
+
+    if (stats) {
+      const grid = document.getElementById('strava-stats');
+      const cells = [
+        { l: 'Cette année · km',  v: _fmtKm(stats.year_distance_m) },
+        { l: 'Cette année · D+',  v: _fmtElev(stats.year_elev_m) },
+        { l: 'Cette année · temps', v: _fmtH(stats.year_time_s) },
+        { l: '30 derniers j',     v: _fmtKm(stats.month_distance_m) },
+        { l: 'Total importé',     v: _fmtKm(stats.total_distance_m) + ' / ' + (stats.total || 0) + ' rides' },
+      ];
+      grid.innerHTML = cells.map(c =>
+        `<div style="border:1px solid var(--line); padding:12px 14px;"><div style="font-family:var(--f-sans); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--parch-3);">${c.l}</div><div style="font-family:var(--f-disp); font-size:22px; color:var(--brass); margin-top:4px;">${c.v}</div></div>`
+      ).join('');
+    }
+  }
+
+  async function loadStrava() {
+    try {
+      const status = await _stravaApi('/strava/status');
+      let stats = null;
+      if (status.connected) {
+        try { stats = await _stravaApi('/strava/stats'); } catch {}
+      }
+      renderStravaState(status, stats);
+    } catch (err) {
+      console.warn('[strava]', err);
+    }
+  }
+  loadStrava();
+
+  // Notification après retour OAuth callback (URL ?strava=connected / error)
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('strava')) {
+    const status   = qs.get('strava');
+    const imported = parseInt(qs.get('imported') || '0', 10);
+    const syncErr  = qs.get('sync_error');
+    if (window.toast) {
+      if (status === 'connected') {
+        let msg = '✓ Strava connecté';
+        if (imported > 0) msg += ` · ${imported} activité${imported > 1 ? 's' : ''} importée${imported > 1 ? 's' : ''} (90 derniers jours)`;
+        else if (syncErr) msg += ' · sync échouée — clique Synchroniser pour réessayer';
+        else              msg += ' · aucune nouvelle activité à importer';
+        window.toast(msg, 'success', 6000);
+      } else if (status === 'error') {
+        window.toast('Échec Strava : ' + (qs.get('reason') || 'inconnu'), 'error', 8000);
+      }
+    }
+    history.replaceState(null, '', location.pathname);
+  }
+
+  document.getElementById('strava-sync-btn')?.addEventListener('click', async (e) => {
+    const btn = e.target;
+    const msg = document.getElementById('strava-msg');
+    btn.disabled = true; btn.textContent = 'Sync en cours…';
+    if (msg) msg.textContent = '';
+    try {
+      const r = await _stravaApi('/strava/sync', { method: 'POST', body: JSON.stringify({ since_days: 90, max_pages: 3 }) });
+      if (msg) msg.textContent = `✓ ${r.imported} nouvelles activités importées (${r.skipped} déjà connues, ${r.total} scannées).`;
+      loadStrava();
+    } catch (err) {
+      if (msg) msg.textContent = '❌ ' + err.message;
+    } finally {
+      btn.disabled = false; btn.textContent = '↻ Synchroniser';
+    }
+  });
+
+  document.getElementById('strava-disconnect-btn')?.addEventListener('click', async () => {
+    if (!confirm('Déconnecter ton compte Strava ? Les activités importées resteront en base mais ne seront plus mises à jour.')) return;
+    try {
+      await _stravaApi('/strava/disconnect', { method: 'POST' });
+      if (window.toast) window.toast('Strava déconnecté', 'info');
+      loadStrava();
+    } catch (err) {
+      if (window.toast) window.toast('Erreur : ' + err.message, 'error');
+    }
+  });
+
+  // ═════════════════════════════════════════════════════════════════
+  // DASHBOARD — stats personnelles (rang, club avg, sorties, à venir)
+  // ═════════════════════════════════════════════════════════════════
+  async function loadDashboard() {
+    try {
+      const token = window.CCS_AUTH?.getToken();
+      if (!token) return;
+      const r = await fetch(window.CCS_CFG.API + '/membres/me/dashboard', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      if (!r.ok) return;
+      const d = await r.json();
+      const section = document.getElementById('my-stats-section');
+      if (!section) return;
+      section.hidden = false;
+
+      const yearEl = document.getElementById('stats-year');
+      if (yearEl) yearEl.textContent = d.year || new Date().getFullYear();
+
+      // Mon rang
+      const rank = document.getElementById('stat-rank');
+      const rankSub = document.getElementById('stat-rank-sub');
+      if (rank) rank.textContent = d.ranking?.rank ? `${d.ranking.rank}` : '—';
+      if (rankSub) rankSub.textContent = d.ranking?.total ? `sur ${d.ranking.total} membres ranked` : 'pas de km déclaré';
+
+      // Moyenne club
+      const clubAvg    = document.getElementById('stat-club-avg');
+      const clubAvgSub = document.getElementById('stat-club-avg-sub');
+      if (clubAvg) clubAvg.innerHTML = `${d.club?.avg_km || 0}<span class="unit"> km</span>`;
+      if (clubAvgSub) clubAvgSub.textContent = `D+ moy. ${d.club?.avg_dplus || 0} m · ${d.club?.members || 0} membres`;
+
+      // Sorties club (an) — combine déclaré + Strava
+      const sortiesDone = document.getElementById('stat-sorties-done');
+      const sortiesSub  = document.getElementById('stat-sorties-sub');
+      const myKm = d.personal?.strava?.km || d.personal?.km_declared || 0;
+      const myDplus = d.personal?.strava?.dplus || d.personal?.elevation_declared || 0;
+      if (sortiesDone) sortiesDone.innerHTML = `${myKm}<span class="unit"> km</span>`;
+      if (sortiesSub) sortiesSub.textContent = d.personal?.strava
+        ? `${d.personal.strava.rides} rides Strava · D+ ${myDplus} m`
+        : `D+ ${myDplus} m (déclaré)`;
+
+      // Événements à venir
+      const upcoming = document.getElementById('stat-upcoming');
+      if (upcoming) upcoming.textContent = (d.upcoming_events || []).length;
+    } catch (err) {
+      console.warn('[dashboard]', err);
+    }
+  }
+  loadDashboard();
+
+  // ═════════════════════════════════════════════════════════════════
+  // EXPORT RGPD — Article 20 portabilité
+  // ═════════════════════════════════════════════════════════════════
+  document.getElementById('export-data-btn')?.addEventListener('click', async (e) => {
+    const btn = e.target;
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'Préparation…';
+    try {
+      const token = window.CCS_AUTH?.getToken();
+      const r = await fetch(window.CCS_CFG.API + '/auth/export-data', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const blob = await r.blob();
+      const filename = (r.headers.get('content-disposition') || '').match(/filename="([^"]+)"/)?.[1]
+        || `ccs-export-${new Date().toISOString().slice(0, 10)}.json`;
+      // Trigger download via <a> temporaire
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (window.toast) window.toast(`Export téléchargé : ${filename}`, 'success', 4000);
+    } catch (err) {
+      if (window.toast) window.toast('Erreur export : ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  });
+
+  // ═════════════════════════════════════════════════════════════════
+  // SESSIONS — liste + révocation
+  // ═════════════════════════════════════════════════════════════════
+  async function loadSessions() {
+    const listEl = document.getElementById('sessions-list');
+    const revokeAllBtn = document.getElementById('sessions-revoke-all-btn');
+    if (!listEl) return;
+    try {
+      const token = window.CCS_AUTH?.getToken();
+      const r = await fetch(window.CCS_CFG.API + '/auth/sessions', {
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const sessions = data.sessions || [];
+      if (sessions.length === 0) {
+        listEl.innerHTML = '<div style="opacity:.6;">Aucune session active détectée.</div>';
+        revokeAllBtn.hidden = true;
+        return;
+      }
+      listEl.innerHTML = sessions.map(s => {
+        const created = new Date(s.created_at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const expires = new Date(s.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+        const cur = s.is_current
+          ? '<span style="color:var(--brass); font-weight:500;"> · session actuelle</span>'
+          : ` <button class="btn-revoke" data-sid="${s.id}" style="background:transparent; border:1px solid #c08080; color:#c08080; padding:2px 8px; font-size:10px; cursor:pointer; margin-left:8px;">Révoquer</button>`;
+        return `<div style="padding:8px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <code style="font-size:11px; color:var(--parch-3);">…${s.short_hash}</code> · créée ${created}${cur}
+            <div style="font-size:11px; color:var(--parch-3);">expire ${expires}</div>
+          </div>
+        </div>`;
+      }).join('');
+      const hasOthers = sessions.some(s => !s.is_current);
+      revokeAllBtn.hidden = !hasOthers;
+      // Listeners
+      listEl.querySelectorAll('.btn-revoke').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Révoquer cette session ?')) return;
+          try {
+            await fetch(window.CCS_CFG.API + '/auth/sessions/' + btn.dataset.sid, {
+              method: 'DELETE',
+              headers: { Authorization: 'Bearer ' + token },
+            });
+            if (window.toast) window.toast('Session révoquée', 'success');
+            loadSessions();
+          } catch (err) { if (window.toast) window.toast('Erreur', 'error'); }
+        });
+      });
+    } catch (err) {
+      listEl.innerHTML = '<div style="color:#c08080;">Impossible de charger les sessions.</div>';
+    }
+  }
+  loadSessions();
+
+  document.getElementById('sessions-revoke-all-btn')?.addEventListener('click', async () => {
+    if (!confirm('Déconnecter tous les autres appareils ? Vous resterez connecté ici.')) return;
+    try {
+      const token = window.CCS_AUTH?.getToken();
+      const r = await fetch(window.CCS_CFG.API + '/auth/sessions', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      const data = await r.json();
+      if (window.toast) window.toast(`${data.revoked || 0} session(s) révoquée(s)`, 'success');
+      loadSessions();
+    } catch (err) { if (window.toast) window.toast('Erreur révocation globale', 'error'); }
+  });
+
+  // ═════════════════════════════════════════════════════════════════
+  // SUPPRESSION DE COMPTE — RGPD article 17
+  // ═════════════════════════════════════════════════════════════════
+  const dm = document.getElementById('delete-modal');
+  function showDelModal() { dm.hidden = false; dm.style.display = 'flex'; }
+  function hideDelModal() { dm.hidden = true; dm.style.display = 'none';
+    document.getElementById('dm-pw').value = '';
+    document.getElementById('dm-confirm').value = '';
+    document.getElementById('dm-err').hidden = true;
+  }
+  hideDelModal();
+
+  document.getElementById('ps-delete-btn')?.addEventListener('click', showDelModal);
+  document.getElementById('dm-cancel')?.addEventListener('click', hideDelModal);
+  document.getElementById('ps-export-link')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('export-data-btn')?.click();
+  });
+  dm?.addEventListener('click', (e) => { if (e.target === dm) hideDelModal(); });
+
+  document.getElementById('dm-confirm-btn')?.addEventListener('click', async () => {
+    const pw = document.getElementById('dm-pw').value;
+    const confirm = document.getElementById('dm-confirm').value;
+    const err = document.getElementById('dm-err');
+    err.hidden = true;
+    if (!pw) { err.textContent = 'Mot de passe requis'; err.hidden = false; return; }
+    if (confirm !== 'SUPPRIMER') { err.textContent = 'Tapez exactement SUPPRIMER pour confirmer'; err.hidden = false; return; }
+    const btn = document.getElementById('dm-confirm-btn');
+    btn.disabled = true; btn.textContent = 'Suppression…';
+    try {
+      const token = window.CCS_AUTH?.getToken();
+      const r = await fetch(window.CCS_CFG.API + '/auth/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ password: pw, confirm }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'HTTP ' + r.status);
+      alert('Compte supprimé.\n\nVous allez être déconnecté et redirigé vers l\'accueil.');
+      // Force logout client-side puis redirection
+      try { await window.CCS_AUTH.logout(); } catch {}
+      location.href = '/';
+    } catch (err2) {
+      err.textContent = err2.message;
+      err.hidden = false;
+      btn.disabled = false; btn.textContent = 'Supprimer définitivement';
     }
   });
 })();
