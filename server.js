@@ -445,20 +445,24 @@ app.listen(PORT, () => {
   })();
 
   // ── Auto-expire les courses passées (BDD + GPX) ──────────────
-  // Lance en arrière-plan, sans bloquer le démarrage.
-  // Re-exécute toutes les 24 h tant que le serveur tourne.
-  const runCleanup = () => {
-    const { fork } = require('child_process');
-    const proc = fork(require('path').join(__dirname, 'scripts', 'expire-past-sorties.js'), [], {
-      stdio: 'inherit',
-      env: process.env,
-    });
-    proc.on('error', err => logger.warn({ err }, '[expire-past] failed'));
-  };
-  // Premier lancement : 30 s après le boot (laisse la BDD se stabiliser)
-  setTimeout(runCleanup, 30_000);
-  // Puis toutes les 24 h
-  setInterval(runCleanup, 24 * 60 * 60 * 1000);
+  // Grace period = 90 jours (3 mois) par défaut. Surclassable via
+  // SCRAPE_GRACE_DAYS dans .env. Désactivable via DISABLE_AUTO_EXPIRE=true.
+  if (process.env.DISABLE_AUTO_EXPIRE !== 'true') {
+    const grace = process.env.SCRAPE_GRACE_DAYS || '90';
+    const runCleanup = () => {
+      const { fork } = require('child_process');
+      const proc = fork(require('path').join(__dirname, 'scripts', 'expire-past-sorties.js'), [], {
+        stdio: 'inherit',
+        env: { ...process.env, SCRAPE_GRACE_DAYS: grace },
+      });
+      proc.on('error', err => logger.warn({ err }, '[expire-past] failed'));
+    };
+    setTimeout(runCleanup, 30_000);
+    setInterval(runCleanup, 24 * 60 * 60 * 1000);
+    logger.info('[auto-expire] activé · grace ' + grace + 'j');
+  } else {
+    logger.info('[auto-expire] désactivé via DISABLE_AUTO_EXPIRE=true');
+  }
 
   // ── Purge audit_log (Brief B5) ───────────────────────────────
   // Rétention configurable via AUDIT_RETENTION_DAYS (défaut 365j).
