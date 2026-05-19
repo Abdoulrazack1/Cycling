@@ -204,4 +204,146 @@ router.get('/stats', requireAuth, async (req, res) => {
   } catch (err) { errResponse(req, res, err, 500, 'Erreur stats Strava'); }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// GET /api/strava/my-routes — Liste les routes Strava de l'utilisateur
+// connecté (les "Itinéraires" sauvegardés sur Strava). Idéal pour qu'un
+// admin/président parcoure ses routes et les transforme en sorties.
+// ═══════════════════════════════════════════════════════════════════
+router.get('/my-routes', requireAuth, async (req, res) => {
+  try {
+    const perPage = Math.min(50, parseInt(req.query.per_page) || 30);
+    const page    = Math.max(1, parseInt(req.query.page) || 1);
+    const routes  = await strava.stravaGet(req.user.id, '/athlete/routes', { page, per_page: perPage });
+    // On normalise et on ne renvoie que les champs utiles (économise les tokens UI)
+    const out = (routes || []).map(r => ({
+      id:         r.id,
+      id_str:     r.id_str || String(r.id),
+      name:       r.name,
+      description: r.description || null,
+      type:       r.type === 1 ? 'ride' : (r.type === 2 ? 'run' : 'other'),
+      sub_type:   r.sub_type, // 1=road, 2=mtb, 3=cx, 4=trail, 5=mixed
+      distance_m: Math.round(r.distance || 0),
+      elevation_gain_m: Math.round(r.elevation_gain || 0),
+      estimated_moving_time_s: r.estimated_moving_time,
+      created_at: r.created_at,
+      starred:    !!r.starred,
+      private:    !!r.private,
+      summary_polyline: r.map?.summary_polyline || null,
+    }));
+    res.json({ routes: out, page, per_page: perPage });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur listing routes Strava');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// POST /api/strava/import-route/:routeId — En 1 appel :
+//  1. Télécharge le GPX de la route Strava
+//  2. Écrit le fichier dans asset/gpx/{slug}.gpx
+//  3. Crée une nouvelle sortie en BDD avec métadonnées extraites
+//  4. Retourne la sortie créée
+//
+// Body : { date, title?, statut?, chapter? }
+//   date  : YYYY-MM-DD (requis, pour fixer la date de la sortie)
+//   title : si absent, utilise le nom de la route
+// ═══════════════════════════════════════════════════════════════════
+const fs   = require('fs');
+const path = require('path');
+const { parseGpx } = require('../services/gpx-parser');
+const { GPX_DIR: ASSET_GPX_DIR } = require('../middleware/upload');
+
+function _slugify(s) {
+  return String(s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+router.post('/import-route/:routeId', requireAuth, async (req, res) => {
+  try {
+    const routeId = req.params.routeId;
+    const date    = req.body?.date;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Date requise (YYYY-MM-DD)' });
+    }
+
+    // 1. Fetch metadata Strava
+    const meta = await strava.stravaGet(req.user.id, `/routes/${routeId}`);
+    const title    = (req.body?.title || meta.name || `Route ${routeId}`).trim();
+    const chapter  = req.body?.chapter || 'route';
+    const statut   = req.body?.statut === 'future' ? 'future' : (new Date(date) > new Date() ? 'future' : 'passee');
+    const slug     = _slugify(title) || `route-${routeId}`;
+    const sortieId = `${slug}-${date}`;
+
+    // Vérif unicité
+    const existing = await query('SELECT id FROM sorties WHERE id = ? OR slug = ?', [sortieId, slug]);
+    if (existing.length) {
+      return res.status(409).json({ error: `Sortie déjà existante : ${existing[0].id}. Changez le titre ou la date.` });
+    }
+
+    // 2. Télécharge le GPX (endpoint Strava /routes/{id}/export_gpx)
+    const token = await strava.getValidAccessToken(req.user.id);
+    const gpxResp = await fetch(`https://www.strava.com/api/v3/routes/${routeId}/export_gpx`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!gpxResp.ok) {
+      const t = await gpxResp.text();
+      return res.status(502).json({ error: `Téléchargement GPX Strava échoué (${gpxResp.status})`, detail: t.slice(0, 200) });
+    }
+    const gpxText = await gpxResp.text();
+
+    // 3. Parse GPX pour métriques + bbox
+    const metrics = parseGpx(gpxText);
+
+    // 4. Écrit le fichier GPX
+    const gpxFilename = `${slug}.gpx`;
+    const gpxPath = path.join(ASSET_GPX_DIR, gpxFilename);
+    fs.writeFileSync(gpxPath, gpxText);
+
+    // 5. INSERT sortie
+    const heroMap = {
+      route: 'asset/img/img-route.webp',  gravel: 'asset/img/img-gravel.webp',
+      cote:  'asset/img/img-cote.webp',   monts: 'asset/img/img-monts.webp',
+      pave:  'asset/img/img-pave.webp',   peloton: 'asset/img/img-peloton.webp',
+      clm:   'asset/img/img-clm.webp',
+    };
+    const heroImg = heroMap[chapter] || heroMap.route;
+    await query(
+      `INSERT INTO sorties (id, slug, title, title_html, subtitle, chapter, description,
+         date, date_label, distance_km, elevation_gain, elevation_loss, elevation_max, elevation_min,
+         hero_img, card_img, location_name, location_lat, location_lng, gpx_filename, statut, created_by)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        sortieId, slug, title, title,
+        meta.description || `Importé depuis Strava (route ${routeId})`,
+        chapter,
+        meta.description || null,
+        date, null,
+        metrics.distance_km, metrics.elevation_gain, metrics.elevation_loss,
+        metrics.elevation_max, metrics.elevation_min,
+        heroImg, heroImg,
+        null, metrics.start.lat, metrics.start.lng,
+        gpxFilename, statut, req.user.id,
+      ]
+    );
+
+    logger.info({ userId: req.user.id, routeId, sortieId, distance: metrics.distance_km }, '[strava] route imported as sortie');
+    res.status(201).json({
+      ok: true,
+      sortie: {
+        id: sortieId, slug, title,
+        distance_km: metrics.distance_km,
+        elevation_gain: metrics.elevation_gain,
+        gpx_filename: gpxFilename,
+        statut, date,
+      },
+      strava_route: { id: routeId, name: meta.name },
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, '[strava] import-route error');
+    errResponse(req, res, err, 500, 'Erreur import route Strava');
+  }
+});
+
 module.exports = router;
