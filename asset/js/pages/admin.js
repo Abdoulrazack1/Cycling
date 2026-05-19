@@ -92,10 +92,15 @@
         document.getElementById('sc-uri').textContent = cfg.redirect_uri || '—';
         document.getElementById('sc-src').textContent = cfg.source === 'db' ? 'Base de données (modifié via UI)' : 'Fichier .env';
         activeEl.hidden = false;
+        // Charge les routes Strava de l'admin si connecté
+        document.getElementById('strava-routes-section').hidden = false;
+        loadStravaRoutes();
       } else {
         // Pré-remplir le redirect URI avec une valeur par défaut sensée
         const uriInput = document.getElementById('sc-input-uri');
         if (uriInput && !uriInput.value) uriInput.placeholder = `${proto}//${host}/api/strava/callback`;
+        document.getElementById('sc-copy-website').textContent = `${proto}//${host}`;
+        document.getElementById('sc-copy-domain').textContent = host.split(':')[0];
         formEl.hidden = false;
       }
     } catch (err) {
@@ -148,7 +153,89 @@
         btn.disabled = false; btn.textContent = 'Enregistrer';
       }
     }
+
+    // ── Clipboard helpers (panel Strava admin) ──
+    if (e.target?.id === 'btn-copy-domain' || e.target?.closest('#btn-copy-domain')) {
+      const txt = document.getElementById('sc-copy-domain')?.textContent || 'localhost';
+      navigator.clipboard.writeText(txt).then(() => toast('Copié : ' + txt, 'success', 2000)).catch(() => {});
+    }
+    if (e.target?.id === 'btn-copy-website' || e.target?.closest('#btn-copy-website')) {
+      const txt = document.getElementById('sc-copy-website')?.textContent || location.origin;
+      navigator.clipboard.writeText(txt).then(() => toast('Copié : ' + txt, 'success', 2000)).catch(() => {});
+    }
+
+    // ── Refresh routes Strava ──
+    if (e.target?.id === 'btn-strava-routes-refresh') {
+      loadStravaRoutes();
+    }
+
+    // ── Import 1 clic d'une route Strava → sortie ──
+    if (e.target?.classList.contains('btn-import-route')) {
+      const card = e.target.closest('[data-route-id]');
+      if (!card) return;
+      const routeId = card.dataset.routeId;
+      const name    = card.dataset.routeName || 'Route';
+      const date = prompt(`Date de la sortie pour "${name}" ? (YYYY-MM-DD, ex. ${new Date(Date.now() + 7*86400000).toISOString().slice(0,10)})`,
+                          new Date(Date.now() + 7*86400000).toISOString().slice(0,10));
+      if (!date) return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        toast('Format attendu : YYYY-MM-DD', 'error');
+        return;
+      }
+      e.target.disabled = true; e.target.textContent = 'Import…';
+      try {
+        const r = await apiFetch(`/strava/import-route/${routeId}`, {
+          method: 'POST',
+          body: JSON.stringify({ date, title: name }),
+        });
+        toast(`✓ Sortie créée : ${r.sortie.title} (${r.sortie.distance_km} km, ${r.sortie.statut})`, 'success', 5000);
+        card.style.opacity = 0.4;
+        e.target.textContent = '✓ Importé';
+      } catch (err) {
+        toast('Erreur import : ' + err.message, 'error');
+        e.target.disabled = false; e.target.textContent = '↓ Importer';
+      }
+    }
   });
+
+  async function loadStravaRoutes() {
+    const status = document.getElementById('strava-routes-status');
+    const list   = document.getElementById('strava-routes-list');
+    if (!status || !list) return;
+    status.textContent = 'Chargement des routes…';
+    list.innerHTML = '';
+    try {
+      const data = await apiFetch('/strava/my-routes');
+      const routes = data.routes || [];
+      if (routes.length === 0) {
+        status.textContent = 'Aucune route Strava trouvée. Crée des Itinéraires sur strava.com/routes/new puis reviens ici.';
+        return;
+      }
+      status.textContent = `${routes.length} route(s) Strava — clique "Importer" pour en faire une sortie sur le site.`;
+      list.innerHTML = routes.map(r => {
+        const km    = (r.distance_m / 1000).toFixed(1);
+        const dplus = r.elevation_gain_m || 0;
+        const dur   = r.estimated_moving_time_s ? Math.round(r.estimated_moving_time_s / 60) + ' min' : '—';
+        const type  = r.type === 'ride' ? '🚴' : (r.type === 'run' ? '🏃' : '·');
+        const star  = r.starred ? ' ⭐' : '';
+        const priv  = r.private ? ' 🔒' : '';
+        return `
+          <div data-route-id="${r.id}" data-route-name="${escHtml(r.name)}" style="display:grid; grid-template-columns:1fr auto; gap:12px; padding:12px 16px; background:var(--ink-2); border:1px solid var(--line); align-items:center;">
+            <div>
+              <div style="font-family:var(--f-disp); font-size:15px; color:var(--t-cream); margin-bottom:2px;">${type} ${escHtml(r.name)}${star}${priv}</div>
+              <div style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3);">
+                ${km} km · D+${dplus} m · ~${dur} ·
+                <a href="https://www.strava.com/routes/${r.id_str}" target="_blank" rel="noopener" style="color:var(--brass);">voir sur Strava ↗</a>
+              </div>
+              ${r.description ? `<div style="font-family:var(--f-sans); font-size:11px; color:var(--parch-2); margin-top:4px;">${escHtml(r.description.slice(0, 120))}${r.description.length > 120 ? '…' : ''}</div>` : ''}
+            </div>
+            <button class="btn btn-brass btn-sm btn-import-route" type="button" style="white-space:nowrap;">↓ Importer</button>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      status.innerHTML = `<span style="color:#c08080;">${escHtml(err.message)}</span>`;
+    }
+  }
 
   // ── Dashboard ────────────────────────────────────────────────
   async function loadDashboard() {
