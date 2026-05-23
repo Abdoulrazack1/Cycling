@@ -1,6 +1,13 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/membre.js — Page /membre.html?id=N (fiche publique d'un membre)
+   Affiche profil + équipements + palmarès lié au membre demandé.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async () => {
+
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
+
   if (!id) {
     document.getElementById('m-name').textContent = 'Membre non spécifié';
     return;

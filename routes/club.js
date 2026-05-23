@@ -1,4 +1,9 @@
-// routes/club.js
+/* ═════════════════════════════════════════════════════════════════
+   routes/club.js — Paramètres généraux du club (key-value)
+   GET  /api/club          lecture des paramètres (publique)
+   PUT  /api/club          mise à jour groupée (admin uniquement)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');

@@ -1,4 +1,11 @@
-// routes/contact.js
+/* ═════════════════════════════════════════════════════════════════
+   routes/contact.js — Formulaire de contact public + boîte admin
+   POST   /api/contact              soumission du formulaire (rate-limited)
+   GET    /api/contact              boîte de réception (admin)
+   PATCH  /api/contact/:id/statut   nouveau / lu / traité / archive
+   DELETE /api/contact/:id          suppression (admin)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const nodemailer = require('nodemailer');
 const { query, pageClause } = require('../config/database');

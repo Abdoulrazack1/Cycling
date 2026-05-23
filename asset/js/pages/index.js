@@ -1,4 +1,9 @@
-/* ── Mise à jour dynamique de la page d'accueil ───────────── */
+/* ═════════════════════════════════════════════════════════════════
+   pages/index.js — Mise à jour dynamique de la page d'accueil
+   Hydrate les sections "dernière sortie" et "prochains événements"
+   depuis CCS_DATA après le rendu HTML statique.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function indexDynamic() {
   if (!window.CCS_DATA) return;
   try {

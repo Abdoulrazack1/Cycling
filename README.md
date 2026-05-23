@@ -14,7 +14,10 @@
 | Commande | Quand l'utiliser |
 |---|---|
 | `npm run dev` | **Tous les jours** — démarre le serveur (nodemon, port 3000) |
+| `npm run migrate` | **Après un `git pull`** — applique les migrations BDD en attente |
+| `npm run migrate:status` | Voir l'état des migrations (appliquées vs en attente) |
 | `npm run scrape:save` | **Mensuel** — rafraîchit les itinéraires OSM HdF |
+| `npm run backup` | Backup MySQL manuel (auto-planifié si tâche Windows installée) |
 | `npm run expire:dry` | Voir quelles courses seraient supprimées par le cleanup |
 | `npm run clean` | **Reset complet** — vide BDD + GPX (avec confirmation) |
 | `node seed.js` | Recrée admin/membre/paramètres après un `clean` |
@@ -26,12 +29,37 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 
 ## 🚀 Fonctionnalités
 
-- **Catalogue de sorties** alimenté en continu : itinéraires cyclables nommés des Hauts-de-France récupérés depuis OpenStreetMap (tracés officiels mappés par la communauté)
-- **Auto-cleanup** : les courses passées disparaissent automatiquement (BDD + GPX) après un délai de grâce paramétrable
-- **Explorateur de parcours** (`sortie.html`) : Street View synchronisé avec le tracé, mini-carte directionnelle, profil altimétrique coloré par pente, météo Open-Meteo
-- **Page admin** (`admin.html`) : gestion sorties, GPX, membres, contact
-- **Authentification** JWT + cookie, rôles (`admin`, `modo`, `membre`)
-- **Météo intégrée** : prévisions et observations Open-Meteo pour chaque sortie
+### Public
+- **Catalogue de sorties** alimenté en continu : itinéraires cyclables des Hauts-de-France via OpenStreetMap
+- **Explorateur de parcours** (`sortie.html`) : Street View + tracé synchronisé, mini-carte directionnelle, profil altimétrique coloré par pente, météo Open-Meteo, galerie photos, POIs interactifs
+- **Recherche globale Cmd+K** : palette de commandes (Linear/Notion-style) sur sorties / événements / membres / segments
+- **Événements** : inscription publique avec confirmation par email
+- **Calendrier de courses**, **palmarès** par saison, **segments KOM**
+
+### Membre (auth requis)
+- **Profil enrichi** : équipement éditable, FTP + zones de puissance, dashboard stats personnelles (vs club)
+- **Intégration Strava** : OAuth + auto-sync des activités au premier connect + stats annuelles agrégées
+- **Sessions actives** : liste de tous les appareils connectés + révocation individuelle
+- **RGPD Article 20** : export complet de ses données au format JSON
+- **RGPD Article 17** : suppression de compte avec confirmation password
+
+### Admin (`admin.html`)
+- **Dashboard live** : stats agrégées (sorties à venir, événements ouverts, membres liés Strava, inscriptions 7j)
+- **Configuration Strava** : credentials stockés en BDD, hot-reload, aucun restart serveur requis
+- **Broadcast email** : envoi groupé à tous les membres / membres / admins avec preview
+- **Mode maintenance** : toggle global, 503 sur les écritures non-admin, GET reste ouvert
+- **Bulk actions** : désactiver / réactiver / changer rôle plusieurs comptes en une fois
+- **Galerie photos** : upload multiple par sortie + lightbox
+- **Audit log** : trace les actions sensibles (delete, role_change, export_data, login…)
+- **CRUD sorties / événements / palmarès / segments / POIs**
+
+### Infrastructure
+- **Authentification** JWT (access + refresh) + cookie httpOnly + 2FA TOTP (admin)
+- **Migrations versionnées** : runner custom avec table `schema_migrations`, checksum sha256, transactions
+- **Backup MySQL automatique** : script + tâche Windows planifiée (`schtasks`)
+- **Auto-cleanup** : courses passées effacées au-delà de 90 jours (configurable)
+- **Service Worker** : stratégie network-first pour HTML, cache-first pour assets
+- **Rate limiting** : global + auth + admin + contact (anti-spam et anti-brute force)
 
 ## 📦 Stack technique
 
@@ -66,12 +94,38 @@ Puis exécute `schema.sql` sur la base `ccs_salouel`.
 ### 3. Configuration `.env`
 
 ```env
+# ── Base ──────────────────────────────────────────────────────
+DB_HOST=localhost
+DB_USER=ccs_user
 DB_PASSWORD=CCS_Salouel_2025!
+DB_NAME=ccs_salouel
+
+# ── Auth ──────────────────────────────────────────────────────
 JWT_SECRET=<secret_aléatoire_32+_caractères>
-SCRAPE_GRACE_DAYS=7              # Délai avant suppression auto des courses passées
-GOOGLE_MAPS_KEY=                 # Optionnel : Street View API
-SMTP_PASS=                       # Optionnel : Gmail app password (formulaire contact)
+JWT_REFRESH_SECRET=<autre_secret_différent_32+_caractères>
+COOKIE_SECURE=false              # true en prod (HTTPS only)
+
+# ── Auto-cleanup ──────────────────────────────────────────────
+SCRAPE_GRACE_DAYS=90             # Délai avant suppression auto des courses passées
+DISABLE_AUTO_EXPIRE=false        # true pour désactiver le cron 24h
+
+# ── Email transactionnel (optionnel) ──────────────────────────
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=contact@ccs-salouel.fr
+SMTP_PASS=<app_password_gmail>
+EMAIL_FROM=C.C. Salouel <contact@ccs-salouel.fr>
+EMAIL_ADMIN=president@club-salouel.fr
+
+# ── Strava OAuth (optionnel, config aussi via UI admin) ──────
+STRAVA_CLIENT_ID=
+STRAVA_CLIENT_SECRET=
+STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback
+
+# ── Externes (optionnels) ─────────────────────────────────────
+GOOGLE_MAPS_KEY=                 # Street View API
 OSRM_BASE=https://router.project-osrm.org
+GALACTIC_REPOS_BASE=             # Pour l'agent MCP galactic-brain
 ```
 
 ### 4. Premier démarrage
@@ -183,21 +237,54 @@ node scripts/clean-sorties.js --keep-db     # supprime juste les GPX
 
 **Base URL** : `http://localhost:3000/api`
 
-### Routes publiques / membre
+### Routes publiques
 
 | Méthode | Route | Description |
 |---|---|---|
 | GET | `/health` | Health check |
-| GET | `/sorties` | Liste des sorties (params : `statut=future\|passee`, `limit`, `offset`) |
+| GET | `/sorties` | Liste des sorties (params : `statut`, `limit`, `offset`) |
 | GET | `/sorties/:id` | Détail d'une sortie |
 | GET | `/sorties/:id/pois` | POIs d'une sortie |
+| GET | `/sorties/:id/photos` | Galerie photos d'une sortie |
 | GET | `/evenements` | Calendrier |
-| GET | `/membres` | Liste des membres |
-| GET | `/club` | Infos du club |
-| POST | `/auth/login` | Connexion |
+| GET | `/evenements/:id` | Détail événement + inscrits |
+| POST | `/evenements/:id/inscrire` | Inscription publique (rate-limited) |
+| GET | `/membres` | Liste des membres actifs |
+| GET | `/membres/:id` | Fiche publique d'un membre |
+| GET | `/segments` | Liste des segments KOM |
+| GET | `/palmares` | Résultats par saison |
+| GET | `/club` | Paramètres du club |
+| GET | `/search?q=...` | Recherche globale (sorties + events + membres + segments) |
+| POST | `/auth/login` | Connexion (+ TOTP si 2FA activé) |
 | POST | `/auth/register` | Inscription |
-| POST | `/auth/forgot-password` | Demande reset password |
-| POST | `/contact` | Envoyer un message |
+| POST | `/auth/refresh` | Rafraîchir l'access token |
+| POST | `/auth/forgot-password` | Demande reset password (mail si SMTP configuré) |
+| POST | `/auth/reset-password` | Soumettre nouveau password avec token JWT |
+| POST | `/contact` | Envoyer un message (rate-limited) |
+
+### Routes membre (auth requis)
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/auth/me` | Profil de l'user connecté + équipement |
+| POST | `/auth/logout` | Déconnexion (révoque refresh token) |
+| POST | `/auth/change-password` | Changement password |
+| GET | `/auth/sessions` | Liste les sessions actives |
+| DELETE | `/auth/sessions/:id` | Révoque une session |
+| DELETE | `/auth/sessions` | Révoque toutes sauf la courante |
+| GET | `/auth/export-data` | RGPD art. 20 — export JSON complet |
+| DELETE | `/auth/account` | RGPD art. 17 — suppression de compte |
+| POST | `/auth/equipment` | Ajouter un équipement |
+| PUT | `/auth/equipment/:id` | Modifier équipement |
+| DELETE | `/auth/equipment/:id` | Supprimer équipement |
+| GET | `/membres/me/dashboard` | Stats persos vs club + événements à venir |
+| GET | `/strava/status` | État de la connexion Strava |
+| GET | `/strava/connect` | Lance flow OAuth (redirect Strava) |
+| GET | `/strava/callback` | Callback OAuth + auto-sync |
+| POST | `/strava/disconnect` | Délie le compte Strava |
+| POST | `/strava/sync` | Sync manuel des activités |
+| GET | `/strava/activities` | Liste des activités importées |
+| GET | `/strava/stats` | Agrégats annuels (km, D+, temps, allure) |
 
 ### Routes modérateur+
 
@@ -205,8 +292,13 @@ node scripts/clean-sorties.js --keep-db     # supprime juste les GPX
 |---|---|---|
 | POST | `/sorties` | Créer une sortie |
 | PUT | `/sorties/:id` | Modifier une sortie |
+| POST | `/sorties/import-gpx` | Import GPX + cue sheet → sortie + POIs auto |
+| POST | `/sorties/:id/photos` | Upload photos (multipart, max 8 photos × 8 MB) |
+| DELETE | `/sorties/:id/photos/:photoId` | Supprimer une photo |
 | POST | `/sorties/:id/pois` | Ajouter un POI |
 | DELETE | `/sorties/:id/pois/:poiId` | Supprimer un POI |
+| POST | `/evenements` | Créer un événement |
+| PUT | `/evenements/:id` | Modifier un événement |
 
 ### Routes admin
 
@@ -216,6 +308,16 @@ node scripts/clean-sorties.js --keep-db     # supprime juste les GPX
 | GET | `/gpx` | Lister fichiers GPX |
 | POST | `/gpx/upload` | Uploader un GPX |
 | POST | `/auto-courses/generate` | Générer un GPX depuis waypoints |
+| GET | `/admin/dashboard-live` | Stats live agrégées (multi-table) |
+| GET | `/admin/strava-config` | État config Strava (sans secret) |
+| POST | `/admin/strava-config` | Set credentials Strava (hot-reload) |
+| DELETE | `/admin/strava-config` | Désactiver l'intégration Strava |
+| POST | `/admin/broadcast` | Envoi mail à tous / membres / admins |
+| GET | `/admin/maintenance` | État du mode maintenance |
+| POST | `/admin/maintenance` | Activer/désactiver maintenance |
+| PATCH | `/admin/users/bulk` | Bulk actions sur comptes (deactivate / set_role) |
+| GET | `/admin/audit-log` | Journal d'audit (filtres + pagination) |
+| POST | `/admin/audit-log/purge` | Purge des entrées anciennes |
 
 ---
 
@@ -223,31 +325,61 @@ node scripts/clean-sorties.js --keep-db     # supprime juste les GPX
 
 ```
 Cycling/
-├── *.html                       # Pages frontend
+├── *.html                       # 19 pages frontend (admin, profil, sortie, etc.)
 ├── asset/
-│   ├── css/                     # style.css, polish.css
-│   ├── js/                      # auth, data, sortie, weather, ...
-│   ├── img/                     # SVG cyclisme inline
-│   ├── gpx/                     # Fichiers GPX (alimenté par scraper)
+│   ├── css/
+│   │   ├── style.css            # Tokens, reset, composants globaux (89 KB)
+│   │   ├── polish.css           # Overrides, animations, responsive (78 KB)
+│   │   ├── admin.css            # Panel admin + sidebar + ops (19 KB)
+│   │   ├── profil.css           # Cards de sécurité + responsive
+│   │   ├── membres.css          # Grille trombinoscope
+│   │   ├── login.css            # Checkbox auth + spinner
+│   │   ├── evenements.css       # Modale d'inscription
+│   │   └── parcours.css         # Badge Street View hover
+│   ├── js/
+│   │   ├── pages/               # 1 fichier par page HTML
+│   │   ├── weather.js           # Open-Meteo (forecast + archive)
+│   │   ├── sortie-gallery.js    # Galerie photos + lightbox
+│   │   ├── search-palette.js    # Recherche globale Cmd+K
+│   │   ├── ocr-pdf.js           # OCR PDF Strava (pdf.js + Tesseract)
+│   │   ├── auth, data, main, utils, sortie, ...
+│   ├── img/                     # WebP (img-*.webp) + SVG (hero-*.svg)
+│   ├── gpx/                     # Fichiers GPX (scraper + import manuel)
 │   └── data/                    # pois-courses.json (legacy)
-├── routes/                      # Routes Express
+├── routes/                      # 14 fichiers Express (auth, sorties, strava, admin…)
 ├── services/
+│   ├── strava-client.js         # OAuth + auto-refresh + sync activités
+│   ├── mailer.js                # Templates email transactionnels
+│   ├── audit-log.js             # Audit fire-and-forget
+│   ├── gpx-parser.js            # Parser GPX 1.0/1.1 + métriques
+│   ├── gpx-builder.js           # Construction GPX 1.1
 │   ├── routing.js               # OSRM cycling
 │   ├── elevation.js             # Open-Meteo + calcul D+/D−
-│   ├── gpx-builder.js           # Construction GPX 1.1
 │   ├── course-generator.js      # Pipeline génération
 │   └── course-scraper.js        # Scraper MilesRepublic (fallback)
-├── middleware/                  # auth, upload
-├── config/                      # Config DB
+├── middleware/                  # auth, upload (multer)
+├── config/                      # Config DB (mysql2 pool)
+├── migrations/                  # 002-009 + futures (versionnées)
+│   ├── 002_indexes.sql
+│   ├── 003_audit_log.sql
+│   ├── 004_2fa_totp.sql
+│   ├── 007_sortie_photos.sql
+│   ├── 008_strava_oauth.sql
+│   └── 009_audit_export_action.sql
 ├── scripts/
-│   ├── scrape-sorties.js        # Scraper principal OSM HdF ⭐
-│   ├── expire-past-sorties.js   # Cleanup auto courses passées ⭐
-│   ├── clean-sorties.js         # Reset complet BDD + GPX ⭐
-│   ├── build-courses.js         # Génération GPX depuis waypoints (legacy)
-│   └── generate-gpx.js          # Génération GPX simple (legacy)
-├── server.js                    # Express + cron auto-expire 24h
-├── seed.js                      # Peuplement initial admin/membre
+│   ├── migrate.js               # Runner versionné avec schema_migrations ⭐
+│   ├── scrape-sorties.js        # Scraper principal OSM HdF
+│   ├── expire-past-sorties.js   # Cleanup auto courses passées (90j)
+│   ├── clean-sorties.js         # Reset complet BDD + GPX
+│   ├── install-backup-cron.ps1  # Tâche Windows backup quotidien
+│   ├── backup-db.js             # Dump mysqldump compressé + rotation
+│   ├── purge-audit-log.js       # Purge audit_log selon retention
+│   └── analyze-gpx.js           # Diagnostic d'un fichier GPX
+├── server.js                    # Express + cron auto-expire 24h + maintenance middleware
+├── sw.js                        # Service Worker (network-first HTML, cache-first assets)
+├── seed.js                      # Peuplement initial admin/membre/club
 ├── schema.sql                   # Schéma MySQL
+├── manifest.webmanifest         # PWA manifest
 ├── package.json
 └── .env
 ```

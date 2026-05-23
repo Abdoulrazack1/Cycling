@@ -1,4 +1,20 @@
-// routes/admin.js — endpoints de diagnostic + audit admin
+/* ═════════════════════════════════════════════════════════════════
+   routes/admin.js — Endpoints d'administration (admin role only)
+   ─────────────────────────────────────────────────────────────────
+   Endpoints exposés :
+     GET    /admin/scraper-health       diag : santé des scrapers
+     GET    /admin/audit-log            consultation du journal d'audit
+     POST   /admin/audit-log/purge      purge des entrées anciennes
+     GET    /admin/strava-config        état config Strava + creds (sans secret)
+     POST   /admin/strava-config        set creds Strava (hot-reload env)
+     DELETE /admin/strava-config        désactive l'intégration Strava
+     GET    /admin/dashboard-live       agrégats live (membres / sorties / events…)
+     POST   /admin/broadcast            envoi mail groupé
+     GET    /admin/maintenance          état du mode maintenance
+     POST   /admin/maintenance          activation/désactivation maintenance
+     PATCH  /admin/users/bulk           actions de masse (deactivate / set_role)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { scrapeAll } = require('../services/course-scraper');
@@ -214,8 +230,10 @@ router.get('/dashboard-live', requireAuth, requireAdmin, async (req, res) => {
         SUM(DATEDIFF(NOW(), created_at) <= 7) AS last_7d
        FROM contacts`),
       query(`SELECT COUNT(*) AS cnt FROM users WHERE DATEDIFF(NOW(), created_at) <= 7 AND actif = TRUE`),
-      query(`SELECT COUNT(*) AS errors_today FROM audit_log WHERE DATE(created_at) = CURDATE() AND action IN ('delete','role_change','password_reset')`).catch(() => [{ errors_today: 0 }]),
-      query(`SELECT COUNT(*) AS linked FROM user_strava_link`).catch(() => [{ linked: 0 }]),
+      query(`SELECT COUNT(*) AS errors_today FROM audit_log WHERE DATE(created_at) = CURDATE() AND action IN ('delete','role_change','password_reset')`)
+        .catch(err => { logger.warn({ err: err.message }, '[dashboard-live] audit_log query failed'); return [{ errors_today: 0 }]; }),
+      query(`SELECT COUNT(*) AS linked FROM user_strava_link`)
+        .catch(err => { logger.warn({ err: err.message }, '[dashboard-live] strava_link query failed (table absente ?)'); return [{ linked: 0 }]; }),
     ]);
 
     res.json({

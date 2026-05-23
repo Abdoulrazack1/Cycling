@@ -1,34 +1,50 @@
-// Service mail transactionnel centralisé.
-// Toutes les routes qui envoient un mail importent ce module au lieu de
-// recréer un transporter nodemailer chacune.
-//
-// Variables d'env (.env) :
-//   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, EMAIL_ADMIN
-//
-// Si aucun SMTP_HOST n'est défini, le mail est juste loggué (mode "dry").
-// Pratique en dev pour ne pas spammer.
+/* ═════════════════════════════════════════════════════════════════
+   services/mailer.js — Service mail transactionnel centralisé
+   ─────────────────────────────────────────────────────────────────
+   Toutes les routes qui envoient un mail importent ce module au
+   lieu de recréer un transporter nodemailer chacune.
+
+   Variables d'env (.env) :
+     SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+     EMAIL_FROM    expéditeur affiché
+     EMAIL_ADMIN   destinataire des alertes système
+
+   Si aucun SMTP_HOST n'est défini, les mails sont seulement loggués
+   (mode "dry") — pratique en dev pour ne pas spammer.
+   ═════════════════════════════════════════════════════════════════ */
 
 const nodemailer = require('nodemailer');
 const logger     = require('../lib/logger');
 
+
+// ─── Constantes ────────────────────────────────────────────────────
+const FROM      = process.env.EMAIL_FROM  || 'C.C. Salouel <noreply@club-salouel.fr>';
+const ADMIN_TO  = process.env.EMAIL_ADMIN || null;
+const SITE_NAME = 'Club de Cyclisme de Salouel';
+
+
+// ─── Transporter (lazy + cached) ───────────────────────────────────
 let _transporter = null;
+
 function _getTransporter() {
   if (_transporter) return _transporter;
   if (!process.env.SMTP_HOST) return null;
+
   _transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT) || 587,
+    host:   process.env.SMTP_HOST,
+    port:   parseInt(process.env.SMTP_PORT) || 587,
     secure: parseInt(process.env.SMTP_PORT) === 465,
-    auth: (process.env.SMTP_USER && process.env.SMTP_PASS)
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-      : undefined,
+    auth:   (process.env.SMTP_USER && process.env.SMTP_PASS)
+              ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+              : undefined,
   });
   return _transporter;
 }
 
-const FROM      = process.env.EMAIL_FROM  || 'C.C. Salouel <noreply@club-salouel.fr>';
-const ADMIN_TO  = process.env.EMAIL_ADMIN || null;
-const SITE_NAME = 'Club de Cyclisme de Salouel';
+
+// ═════════════════════════════════════════════════════════════════
+// TEMPLATE HTML — wrapper email avec en-tête + footer cohérents
+// ═════════════════════════════════════════════════════════════════
 
 function _wrap(html, title) {
   // Template HTML minimal, sobre, brand cohérente.
@@ -59,6 +75,11 @@ function _wrap(html, title) {
  * Envoi générique. Retourne { ok, messageId? } ou { ok:false, error }.
  * Si SMTP non configuré, log seulement.
  */
+
+// ═════════════════════════════════════════════════════════════════
+// SEND — envoi générique avec fallback dry-mode
+// ═════════════════════════════════════════════════════════════════
+
 async function sendMail({ to, subject, html, text, from }) {
   if (!to) return { ok: false, error: 'to manquant' };
   const transporter = _getTransporter();
@@ -82,7 +103,10 @@ async function sendMail({ to, subject, html, text, from }) {
   }
 }
 
-// ── Templates ─────────────────────────────────────────────────
+
+// ═════════════════════════════════════════════════════════════════
+// TEMPLATES — emails transactionnels prêts à l'emploi
+// ═════════════════════════════════════════════════════════════════
 
 async function sendInscriptionConfirmation({ to, prenom, evenementTitle, evenementDate, lieu }) {
   const dateStr = evenementDate

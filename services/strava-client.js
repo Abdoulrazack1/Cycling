@@ -1,25 +1,47 @@
-// Service Strava : OAuth + appels API authentifiés + auto-refresh des tokens.
-// Doc Strava API : https://developers.strava.com/docs/reference/
-//
-// Variables d'env requises :
-//   STRAVA_CLIENT_ID     — depuis https://www.strava.com/settings/api
-//   STRAVA_CLIENT_SECRET — idem
-//   STRAVA_REDIRECT_URI  — ex: http://localhost:3000/api/strava/callback
-//                          (doit matcher exactement l'autorisation enregistrée sur Strava)
+/* ═════════════════════════════════════════════════════════════════
+   services/strava-client.js — Client Strava (OAuth + API)
+   ─────────────────────────────────────────────────────────────────
+   Wrappe l'API Strava avec :
+     - Échange code → tokens
+     - Auto-refresh quand l'access_token expire (TTL ~6h)
+     - getValidAccessToken(userId) : retourne un token utilisable
+     - stravaGet() : GET authentifié + détection rate-limit (429)
+     - syncActivities() : récupère les activités récentes en BDD
+
+   Doc Strava API : https://developers.strava.com/docs/reference/
+
+   Variables d'env requises :
+     STRAVA_CLIENT_ID      depuis https://www.strava.com/settings/api
+     STRAVA_CLIENT_SECRET  idem
+     STRAVA_REDIRECT_URI   ex: http://localhost:3000/api/strava/callback
+                           (doit matcher EXACTEMENT l'autorisation Strava)
+   ═════════════════════════════════════════════════════════════════ */
 
 const { query } = require('../config/database');
 const logger    = require('../lib/logger');
 
+
+// ─── Constantes Strava ────────────────────────────────────────────
 const STRAVA_AUTH_URL  = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 const STRAVA_API_BASE  = 'https://www.strava.com/api/v3';
 const SCOPES_DEFAULT   = 'read,activity:read';
 
+
+// ─── Guard env ────────────────────────────────────────────────────
 function _envCheck() {
   if (!process.env.STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET) {
-    throw new Error('Strava non configuré : STRAVA_CLIENT_ID + STRAVA_CLIENT_SECRET requis dans .env. Crée ton app sur https://www.strava.com/settings/api.');
+    throw new Error(
+      'Strava non configuré : STRAVA_CLIENT_ID + STRAVA_CLIENT_SECRET requis ' +
+      'dans .env. Crée ton app sur https://www.strava.com/settings/api.'
+    );
   }
 }
+
+
+// ═════════════════════════════════════════════════════════════════
+// OAUTH — authorize URL + exchange + refresh
+// ═════════════════════════════════════════════════════════════════
 
 /** URL d'autorisation OAuth — utilisée pour la première connexion */
 function buildAuthorizeUrl(state, scope = SCOPES_DEFAULT) {
@@ -70,6 +92,11 @@ async function refreshAccessToken(refreshToken) {
   return r.json();
 }
 
+
+// ═════════════════════════════════════════════════════════════════
+// TOKEN MANAGEMENT — token valide en cache + auto-refresh
+// ═════════════════════════════════════════════════════════════════
+
 /**
  * Récupère un access_token valide pour un user — refresh automatique si expiré.
  * Lance une erreur si l'utilisateur n'est pas connecté à Strava.
@@ -93,6 +120,11 @@ async function getValidAccessToken(userId) {
   );
   return refreshed.access_token;
 }
+
+
+// ═════════════════════════════════════════════════════════════════
+// API CALLS — wrappers authentifiés
+// ═════════════════════════════════════════════════════════════════
 
 /** GET authentifié sur l'API Strava avec refresh auto */
 async function stravaGet(userId, pathStr, params = {}) {
@@ -118,6 +150,11 @@ async function stravaGet(userId, pathStr, params = {}) {
  * @param {object} opts { since: Date|number, perPage?: number, maxPages?: number }
  * @returns {Promise<{imported: number, skipped: number, total: number}>}
  */
+
+// ═════════════════════════════════════════════════════════════════
+// SYNC — import des activités en BDD locale
+// ═════════════════════════════════════════════════════════════════
+
 async function syncActivities(userId, opts = {}) {
   const perPage   = Math.min(100, opts.perPage ?? 30);
   const maxPages  = Math.min(10, opts.maxPages ?? 3);

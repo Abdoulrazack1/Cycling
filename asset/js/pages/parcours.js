@@ -1,4 +1,9 @@
-﻿/* ── Chargement dynamique des parcours ──────────────────────── */
+﻿/* ═════════════════════════════════════════════════════════════════
+   pages/parcours.js — Catalogue des parcours
+   Fetch sorties avec GPX, déduit le type (pavé/monts/gravel/route…)
+   et rend en cards avec badge Street View au survol.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function loadParcours() {
   const earlyGrid = document.getElementById('parcours-grid');
   // Skeleton initial — uniquement si le grid est vide (pas de fallback statique)

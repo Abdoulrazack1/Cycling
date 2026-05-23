@@ -1,6 +1,12 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/mot-de-passe-oublie.js — Formulaire "mot de passe oublié"
+   Submit email → POST /api/auth/forgot-password → message neutre.
+   ═════════════════════════════════════════════════════════════════ */
+
 (() => {
-  const form  = document.getElementById('forgot-form');
-  const btn   = document.getElementById('forgot-btn');
+
+  const form = document.getElementById('forgot-form');
+  const btn  = document.getElementById('forgot-btn');
   const errEl = document.getElementById('forgot-error');
   const sucEl = document.getElementById('forgot-success');
   const input = document.getElementById('forgot-email');

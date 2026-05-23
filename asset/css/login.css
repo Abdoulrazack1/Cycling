@@ -1,0 +1,103 @@
+/* ════════════════════════════════════════════════════════════════
+   login.css — checkboxes auth + loading
+   Réutilisable aussi par /mot-de-passe-oublie et /reset-password
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Checkbox custom & options ligne ──────────────────── */
+.auth-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--f-sans);
+  font-size: 12px;
+}
+
+.auth-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--t-cream-2, #C7BC9E);
+  position: relative;
+}
+
+.auth-checkbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auth-checkbox-box {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line-2, rgba(176, 142, 74, 0.35));
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.auth-checkbox input:checked + .auth-checkbox-box {
+  background: var(--brass, #B08E4A);
+  border-color: var(--brass, #B08E4A);
+}
+
+.auth-checkbox input:checked + .auth-checkbox-box::after {
+  content: '';
+  width: 8px;
+  height: 5px;
+  border-left: 2px solid #1a1a1a;
+  border-bottom: 2px solid #1a1a1a;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.auth-checkbox:hover .auth-checkbox-box {
+  border-color: var(--brass, #B08E4A);
+}
+
+.auth-checkbox input:focus-visible + .auth-checkbox-box {
+  outline: 2px solid var(--brass, #B08E4A);
+  outline-offset: 2px;
+}
+
+.auth-options-link {
+  color: var(--brass, #B08E4A);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s;
+}
+
+.auth-options-link:hover {
+  color: var(--brass-hi, #CAA35B);
+  text-decoration: underline;
+}
+
+/* ── Loading state ──────────────────────────────────────── */
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  font-family: var(--f-sans);
+  font-size: 12px;
+  color: var(--t-cream-3, rgba(199, 188, 158, 0.55));
+}
+
+.auth-loading-spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(176, 142, 74, 0.2);
+  border-top-color: var(--brass, #B08E4A);
+  border-radius: 50%;
+  animation: auth-spin 0.8s linear infinite;
+}
+
+@keyframes auth-spin { to { transform: rotate(360deg); } }

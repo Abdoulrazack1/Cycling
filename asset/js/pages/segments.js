@@ -1,4 +1,8 @@
-/* ── Chargement dynamique des segments depuis l'API ── */
+/* ═════════════════════════════════════════════════════════════════
+   pages/segments.js — Page publique des segments KOM
+   Affiche les segments triés par étoiles avec stars, distance et KOM.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function loadSegments() {
   await new Promise(resolve => {
     const check = (n = 0) => {

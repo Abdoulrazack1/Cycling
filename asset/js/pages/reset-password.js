@@ -1,6 +1,12 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/reset-password.js — Page /reset-password.html?token=JWT
+   Lit le token JWT du QS, soumet le nouveau mot de passe via POST.
+   ═════════════════════════════════════════════════════════════════ */
+
 (() => {
+
   const params = new URLSearchParams(location.search);
-  const token = params.get('token');
+  const token  = params.get('token');
   const form  = document.getElementById('reset-form');
   const btn   = document.getElementById('reset-btn');
   const errEl = document.getElementById('reset-error');

@@ -2193,6 +2193,21 @@ img, video, svg {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   RESPONSIVE FIXES — grids manquant breakpoints mobile
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  .story-meta { grid-template-columns: 1fr 1fr; }
+  .story-meta-item { border-right: none; border-bottom: 1px solid var(--line); padding: 12px 0; }
+  .story-meta-item:last-child { border-bottom: none; }
+  .rc-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rc-stats > * { padding: 8px; }
+}
+@media (max-width: 480px) {
+  .story-meta { grid-template-columns: 1fr; }
+  .rc-stats { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════════
    Roadbook PDF — impression sortie en fiche A4 propre
    Active via @media print OU body.print-roadbook
    ════════════════════════════════════════════════════════════════ */

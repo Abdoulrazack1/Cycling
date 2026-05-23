@@ -61,9 +61,196 @@
       diagnostic:   loadDiagnostic,
       security:     loadSecurity,
       strava:       loadStravaAdmin,
+      ops:          loadOpsPanel,
     };
     loaders[name]?.();
   }
+
+  // ── Helper : pose un message sur un .ops-status avec tonalité ──
+  function setOpsStatus(id, text, tone /* 'info'|'success'|'warn'|'error' */ = 'info') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = text;                       // text peut contenir du HTML déjà escapé
+    el.dataset.tone = tone;
+  }
+
+  // ── Ops panel : broadcast + maintenance + bulk users ─────────
+  async function loadOpsPanel() {
+    // Charger l'état actuel de la maintenance
+    const wrap = document.getElementById('maint-status-wrap');
+    const btnOn = document.getElementById('btn-maint-on');
+    const btnOff = document.getElementById('btn-maint-off');
+    const inputMsg = document.getElementById('maint-message');
+    try {
+      const m = await apiFetch('/admin/maintenance');
+      if (m.enabled) {
+        wrap.dataset.state = 'on';
+        wrap.innerHTML = `<span class="ops-maint-dot"></span>
+          <span><strong>Mode maintenance ACTIF</strong> — message affiché : « ${escHtml(m.message || '')} »</span>`;
+        btnOn.hidden = true; btnOff.hidden = false;
+      } else {
+        wrap.dataset.state = 'off';
+        wrap.innerHTML = `<span class="ops-maint-dot"></span>
+          <span>Site en fonctionnement normal. Toutes les écritures sont autorisées.</span>`;
+        btnOn.hidden = false; btnOff.hidden = true;
+      }
+      inputMsg.value = m.message || '';
+    } catch (err) {
+      wrap.dataset.state = 'off';
+      wrap.innerHTML = `<span class="ops-maint-dot" style="color:#c08080;"></span>
+        <span style="color:#c08080;">Erreur chargement : ${escHtml(err.message)}</span>`;
+    }
+  }
+
+  // Délégation : tous les listeners du panel ops attachés une fois au document
+  document.addEventListener('click', async (e) => {
+    // ─── Broadcast : aperçu ───
+    if (e.target?.id === 'btn-bc-preview') {
+      const subject = document.getElementById('bc-subject').value;
+      const message = document.getElementById('bc-message').value;
+      if (!subject || !message) {
+        setOpsStatus('bc-status', 'Renseigne le sujet et le message avant l\'aperçu.', 'error');
+        return;
+      }
+      const html = `<div>
+        <div class="ops-bc-preview-head">Aperçu · Sujet : <code>${escHtml(subject)}</code></div>
+        <div class="ops-bc-preview">${escHtml(message)}</div>
+      </div>`;
+      setOpsStatus('bc-status', html, 'info');
+    }
+
+    // ─── Broadcast : envoi ───
+    if (e.target?.id === 'btn-bc-send') {
+      const subject = document.getElementById('bc-subject').value.trim();
+      const message = document.getElementById('bc-message').value.trim();
+      const target  = document.getElementById('bc-target').value;
+      if (subject.length < 3)  { setOpsStatus('bc-status', 'Sujet trop court (3 caractères minimum).', 'error');  return; }
+      if (message.length < 10) { setOpsStatus('bc-status', 'Message trop court (10 caractères minimum).', 'error'); return; }
+
+      const targetLabel = target === 'all' ? 'TOUS les membres actifs'
+                       : target === 'admins' ? 'tous les admins + modos'
+                       : 'tous les membres (hors admin/modo)';
+      if (!confirm(`Envoyer ce broadcast à ${targetLabel} ?\n\nCette action est irréversible.`)) return;
+
+      e.target.disabled = true;
+      e.target.textContent = 'Envoi…';
+      setOpsStatus('bc-status', '<span class="loading-spinner"></span> Envoi en cours…', 'info');
+
+      try {
+        const r = await apiFetch('/admin/broadcast', {
+          method: 'POST',
+          body: JSON.stringify({ subject, message, target }),
+        });
+        const failMsg = r.failed > 0 ? ` · <strong>${r.failed} échec(s)</strong>` : '';
+        setOpsStatus('bc-status', `Envoyé à <strong>${r.sent}/${r.total}</strong> destinataire(s)${failMsg}`, 'success');
+        toast(`Broadcast envoyé à ${r.sent} membre(s)`, 'success');
+        document.getElementById('bc-subject').value = '';
+        document.getElementById('bc-message').value = '';
+      } catch (err) {
+        setOpsStatus('bc-status', `Erreur : ${escHtml(err.message)}`, 'error');
+      } finally {
+        e.target.disabled = false;
+        e.target.textContent = 'Envoyer le broadcast';
+      }
+    }
+
+    // ─── Maintenance ───
+    if (e.target?.id === 'btn-maint-on' || e.target?.id === 'btn-maint-off') {
+      const enable = e.target.id === 'btn-maint-on';
+      const message = document.getElementById('maint-message').value.trim();
+      const action = enable ? 'activer' : 'désactiver';
+      if (enable && !confirm('Activer le mode maintenance ? Les non-admins ne pourront plus écrire (POST/PUT/DELETE) jusqu\'à désactivation.')) return;
+      try {
+        await apiFetch('/admin/maintenance', {
+          method: 'POST',
+          body: JSON.stringify({ enabled: enable, message: message || undefined }),
+        });
+        toast(`Maintenance ${enable ? 'activée' : 'désactivée'}`, enable ? 'warning' : 'success');
+        loadOpsPanel();
+      } catch (err) { toast('Erreur : ' + err.message, 'error'); }
+    }
+
+    // ─── Bulk users : charger / rafraîchir ───
+    if (e.target?.id === 'btn-bulk-refresh') {
+      const wrap = document.getElementById('bulk-table-wrap');
+      const count = document.getElementById('bulk-count');
+      wrap.innerHTML = '<div class="ops-empty"><span class="loading-spinner"></span> Chargement…</div>';
+      count.textContent = '';
+      try {
+        const users = await apiFetch('/membres');
+        const me = window.CCS_AUTH?.getUser()?.id;
+        wrap.innerHTML = `
+          <table class="ops-bulk-table">
+            <thead>
+              <tr>
+                <th style="width:36px; text-align:center;"><input type="checkbox" class="ops-check" id="bulk-check-all" title="Tout cocher / décocher"></th>
+                <th>Membre</th>
+                <th>Username</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody>${users.map(u => {
+              const isSelf = u.id === me;
+              return `<tr class="${isSelf ? 'is-self' : ''}">
+                <td style="text-align:center;">
+                  <input type="checkbox" class="ops-check bulk-check" value="${u.id}" ${isSelf ? 'disabled title="Toi-même"' : ''}>
+                </td>
+                <td><strong>${escHtml(u.prenom || '')} ${escHtml(u.nom || '')}</strong></td>
+                <td><code>${escHtml(u.username || '')}</code></td>
+                <td><span class="ops-role-badge" data-role="${escHtml(u.role || 'membre')}">${escHtml(u.role || 'membre')}</span></td>
+                <td><span class="ops-actif-tag" data-actif="${u.actif ? 'true' : 'false'}">${u.actif ? 'actif' : 'désactivé'}</span></td>
+              </tr>`;
+            }).join('')}
+            </tbody>
+          </table>`;
+        count.innerHTML = `<strong>${users.length}</strong> membre(s) chargé(s) · <strong>0</strong> sélectionné(s)`;
+
+        // Sync "tout cocher"
+        document.getElementById('bulk-check-all')?.addEventListener('change', (ev) => {
+          wrap.querySelectorAll('.bulk-check:not(:disabled)').forEach(c => c.checked = ev.target.checked);
+          updateBulkCount();
+        });
+        wrap.querySelectorAll('.bulk-check').forEach(c => c.addEventListener('change', updateBulkCount));
+
+        function updateBulkCount() {
+          const total = wrap.querySelectorAll('.bulk-check').length;
+          const sel = wrap.querySelectorAll('.bulk-check:checked').length;
+          count.innerHTML = `<strong>${total}</strong> membre(s) chargé(s) · <strong>${sel}</strong> sélectionné(s)`;
+        }
+      } catch (err) {
+        wrap.innerHTML = `<div class="ops-empty" style="color:#c08080;">Erreur : ${escHtml(err.message)}</div>`;
+      }
+    }
+
+    // ─── Bulk users : appliquer ───
+    if (e.target?.id === 'btn-bulk-apply') {
+      const wrap = document.getElementById('bulk-table-wrap');
+      const actionRaw = document.getElementById('bulk-action').value;
+      if (!actionRaw) { setOpsStatus('bulk-status', 'Choisis une action dans la liste déroulante.', 'error'); return; }
+      const ids = [...wrap.querySelectorAll('.bulk-check:checked')].map(c => parseInt(c.value, 10));
+      if (ids.length === 0) { setOpsStatus('bulk-status', 'Coche au moins un membre dans le tableau.', 'error'); return; }
+      const [action, role] = actionRaw.split(':');
+      const verb = action === 'deactivate' ? 'désactiver' : action === 'activate' ? 'réactiver' : `passer en rôle « ${role} »`;
+      if (!confirm(`${verb} ${ids.length} membre(s) ?`)) return;
+      e.target.disabled = true;
+      e.target.textContent = 'Application…';
+      try {
+        const r = await apiFetch('/admin/users/bulk', {
+          method: 'PATCH',
+          body: JSON.stringify({ user_ids: ids, action, role }),
+        });
+        setOpsStatus('bulk-status', `<strong>${r.affected}</strong> membre(s) modifié(s).`, 'success');
+        toast(`${r.affected} membre(s) modifié(s)`, 'success');
+        document.getElementById('btn-bulk-refresh').click();
+      } catch (err) {
+        setOpsStatus('bulk-status', `Erreur : ${escHtml(err.message)}`, 'error');
+      } finally {
+        e.target.disabled = false;
+        e.target.textContent = 'Appliquer';
+      }
+    }
+  });
 
   // ── Strava admin config ──────────────────────────────────────
   async function loadStravaAdmin() {

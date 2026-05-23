@@ -1,5 +1,12 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/membres.js — Liste publique des sociétaires
+   Render skeleton → fetch CCS_DATA.membres() → render cards triées.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function loadMembres() {
+
   const grid = document.getElementById('members-grid');
+
   // Skeleton avant l'attente de CCS_DATA (perçu de chargement)
   if (grid && !grid.innerHTML.trim()) {
     grid.innerHTML = Array(6).fill(

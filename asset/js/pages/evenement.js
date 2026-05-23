@@ -1,6 +1,12 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/evenement.js — Page détail d'un événement (?id=N ou ?slug=...)
+   Charge l'événement + la liste des inscrits + ouvre la modale d'inscription.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async () => {
+
   const params = new URLSearchParams(location.search);
-  const evId = params.get('id') || params.get('slug');
+  const evId   = params.get('id') || params.get('slug');
   if (!evId) {
     document.getElementById('ev-title').textContent = 'Événement non spécifié';
     return;

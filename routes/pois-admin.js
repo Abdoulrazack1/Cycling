@@ -1,4 +1,9 @@
-// routes/pois-admin.js — Vue globale des POIs (admin)
+/* ═════════════════════════════════════════════════════════════════
+   routes/pois-admin.js — Vue cross-sortie des POIs (panel admin)
+   GET    /api/pois            liste tous les POIs + sortie associée
+   DELETE /api/pois/:id        suppression individuelle (admin)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');

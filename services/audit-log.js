@@ -1,17 +1,21 @@
-// services/audit-log.js — Helper pour tracer les actions admin
-//
-// Cf. AUDIT item #30. Usage typique :
-//
-//   const { audit } = require('../services/audit-log');
-//   ...
-//   await query('UPDATE sorties SET ... WHERE id=?', [id]);
-//   audit(req, 'update', 'sortie', id, { changes: req.body });
-//
-// `audit` est volontairement non-bloquant (fire-and-forget) : si
-// la table audit_log n'existe pas encore (migration pas appliquée),
-// l'erreur est loggée mais ne fait pas échouer la requête métier.
+/* ═════════════════════════════════════════════════════════════════
+   services/audit-log.js — Helper pour tracer les actions sensibles
+   ─────────────────────────────────────────────────────────────────
+   Cf. AUDIT item #30. Usage typique :
+
+     const { audit } = require('../services/audit-log');
+     ...
+     await query('UPDATE sorties SET ... WHERE id=?', [id]);
+     audit(req, 'update', 'sortie', id, { changes: req.body });
+
+   `audit` est volontairement non-bloquant (fire-and-forget) :
+   si la table audit_log n'existe pas encore (migration pas
+   appliquée), l'erreur est loggée mais ne fait pas échouer la
+   requête métier.
+   ═════════════════════════════════════════════════════════════════ */
+
 const { query } = require('../config/database');
-const logger = require('../lib/logger');
+const logger    = require('../lib/logger');
 
 /**
  * Enregistre une action dans audit_log.
