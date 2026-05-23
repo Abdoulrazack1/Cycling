@@ -1,4 +1,10 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/contact.js — Formulaire de contact public
+   Soumet POST /api/contact avec les champs prenom/nom/email/sujet/message.
+   ═════════════════════════════════════════════════════════════════ */
+
 (() => {
+
   async function handleContactSubmit(e) {
     const btn = e.target.querySelector('[type="submit"]');
     const data = {

@@ -1,6 +1,18 @@
-// services/gpx-parser.js
-// Parse un fichier GPX 1.0 ou 1.1 (texte) et calcule les metrics.
-// Pure regex, pas de dépendance XML.
+/* ═════════════════════════════════════════════════════════════════
+   services/gpx-parser.js — Parseur GPX 1.0/1.1 (regex pure)
+   ─────────────────────────────────────────────────────────────────
+   Lit un fichier GPX et retourne :
+     - points[]            { lat, lng, ele }
+     - distance_km         calculé via haversine cumulé
+     - elevation_gain/loss D+/D- avec lissage moyenne glissante 10pts
+     - elevation_min/max
+     - start, end          premier/dernier point
+     - bbox                bounding box pour fit map
+     - name                <name> du <metadata>
+
+   Pas de dépendance XML : regex sur les <trkpt> et <ele>.
+   Robuste aux variantes Strava / Garmin / RideWithGPS / Komoot.
+   ═════════════════════════════════════════════════════════════════ */
 
 /**
  * @typedef {Object} GpxPoint

@@ -9,7 +9,7 @@
  * anciens caches.
  */
 
-const CACHE_VERSION = 'ccs-v15';
+const CACHE_VERSION = 'ccs-v19';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 

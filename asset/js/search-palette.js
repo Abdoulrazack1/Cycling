@@ -1,5 +1,19 @@
-// Palette de recherche globale (Cmd+K / Ctrl+K)
-// Recherche en parallèle sur sorties, événements, membres, segments.
+/* ═════════════════════════════════════════════════════════════════
+   search-palette.js — Palette de recherche globale (Cmd+K / Ctrl+K)
+   ─────────────────────────────────────────────────────────────────
+   Overlay style Linear/Notion injecté lazily via main.js.
+   Recherche en parallèle sur sorties + événements + membres + segments
+   via GET /api/search.
+
+   Raccourcis :
+     Cmd+K / Ctrl+K       ouvre/ferme la palette
+     ↑ ↓                  navigation
+     Entrée               ouvrir le résultat sélectionné
+     Esc                  fermer
+
+   API publique : window.CCS_SEARCH.open() / .close()
+   ═════════════════════════════════════════════════════════════════ */
+
 (function () {
   'use strict';
 

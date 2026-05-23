@@ -1,5 +1,11 @@
-// Recherche globale : interroge en parallèle les tables principales
-// et renvoie une liste typée pour la palette Cmd+K.
+/* ═════════════════════════════════════════════════════════════════
+   routes/search.js — Recherche globale (palette Cmd+K)
+   ─────────────────────────────────────────────────────────────────
+   Interroge en parallèle sorties + événements + membres + segments
+   et renvoie une liste typée pour la palette de recherche frontend.
+   GET /api/search?q=...   → { results: [{type, id, title, subtitle, url}] }
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { query } = require('../config/database');
 const { errResponse } = require('../lib/errors');

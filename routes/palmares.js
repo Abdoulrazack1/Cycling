@@ -1,4 +1,11 @@
-// routes/palmares.js — Palmarès CRUD
+/* ═════════════════════════════════════════════════════════════════
+   routes/palmares.js — Palmarès (résultats de course)
+   GET    /api/palmares        liste + filtres (annee, membre_id)
+   POST   /api/palmares        ajout d'un résultat (modo+)
+   PUT    /api/palmares/:id    édition (modo+)
+   DELETE /api/palmares/:id    suppression (admin)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo } = require('../middleware/auth');

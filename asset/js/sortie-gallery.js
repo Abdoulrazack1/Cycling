@@ -1,5 +1,13 @@
-// Galerie photos pour une sortie + lightbox.
-// API : CCS_GALLERY.load(sortieId) — fetch les photos et rend la grille.
+/* ═════════════════════════════════════════════════════════════════
+   sortie-gallery.js — Galerie photos d'une sortie + lightbox
+   ─────────────────────────────────────────────────────────────────
+   Récupère GET /api/sorties/:id/photos, rend une grille de vignettes
+   et ouvre un lightbox plein écran (← → Esc) au clic.
+
+   API publique : window.CCS_GALLERY.load(sortieId)
+   Styles injectés à la volée (auto-contained).
+   ═════════════════════════════════════════════════════════════════ */
+
 (function () {
   'use strict';
 

@@ -1,11 +1,17 @@
-// OCR client-side d'un PDF Strava (image-flatten ou texte natif).
-// Tente d'abord l'extraction texte natif via pdf.js (rapide, instantané).
-// Si la page n'a pas de texte exploitable → rend la page en image et passe en Tesseract OCR (lent, ~5-10s).
-//
-// API :
-//   const text = await extractPdfText(file, { onProgress, lang });
-//
-// Charge pdf.js et tesseract.js depuis CDN à la demande (cachés ensuite).
+/* ═════════════════════════════════════════════════════════════════
+   ocr-pdf.js — OCR client-side d'un PDF Strava
+   ─────────────────────────────────────────────────────────────────
+   Stratégie :
+     1. Tente l'extraction texte natif via pdf.js (rapide, instantané)
+     2. Si la page n'a pas de texte exploitable → rend en image et
+        passe en Tesseract.js OCR (lent, ~5-10s par page)
+
+   Charge pdf.js + tesseract.js depuis CDN à la demande (caché ensuite).
+
+   API publique : window.CCS_OCR.extractPdfText(file, opts) → string
+     opts.onProgress(stage, ratio)  → callback de progression
+     opts.lang                       → 'fra' (default) | 'eng' | …
+   ═════════════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';

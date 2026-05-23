@@ -1,4 +1,11 @@
-﻿/* ── Street View modal (sorties.html) ── */
+﻿/* ═════════════════════════════════════════════════════════════════
+   pages/sorties.js — Liste publique des sorties + modal Street View
+   ─────────────────────────────────────────────────────────────────
+   - Cards triées par date avec photo, type (chapter), distance/D+
+   - Modal Street View au clic sur le badge "Vue rue"
+   - Fetch CCS_DATA.sorties() + pickPhoto() pour le visuel par catégorie
+   ═════════════════════════════════════════════════════════════════ */
+
 (function () {
   const modal   = document.getElementById('gsv-modal');
   const backdrop= document.getElementById('gsv-modal-backdrop');

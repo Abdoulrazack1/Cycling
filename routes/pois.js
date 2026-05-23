@@ -1,4 +1,13 @@
-// routes/pois.js — Gestion des points d'intérêt
+/* ═════════════════════════════════════════════════════════════════
+   routes/pois.js — Points d'intérêt d'une sortie (signaleurs, ravitos…)
+   ─────────────────────────────────────────────────────────────────
+   Monté sur /api/sorties/:sortieId/pois — relatif à une sortie.
+   GET    /                       liste les POIs d'une sortie
+   POST   /                       crée un POI (auth requis, user_added=true)
+   PUT    /:poiId                 édite un POI
+   DELETE /:poiId                 supprime un POI
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/database');

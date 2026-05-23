@@ -1,5 +1,23 @@
-/* ── Chargement dynamique du profil connecté ── */
+/* ═════════════════════════════════════════════════════════════════
+   profil.js — Page /profil
+   ─────────────────────────────────────────────────────────────────
+   Sections (dans l'ordre d'exécution) :
+     1.  Chargement du profil utilisateur (auth + fetch)
+     2.  Affichage des stats persos (km, FTP, dénivelé, zones de puissance)
+     3.  Toggle bio_public (RGPD)
+     4.  Dashboard "Ma saison & le club" (rang, moyennes, événements)
+     5.  Gestion équipement (CRUD via modal)
+     6.  Strava (état connexion + sync + stats annuelles)
+     7.  Dashboard membre (chargé via /api/membres/me/dashboard)
+     8.  Export RGPD article 20 (téléchargement JSON)
+     9.  Sessions actives (liste + révocation)
+     10. Suppression de compte RGPD article 17 (modal + confirmation)
+     11. Changement de mot de passe
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function loadProfile() {
+
+  // ─── Helper : attente conditionnelle (poll jusqu'à condition vraie) ───
   const waitFor = (cond, max = 50) => new Promise(resolve => {
     const tick = (n) => {
       if (cond()) return resolve(true);
@@ -8,6 +26,33 @@
     };
     tick(0);
   });
+
+  /**
+   * Wrapper unique pour les appels API authentifiés.
+   *   await api('/auth/sessions')                      → GET, retourne le JSON parsé
+   *   await api('/auth/account', { method: 'DELETE', body: {password, confirm} })
+   * Throws Error(data.error || 'HTTP N') si !res.ok.
+   * Centralise l'ajout du token, du Content-Type et du parsing.
+   */
+  async function api(path, opts = {}) {
+    const API   = window.CCS_CFG?.API || window.CCS_CONFIG?.apiBase || '/api';
+    const token = window.CCS_AUTH?.getToken?.();
+    const body  = opts.body && typeof opts.body !== 'string' ? JSON.stringify(opts.body) : opts.body;
+    const r = await fetch(API + path, {
+      ...opts,
+      body,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(opts.headers || {}),
+      },
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    return data;
+  }
+
+
   await waitFor(() => !!window.CCS_AUTH);
   await window.CCS_AUTH.ready();
 
@@ -41,7 +86,9 @@
   const bioEl = document.getElementById('profile-bio');
   if (bioEl) bioEl.textContent = profile.bio || '';
 
-  // ── Toggle bio_public (Brief RGPD) ────────────────────────────
+  // ═════════════════════════════════════════════════════════════════
+  // BIO PUBLIC — toggle de visibilité (RGPD Brief)
+  // ═════════════════════════════════════════════════════════════════
   const bioToggle = document.getElementById('bio-public-toggle');
   const bioStatus = document.getElementById('bio-public-status');
   if (bioToggle) {
@@ -183,7 +230,9 @@
   let currentEquip = Array.isArray(profile.equipment) ? profile.equipment.filter(e => e.id) : [];
   renderEquipGrid(currentEquip);
 
-  /* ─── Modal équipement (création/édition) ──────────────────── */
+  // ═════════════════════════════════════════════════════════════════
+  // ÉQUIPEMENT — modal de création/édition + CRUD
+  // ═════════════════════════════════════════════════════════════════
   const modal      = document.getElementById('equip-modal');
   const modalTitle = document.getElementById('equip-modal-title');
   const inputTitre = document.getElementById('equip-titre');
@@ -230,17 +279,12 @@
       if (!it) return;
       if (!confirm(`Supprimer "${it.titre}" ?`)) return;
       try {
-        const token = window.CCS_AUTH?.getToken();
-        const r = await fetch(`${window.CCS_CFG.API}/auth/equipment/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: 'Bearer ' + token },
-        });
-        if (!r.ok) throw new Error((await r.json()).error || `HTTP ${r.status}`);
+        await api(`/auth/equipment/${id}`, { method: 'DELETE' });
         currentEquip = currentEquip.filter(x => x.id !== id);
         renderEquipGrid(currentEquip);
-        if (window.toast) window.toast('Équipement supprimé', 'success');
+        window.toast?.('Équipement supprimé', 'success');
       } catch (err) {
-        if (window.toast) window.toast('Erreur : ' + err.message, 'error');
+        window.toast?.('Erreur : ' + err.message, 'error');
       }
     }
   });
@@ -254,30 +298,22 @@
     btnSave.disabled = true;
     btnSave.textContent = 'Enregistrement…';
     try {
-      const token = window.CCS_AUTH?.getToken();
-      const url   = editingId
-        ? `${window.CCS_CFG.API}/auth/equipment/${editingId}`
-        : `${window.CCS_CFG.API}/auth/equipment`;
-      const method = editingId ? 'PUT' : 'POST';
-      const r = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ titre, description: desc || undefined }),
-      });
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        throw new Error(data.error || `HTTP ${r.status}`);
-      }
+      const result = await api(
+        editingId ? `/auth/equipment/${editingId}` : '/auth/equipment',
+        {
+          method: editingId ? 'PUT' : 'POST',
+          body:   { titre, description: desc || undefined },
+        }
+      );
       if (editingId) {
         const it = currentEquip.find(x => x.id === editingId);
         if (it) { it.titre = titre; it.description = desc || null; }
       } else {
-        const created = await r.json();
-        currentEquip.push(created);
+        currentEquip.push(result);
       }
       renderEquipGrid(currentEquip);
       closeModal();
-      if (window.toast) window.toast(editingId ? 'Équipement modifié' : 'Équipement ajouté', 'success');
+      window.toast?.(editingId ? 'Équipement modifié' : 'Équipement ajouté', 'success');
     } catch (err) {
       modalErr.textContent = err.message;
       modalErr.hidden = false;
@@ -290,11 +326,18 @@
   const userLabel = document.getElementById('ps-user-label');
   if (userLabel) userLabel.textContent = `${profile.prenom} ${profile.nom} (${profile.email || profile.username})`;
 
+  // ═════════════════════════════════════════════════════════════════
+  // LOGOUT — bouton de déconnexion simple
+  // ═════════════════════════════════════════════════════════════════
   document.getElementById('ps-logout-btn')?.addEventListener('click', async () => {
     if (!confirm('Confirmer la déconnexion ?')) return;
     await window.CCS_AUTH.logout();
   });
 
+
+  // ═════════════════════════════════════════════════════════════════
+  // CHANGEMENT DE MOT DE PASSE
+  // ═════════════════════════════════════════════════════════════════
   document.getElementById('pw-btn')?.addEventListener('click', async () => {
     const cur     = document.getElementById('pw-current').value;
     const nw      = document.getElementById('pw-new').value;
@@ -332,17 +375,8 @@
   // ═════════════════════════════════════════════════════════════════
   // STRAVA — état connexion / sync / stats
   // ═════════════════════════════════════════════════════════════════
-  async function _stravaApi(p, init = {}) {
-    const token = window.CCS_AUTH?.getToken();
-    if (!token) throw new Error('non authentifié');
-    const r = await fetch(window.CCS_CFG.API + p, {
-      ...init,
-      headers: { ...(init.headers || {}), Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
-    return data;
-  }
+  // _stravaApi est conservé comme alias historique mais délègue à api()
+  const _stravaApi = (p, init = {}) => api(p, init);
 
   function _fmtKm(m)   { return m ? (m / 1000).toFixed(1) + ' km'  : '—'; }
   function _fmtElev(m) { return m ? Math.round(m) + ' m'           : '—'; }
@@ -543,12 +577,7 @@
     const revokeAllBtn = document.getElementById('sessions-revoke-all-btn');
     if (!listEl) return;
     try {
-      const token = window.CCS_AUTH?.getToken();
-      const r = await fetch(window.CCS_CFG.API + '/auth/sessions', {
-        headers: { Authorization: 'Bearer ' + token },
-      });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const data = await r.json();
+      const data = await api('/auth/sessions');
       const sessions = data.sessions || [];
       if (sessions.length === 0) {
         listEl.innerHTML = '<div style="opacity:.6;">Aucune session active détectée.</div>';
@@ -575,13 +604,10 @@
         btn.addEventListener('click', async () => {
           if (!confirm('Révoquer cette session ?')) return;
           try {
-            await fetch(window.CCS_CFG.API + '/auth/sessions/' + btn.dataset.sid, {
-              method: 'DELETE',
-              headers: { Authorization: 'Bearer ' + token },
-            });
-            if (window.toast) window.toast('Session révoquée', 'success');
+            await api('/auth/sessions/' + btn.dataset.sid, { method: 'DELETE' });
+            window.toast?.('Session révoquée', 'success');
             loadSessions();
-          } catch (err) { if (window.toast) window.toast('Erreur', 'error'); }
+          } catch { window.toast?.('Erreur', 'error'); }
         });
       });
     } catch (err) {
@@ -593,15 +619,10 @@
   document.getElementById('sessions-revoke-all-btn')?.addEventListener('click', async () => {
     if (!confirm('Déconnecter tous les autres appareils ? Vous resterez connecté ici.')) return;
     try {
-      const token = window.CCS_AUTH?.getToken();
-      const r = await fetch(window.CCS_CFG.API + '/auth/sessions', {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + token },
-      });
-      const data = await r.json();
-      if (window.toast) window.toast(`${data.revoked || 0} session(s) révoquée(s)`, 'success');
+      const data = await api('/auth/sessions', { method: 'DELETE' });
+      window.toast?.(`${data.revoked || 0} session(s) révoquée(s)`, 'success');
       loadSessions();
-    } catch (err) { if (window.toast) window.toast('Erreur révocation globale', 'error'); }
+    } catch { window.toast?.('Erreur révocation globale', 'error'); }
   });
 
   // ═════════════════════════════════════════════════════════════════
@@ -634,16 +655,8 @@
     const btn = document.getElementById('dm-confirm-btn');
     btn.disabled = true; btn.textContent = 'Suppression…';
     try {
-      const token = window.CCS_AUTH?.getToken();
-      const r = await fetch(window.CCS_CFG.API + '/auth/account', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ password: pw, confirm }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'HTTP ' + r.status);
+      await api('/auth/account', { method: 'DELETE', body: { password: pw, confirm } });
       alert('Compte supprimé.\n\nVous allez être déconnecté et redirigé vers l\'accueil.');
-      // Force logout client-side puis redirection
       try { await window.CCS_AUTH.logout(); } catch {}
       location.href = '/';
     } catch (err2) {

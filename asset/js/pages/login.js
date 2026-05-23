@@ -1,3 +1,10 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/login.js — Page /login (connexion + inscription)
+   ─────────────────────────────────────────────────────────────────
+   Gère 2 tabs (login / register), la soumission via CCS_AUTH,
+   le code TOTP 2FA si activé, et la redirection post-login.
+   ═════════════════════════════════════════════════════════════════ */
+
 (() => {
   'use strict';
 

@@ -1,25 +1,45 @@
-// routes/strava.js — OAuth + sync activités Strava
+/* ═════════════════════════════════════════════════════════════════
+   routes/strava.js — Intégration Strava (OAuth + sync activités)
+   ─────────────────────────────────────────────────────────────────
+   Endpoints exposés :
+     GET    /api/strava/status        état de connexion de l'user
+     GET    /api/strava/connect       lance le flow OAuth (redirect Strava)
+     GET    /api/strava/callback      retour OAuth + stockage tokens + auto-sync
+     POST   /api/strava/disconnect    efface le lien user_strava_link
+     POST   /api/strava/sync          sync manuel des activités récentes
+     GET    /api/strava/activities    liste les activités importées en BDD
+     GET    /api/strava/stats         agrégats km/D+/temps (année + 30j)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
-const crypto = require('crypto');
-const { query } = require('../config/database');
-const { requireAuth } = require('../middleware/auth');
-const { errResponse } = require('../lib/errors');
-const logger = require('../lib/logger');
-const strava = require('../services/strava-client');
+const crypto  = require('crypto');
+
+const { query }         = require('../config/database');
+const { requireAuth }   = require('../middleware/auth');
+const { errResponse }   = require('../lib/errors');
+const logger            = require('../lib/logger');
+const strava            = require('../services/strava-client');
 
 const router = express.Router();
 
-// Mémoire éphémère pour les "states" OAuth (anti-CSRF). 10 min TTL.
+
+// ═════════════════════════════════════════════════════════════════
+// OAUTH STATE — anti-CSRF (mémoire éphémère, 10 min TTL)
+// ═════════════════════════════════════════════════════════════════
+
 const _oauthStates = new Map();
+
 function _newState(userId) {
   const s = crypto.randomBytes(16).toString('hex');
   _oauthStates.set(s, { userId, ts: Date.now() });
-  // GC
+
+  // GC opportuniste : on profite de l'appel pour évincer les entrées périmées
   for (const [k, v] of _oauthStates) {
     if (Date.now() - v.ts > 600000) _oauthStates.delete(k);
   }
   return s;
 }
+
 function _consumeState(s) {
   const v = _oauthStates.get(s);
   if (!v) return null;

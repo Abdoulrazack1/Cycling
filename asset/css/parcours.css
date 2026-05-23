@@ -1,0 +1,34 @@
+/* ════════════════════════════════════════════════════════════════
+   parcours.css — styles spécifiques à la page /parcours
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Badge Street View sur les cartes parcours ─────────────── */
+.rc { position: relative; }
+
+.rc-sv-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(18, 18, 18, 0.82);
+  color: #C7BC9E;
+  font-family: 'Archivo', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 3px;
+  border: 1px solid rgba(176, 142, 74, 0.4);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(4px);
+  z-index: 3;
+}
+
+.rc-sv-badge svg { opacity: 0.8; }
+
+.rc:hover .rc-sv-badge {
+  color: #B08E4A;
+  border-color: rgba(176, 142, 74, 0.7);
+}

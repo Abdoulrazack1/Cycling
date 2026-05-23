@@ -1,4 +1,12 @@
-// routes/membres.js
+/* ═════════════════════════════════════════════════════════════════
+   routes/membres.js — Annuaire + profil des sociétaires
+   GET   /api/membres                       liste publique active
+   GET   /api/membres/:id                   fiche publique + équipement
+   PATCH /api/membres/:id                   édition (self ou admin)
+   PATCH /api/membres/:id/actif             désactivation (admin)
+   GET   /api/membres/me/dashboard          stats perso : rang, club avg, à venir
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const bcrypt  = require('bcryptjs');
 const { query, pageClause } = require('../config/database');

@@ -1,4 +1,15 @@
-// routes/gpx.js — Upload et service des fichiers GPX
+/* ═════════════════════════════════════════════════════════════════
+   routes/gpx.js — Upload + listing des fichiers GPX
+   ─────────────────────────────────────────────────────────────────
+   Les fichiers sont stockés dans asset/gpx/. Référencés ensuite
+   par sorties.gpx_filename. Sniffing de contenu (Brief B4) pour
+   éviter les uploads falsifiés MIME-only.
+
+   GET    /api/gpx                 liste les .gpx présents sur disque
+   POST   /api/gpx/upload          upload (modo+), multer disque
+   DELETE /api/gpx/:filename       suppression (admin)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const path    = require('path');
 const fs      = require('fs');

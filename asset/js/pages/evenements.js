@@ -1,4 +1,10 @@
-/* ── Chargement dynamique des événements depuis l'API ── */
+/* ═════════════════════════════════════════════════════════════════
+   pages/evenements.js — Liste publique des événements
+   ─────────────────────────────────────────────────────────────────
+   Fetch CCS_DATA.evenements() → filtres (type, statut), tri par date,
+   pagination "Charger plus", lien vers /evenement.html?id=N.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function loadEvenements() {
   await new Promise(resolve => {
     const check = (n = 0) => {

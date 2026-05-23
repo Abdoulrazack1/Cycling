@@ -1,4 +1,11 @@
-// routes/segments.js
+/* ═════════════════════════════════════════════════════════════════
+   routes/segments.js — Segments KOM (lecture publique + CRUD admin)
+   GET    /api/segments        liste paginée + filtre par sortie_id
+   POST   /api/segments        création (admin)
+   PUT    /api/segments/:id    édition (admin)
+   DELETE /api/segments/:id    suppression (admin)
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { query, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');

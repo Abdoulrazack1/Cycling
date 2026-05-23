@@ -1,0 +1,159 @@
+/* ════════════════════════════════════════════════════════════════
+   membres.css — page liste des sociétaires
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Grille des cartes membres ──────────────────────────────── */
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.member-card {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  padding: 24px 20px;
+  text-align: center;
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.member-card:hover {
+  border-color: var(--brass-b);
+  transform: translateY(-2px);
+}
+
+.member-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brass-lo), var(--brass-hi));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-family: var(--f-disp);
+  font-size: 26px;
+  font-style: italic;
+  margin: 0 auto 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.member-num {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--parch-3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.member-name {
+  font-family: var(--f-disp);
+  font-size: 17px;
+  color: var(--parch);
+  margin-bottom: 6px;
+}
+
+.member-name .it {
+  font-style: italic;
+  color: var(--brass);
+}
+
+/* ── Badge rôle ─────────────────────────────────────────────── */
+.member-role {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  display: inline-block;
+  color: var(--parch-2);
+}
+
+.member-role.admin {
+  color: var(--brass);
+  border-color: var(--brass-b);
+}
+
+.member-role.moderateur {
+  color: #7abcda;
+  border-color: rgba(122, 188, 218, 0.3);
+}
+
+/* ── Footer carte (stats) ───────────────────────────────────── */
+.member-meta {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-family: var(--f-sans);
+  font-size: 11px;
+  color: var(--parch-3);
+  line-height: 1.6;
+}
+
+.member-meta b {
+  color: var(--parch-2);
+  font-weight: 500;
+}
+
+/* ── Filtres haut de page ───────────────────────────────────── */
+.member-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+/* ── États (vide / chargement) ──────────────────────────────── */
+.members-empty {
+  padding: 48px;
+  text-align: center;
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--parch-2);
+}
+
+.members-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.members-loading .spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--line);
+  border-top-color: var(--brass);
+  border-radius: 50%;
+  animation: m-spin 0.8s linear infinite;
+}
+
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .members-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .member-card {
+    padding: 18px 14px;
+  }
+  .member-avatar {
+    width: 54px;
+    height: 54px;
+    font-size: 22px;
+  }
+  .member-name {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .members-grid {
+    grid-template-columns: 1fr;
+  }
+}

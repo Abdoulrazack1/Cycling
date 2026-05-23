@@ -1,4 +1,8 @@
-/* ── Chargement dynamique du palmarès depuis l'API ── */
+/* ═════════════════════════════════════════════════════════════════
+   pages/palmares.js — Page publique des résultats de courses
+   Groupe par année, affiche médailles + lien membre cliquable.
+   ═════════════════════════════════════════════════════════════════ */
+
 (async function loadPalmares() {
   const earlyContainer = document.querySelector('.section-sm .wrap');
   if (earlyContainer && !earlyContainer.innerHTML.trim()) {

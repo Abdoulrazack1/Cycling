@@ -264,6 +264,18 @@ const inscriptionLimiter = rateLimit({
   message: { error: 'Trop d\'inscriptions tentées récemment, patientez 1 h' }
 });
 
+// adminLimiter : limite les routes admin à 300 req/15min/IP.
+// Cf. audit-2026-05-19 — sans rate limit, un token admin volé permet
+// d'enumérer la BDD à vitesse maximale (broadcast en série, bulk users…).
+// 300/15min = ~20/min = largement suffisant pour un humain qui clique.
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes admin, patientez 15 min' }
+});
+
 app.use('/api', globalLimiter);
 
 // ── Compression gzip/brotli ─────────────────────────────────
@@ -353,7 +365,7 @@ app.use('/api/segments',   require('./routes/segments'));
 app.use('/api/palmares',   require('./routes/palmares'));
 app.use('/api/gpx',        require('./routes/gpx'));
 app.use('/api/auto-courses', require('./routes/auto-courses'));
-app.use('/api/admin',      require('./routes/admin'));
+app.use('/api/admin',      adminLimiter, require('./routes/admin'));
 app.use('/api/search',     require('./routes/search'));
 app.use('/api/strava',     require('./routes/strava'));
 app.use('/api/pois',       require('./routes/pois-admin'));

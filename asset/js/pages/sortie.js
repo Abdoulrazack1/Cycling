@@ -1,3 +1,10 @@
+/* ═════════════════════════════════════════════════════════════════
+   pages/sortie.js — Modules legers pour la page détail d'une sortie
+   Branche le widget météo + la galerie photos dès que les données
+   sont disponibles. La logique principale est dans asset/js/sortie.js.
+   ═════════════════════════════════════════════════════════════════ */
+
+
 /* ─── Widget météo : se charge dès qu'on connaît lat/lng/date du parcours ─── */
 (function initWeatherWidget() {
   const tryInit = (attempt = 0) => {

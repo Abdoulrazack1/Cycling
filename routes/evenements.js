@@ -1,4 +1,14 @@
-// routes/evenements.js
+/* ═════════════════════════════════════════════════════════════════
+   routes/evenements.js — Événements + inscriptions
+   GET    /api/evenements                liste paginée + filtres
+   GET    /api/evenements/:id            détail + inscrits
+   POST   /api/evenements                création (modo+)
+   PUT    /api/evenements/:id            édition (modo+)
+   DELETE /api/evenements/:id            suppression (admin)
+   POST   /api/evenements/:id/inscrire   inscription publique (mail confirm)
+   POST   /api/evenements/inscriptions/purge   purge RGPD événements terminés
+   ═════════════════════════════════════════════════════════════════ */
+
 const express = require('express');
 const { query, withTransaction, pageClause } = require('../config/database');
 const { requireAuth, requireAdmin, requireModo, optionalAuth } = require('../middleware/auth');
