@@ -6,6 +6,11 @@
    ═════════════════════════════════════════════════════════════════ */
 
 (async function loadEvenements() {
+  // Skeleton immédiat (avant l'attente CCS_DATA) — évite le trou blanc
+  const earlyList = document.querySelector('.list-ornate');
+  if (earlyList && !earlyList.innerHTML.trim()) {
+    earlyList.innerHTML = Array(5).fill('<div class="skeleton skeleton-row" style="margin:8px 0;"></div>').join('');
+  }
   await new Promise(resolve => {
     const check = (n = 0) => {
       if (window.CCS_DATA) return resolve();

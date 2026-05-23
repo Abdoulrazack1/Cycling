@@ -14,6 +14,8 @@
       telephone: document.getElementById('c-phone')?.value?.trim() || undefined,
       sujet:     document.getElementById('c-subject')?.value,
       message:   document.getElementById('c-msg')?.value?.trim(),
+      // Honeypot — toujours envoyé (vide pour un humain, rempli pour un bot)
+      website:   document.getElementById('c-website')?.value || '',
     };
     if (!data.prenom || !data.nom || !data.email || !data.sujet || !data.message) {
       window.toast?.('Remplissez tous les champs obligatoires', 'warning'); return;

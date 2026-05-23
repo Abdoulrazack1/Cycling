@@ -1,0 +1,10 @@
+# Security.txt — Club de Cyclisme de Salouel
+# https://www.rfc-editor.org/rfc/rfc9116
+Contact: mailto:contact@club-salouel.fr
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: fr, en
+Canonical: https://cc-salouel.fr/.well-known/security.txt
+
+# Vous avez identifié une vulnérabilité ? Merci de nous écrire à l'adresse
+# ci-dessus. Décrivez précisément la faille, l'impact et les étapes de
+# reproduction. Nous accuserons réception sous 72 h.

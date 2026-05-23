@@ -73,6 +73,11 @@
           <label for="c-msg">Message *</label>
           <textarea id="c-msg" required placeholder="Dites-nous ce qui vous amène…"></textarea>
         </div>
+        <!-- Honeypot anti-spam : champ caché aux humains, rempli par les bots -->
+        <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+          <label for="c-website">Site web (laissez vide)</label>
+          <input id="c-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
         <button type="submit" class="btn btn-brass">Envoyer</button>
       </form>
     </div>
