@@ -124,3 +124,38 @@ Voir le README pour la documentation complète d'utilisation.
 - **Scraper** : les sources Miles Republic peuvent changer leur HTML. Si le scrape renvoie 0 events, vérifier le parser regex.
 - **Stockage GPX** : actuellement en disque local (`asset/gpx/`). Pour scaler à >1000 courses, prévoir un stockage S3/CDN.
 - **Auth** : JWT en mémoire, à invalider à la déconnexion. Token blacklist non implémenté → durée courte (15 min) recommandée.
+
+---
+
+## 🚀 Itération 2026-05-23 — couche premium + tests étendus
+
+### Ajouté
+
+- **`/api/stats`** : statistiques agrégées publiques (sorties/km/D+/évts/membres/segments/KOMs) avec cache mémoire 5 min + endpoint flush.
+- **`/api/newsletter`** : subscribe (double opt-in), confirm, unsubscribe, list (admin) + table `newsletter_subscribers` (migration 010).
+- **Widget newsletter** intégré au footer global (auto-injecté par `main.js`) avec honeypot anti-spam.
+- **Honeypot anti-bot** sur le formulaire de contact (champ `website` caché, 201 silencieux si rempli).
+- **`offline.html`** + service worker v20 : fallback dédié hors-ligne au lieu de réutiliser `index.html`.
+- **`.well-known/security.txt`** (RFC 9116) pour les divulgations de vulnérabilité.
+- **`asset/js/premium.js` + `asset/css/premium.css`** — couche d'expérience :
+  - Progress bar globale style YouTube/NProgress branchée automatiquement sur `window.fetch`.
+  - Toast queue (FIFO, 3 max, bouton close, success/error/warning/info, accessible).
+  - View Transitions API (fade page-to-page sur Chrome 111+) avec fallback gracieux.
+  - Smooth scroll automatique pour les ancres `#xxx` avec offset sous la nav fixe.
+  - Pull-to-refresh mobile (opt-in via `<body data-ptr>`).
+  - Core Web Vitals collectés dans `localStorage` (LCP / CLS / TTFB).
+  - Helper `CCS_PREMIUM.copyLink(url, label)` + bouton "Copier" sur la page sortie.
+
+### Tests
+
+- **31 → 63 tests** (33 unitaires scraper + 30 intégration : auth, sorties, admin, gpx, 2fa, **stats, newsletter, public-endpoints**).
+- `tests/integration/gpx.test.js` réécrit : ne dépend plus des 4 GPX de démo (`avesnois`, `cote-opale`, `pevele`, `scarpe-gravel`) qui n'existaient plus — désormais teste dynamiquement les GPX présents.
+- `tests/integration/newsletter.test.js` (9 cas) + `tests/integration/stats.test.js` (4 cas) + `tests/integration/public-endpoints.test.js` (17 cas).
+
+### Polish UX
+
+- Skeleton loaders ajoutés sur `evenements.html`, `segments.html` (en plus des existants sur sorties/membres/palmares).
+- Bouton "Copier lien" sur `sortie.html`.
+- `fetchpriority="high"` sur l'image hero d'`evenements.html`.
+- Lazy-fade pour `img[loading="lazy"]` (transition opacity douce).
+- Focus-ring uniformisé brass + shadow halo sur tous les boutons et liens.

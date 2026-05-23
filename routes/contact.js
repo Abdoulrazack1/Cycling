@@ -39,10 +39,22 @@ router.post('/', [
   body('email').isEmail().normalizeEmail(),
   body('telephone').optional().trim().isLength({ max: 20 }).matches(/^[0-9 +\-().]*$/),
   body('sujet').notEmpty().trim().isLength({ max: 200 }),
-  body('message').notEmpty().trim().isLength({ min: 10, max: 2000 })
+  body('message').notEmpty().trim().isLength({ min: 10, max: 2000 }),
+  // Honeypot : champ "website" caché côté frontend. Si rempli → bot.
+  // On répond 201 sans rien enregistrer pour ne pas donner d'info au scraper.
+  body('website').optional({ checkFalsy: true }).custom(v => {
+    if (v && String(v).length > 0) throw new Error('HONEYPOT');
+    return true;
+  })
 ], async (req, res) => {
   const errs = validationResult(req);
-  if (!errs.isEmpty()) return res.status(400).json({ errors: errs.array() });
+  if (!errs.isEmpty()) {
+    // Honeypot rempli : 201 silencieux (le bot pense que ça a marché)
+    if (errs.array().some(e => e.path === 'website')) {
+      return res.status(201).json({ message: 'Message envoyé' });
+    }
+    return res.status(400).json({ errors: errs.array() });
+  }
 
   const { prenom, nom, email, telephone, sujet, message } = req.body;
   try {

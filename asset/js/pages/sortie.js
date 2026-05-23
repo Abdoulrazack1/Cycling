@@ -42,3 +42,19 @@
   };
   tryInit();
 })();
+
+/* ─── Bouton "Copier lien" : copie l'URL canonique de la sortie ──── */
+(function initCopyLink() {
+  const btn = document.getElementById('copy-sortie-link');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const sortie = window.CCS_SORTIE_STATE?.sortie;
+    const url = location.href;
+    const label = sortie?.title ? `Lien copié — ${sortie.title}` : 'Lien copié';
+    if (window.CCS_PREMIUM?.copyLink) {
+      window.CCS_PREMIUM.copyLink(url, label);
+    } else if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(() => window.toast?.(label, 'success'));
+    }
+  });
+})();

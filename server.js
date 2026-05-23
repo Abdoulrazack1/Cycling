@@ -367,6 +367,8 @@ app.use('/api/gpx',        require('./routes/gpx'));
 app.use('/api/auto-courses', require('./routes/auto-courses'));
 app.use('/api/admin',      adminLimiter, require('./routes/admin'));
 app.use('/api/search',     require('./routes/search'));
+app.use('/api/stats',      require('./routes/stats'));
+app.use('/api/newsletter', require('./routes/newsletter'));
 app.use('/api/strava',     require('./routes/strava'));
 app.use('/api/pois',       require('./routes/pois-admin'));
 

@@ -4,6 +4,13 @@
    ═════════════════════════════════════════════════════════════════ */
 
 (async function loadSegments() {
+  // Skeleton lignes du tableau avant fetch (évite le trou blanc)
+  const earlyTbody = document.querySelector('.seg-table tbody');
+  if (earlyTbody && !earlyTbody.innerHTML.trim()) {
+    earlyTbody.innerHTML = Array(5).fill(
+      '<tr>' + Array(7).fill('<td><div class="skeleton" style="height:14px;"></div></td>').join('') + '</tr>'
+    ).join('');
+  }
   await new Promise(resolve => {
     const check = (n = 0) => {
       if (window.CCS_DATA) return resolve();

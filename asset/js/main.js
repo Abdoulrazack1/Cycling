@@ -127,6 +127,19 @@
         </div>
       </div>
 
+      <div class="footer-newsletter" data-newsletter>
+        <div class="footer-col-title">Lettre du club</div>
+        <p class="footer-newsletter-sub">Une lettre tous les deux mois — sorties, calendrier, palmarès. Désabonnement en un clic.</p>
+        <form class="footer-newsletter-form" id="footer-newsletter" novalidate>
+          <input type="email" name="email" placeholder="votre@email.fr" required aria-label="Email" autocomplete="email">
+          <button type="submit" class="btn btn-brass btn-sm">S'inscrire</button>
+          <!-- Honeypot anti-spam -->
+          <input type="text" name="website" aria-hidden="true" tabindex="-1" autocomplete="off"
+                 style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+        </form>
+        <div id="footer-newsletter-status" class="footer-newsletter-status" aria-live="polite"></div>
+      </div>
+
       <div class="footer-bar">
         <span>© 1978–2026 · C.C. Salouel</span>
         <span id="live-time-footer">--:--:--</span>
@@ -147,6 +160,18 @@
       s.src = 'asset/js/search-palette.js';
       s.defer = true;
       s.dataset.searchPalette = '1';
+      document.head.appendChild(s);
+    }
+    // Charge la couche premium (progress bar, toasts, view transitions, vitals)
+    if (!window.CCS_PREMIUM && !document.querySelector('script[data-premium]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'asset/css/premium.css';
+      document.head.appendChild(link);
+      const s = document.createElement('script');
+      s.src = 'asset/js/premium.js';
+      s.defer = true;
+      s.dataset.premium = '1';
       document.head.appendChild(s);
     }
     document.querySelectorAll('[data-page]').forEach(a => {
@@ -271,26 +296,50 @@
     document.querySelectorAll('.power-bar').forEach(el => io.observe(el));
   }
 
-  window.toast = function toast(msg, type = 'info', duration = 3200) {
-    const existing = document.querySelector('.toast');
-    if (existing) existing.remove();
-    const el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.setAttribute('role', 'status');
-    const icons = {
-      success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-      error:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2"/></svg>',
-      warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3l10 18H2L12 3z" stroke="currentColor" stroke-width="2"/><path d="M12 10v5M12 18h.01" stroke="currentColor" stroke-width="2"/></svg>',
-      info:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 17h.01" stroke="currentColor" stroke-width="2"/></svg>'
+  // Fallback toast utilisé tant que premium.js n'est pas chargé.
+  // Une fois premium.js prêt, il remplace window.toast par sa version queue (3 max, FIFO).
+  if (!window.toast) {
+    window.toast = function toast(msg, type = 'info') {
+      // Si premium.js a fini de charger entretemps, on l'utilise.
+      if (window.CCS_PREMIUM?.toast?.push) return window.CCS_PREMIUM.toast.push(msg, type);
+      // Sinon, log basique — évite de polluer la page avec des markup orphelins
+      // qui ne seraient plus stylés.
+      console.info('[toast]', type, msg);
     };
-    el.innerHTML = (icons[type] || icons.info) + '<span>' + (window.esc || (s => String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))))(msg) + '</span>';
-    document.body.appendChild(el);
-    requestAnimationFrame(() => el.classList.add('show'));
-    setTimeout(() => {
-      el.classList.remove('show');
-      setTimeout(() => el.remove(), 400);
-    }, duration);
-  };
+  }
+
+  function initFooterNewsletter() {
+    const form = document.getElementById('footer-newsletter');
+    if (!form) return;
+    const status = document.getElementById('footer-newsletter-status');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = form.email.value.trim();
+      const website = form.website.value || '';
+      if (!email) return;
+      const API = window.CCS_CFG?.API || window.CCS_CONFIG?.apiBase || '/api';
+      status.textContent = 'Envoi…';
+      try {
+        const r = await fetch(API + '/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, website, source: 'footer' }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error || 'Erreur');
+        if (data.status === 'already_confirmed') {
+          status.textContent = 'Vous êtes déjà inscrit. Merci !';
+        } else {
+          status.textContent = 'Inscription enregistrée — confirmez via l\'email reçu.';
+          form.reset();
+        }
+        window.toast?.('Inscription enregistrée', 'success');
+      } catch (err) {
+        status.textContent = '';
+        window.toast?.(err.message || 'Erreur inscription', 'error');
+      }
+    });
+  }
 
   function boot() {
     injectChrome();
@@ -300,6 +349,7 @@
     startLiveTime();
     initReveal();
     initPowerBars();
+    initFooterNewsletter();
   }
 
   if (document.readyState === 'loading') {

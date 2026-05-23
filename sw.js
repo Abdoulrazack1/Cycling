@@ -9,7 +9,7 @@
  * anciens caches.
  */
 
-const CACHE_VERSION = 'ccs-v19';
+const CACHE_VERSION = 'ccs-v20';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 
@@ -17,14 +17,17 @@ const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 const PRECACHE = [
   '/',
   '/index.html',
+  '/offline.html',
   '/asset/css/style.css',
   '/asset/css/polish.css',
+  '/asset/css/premium.css',
   '/asset/js/config.js',
   '/asset/js/utils.js',
   '/asset/js/data-static.js',
   '/asset/js/data.js',
   '/asset/js/auth.js',
   '/asset/js/main.js',
+  '/asset/js/premium.js',
   '/asset/img/icon.svg',
   '/manifest.webmanifest',
 ];
@@ -91,7 +94,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => caches.match(req).then(c => c || caches.match('/index.html')))
+        .catch(() => caches.match(req).then(c => c || caches.match('/offline.html')))
     );
     return;
   }
@@ -107,8 +110,8 @@ self.addEventListener('fetch', (event) => {
         }
         return res;
       }).catch(() => {
-        // Fallback navigation hors-ligne : retombe sur index.html en cache
-        if (req.mode === 'navigate') return caches.match('/index.html');
+        // Fallback navigation hors-ligne : page dédiée
+        if (req.mode === 'navigate') return caches.match('/offline.html') || caches.match('/index.html');
         throw new Error('Offline + pas en cache');
       });
     })

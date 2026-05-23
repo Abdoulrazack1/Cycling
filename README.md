@@ -35,6 +35,9 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 - **Recherche globale Cmd+K** : palette de commandes (Linear/Notion-style) sur sorties / événements / membres / segments
 - **Événements** : inscription publique avec confirmation par email
 - **Calendrier de courses**, **palmarès** par saison, **segments KOM**
+- **Newsletter** : inscription opt-in (double confirmation) directement depuis le footer
+- **Stats publiques** : `/api/stats` agrège km/D+/sorties/membres pour les widgets home et footer
+- **Couche premium UX** : progress bar fetch globale, view transitions (fade page-to-page), pull-to-refresh mobile, file de notifications (3 max), copie de lien direct sortie
 
 ### Membre (auth requis)
 - **Profil enrichi** : équipement éditable, FTP + zones de puissance, dashboard stats personnelles (vs club)
@@ -58,8 +61,12 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 - **Migrations versionnées** : runner custom avec table `schema_migrations`, checksum sha256, transactions
 - **Backup MySQL automatique** : script + tâche Windows planifiée (`schtasks`)
 - **Auto-cleanup** : courses passées effacées au-delà de 90 jours (configurable)
-- **Service Worker** : stratégie network-first pour HTML, cache-first pour assets
-- **Rate limiting** : global + auth + admin + contact (anti-spam et anti-brute force)
+- **Service Worker v20** : network-first HTML, cache-first assets, fallback dédié `offline.html`
+- **Rate limiting** : global + auth + admin + contact + newsletter (anti-spam et anti-brute force)
+- **Anti-bot** : honeypot sur contact + newsletter, CSP stricte sans `unsafe-eval`
+- **`.well-known/security.txt`** RFC 9116 pour les divulgations de vulnérabilité
+- **Tests** : `npm test` exécute 63 cas (33 unitaires scraper + 30 intégration auth/sorties/admin/gpx/2fa/stats/newsletter/public-endpoints)
+- **Core Web Vitals** trackés côté client en `localStorage` (LCP/CLS/TTFB)
 
 ## 📦 Stack technique
 
