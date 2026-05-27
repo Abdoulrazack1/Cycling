@@ -1,0 +1,370 @@
+/* ═════════════════════════════════════════════════════════════════
+   fx.css — Couche d'effets avancés (scroll + micro-interactions)
+   ─────────────────────────────────────────────────────────────────
+   Tous les styles consommés par scroll-fx.js et micro-fx.js + qq
+   utilitaires CSS-only complémentaires.
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Scroll progress bar (haut de page) ─────────────────── */
+.ccs-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brass) 0%, var(--brass-hi) 50%, var(--brass) 100%);
+  background-size: 200% 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  z-index: 9998;
+  pointer-events: none;
+  box-shadow: 0 0 12px rgba(202, 163, 91, 0.5);
+  transition: transform .1s linear;
+}
+/* Animation shimmer subtile pour le faire vivre */
+.ccs-scroll-progress {
+  animation: ccs-progress-flow 4s linear infinite;
+}
+@keyframes ccs-progress-flow {
+  0%   { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ccs-scroll-progress { animation: none; }
+}
+
+/* ─── 2. Parallax base style ─────────────────────────────────── */
+[data-parallax] {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ─── 3. Cascade reveal (data-cascade + children .cascade-in) ─ */
+[data-cascade] > * {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity .8s cubic-bezier(.22, .9, .35, 1),
+              transform .8s cubic-bezier(.22, .9, .35, 1);
+  transition-delay: var(--cascade-delay, 0s);
+}
+[data-cascade] > .cascade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cascade] > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ─── 4. Scroll-anim variants ─────────────────────────────────── */
+[data-scroll-anim] {
+  opacity: 0;
+  transition: opacity .9s cubic-bezier(.22, .9, .35, 1),
+              transform .9s cubic-bezier(.22, .9, .35, 1);
+}
+[data-scroll-anim="fade-up"]    { transform: translateY(40px); }
+[data-scroll-anim="fade-down"]  { transform: translateY(-40px); }
+[data-scroll-anim="fade-left"]  { transform: translateX(40px); }
+[data-scroll-anim="fade-right"] { transform: translateX(-40px); }
+[data-scroll-anim="zoom-in"]    { transform: scale(.92); }
+[data-scroll-anim="zoom-out"]   { transform: scale(1.08); }
+[data-scroll-anim="rotate-in"]  { transform: rotate(-3deg) scale(.95); }
+[data-scroll-anim].scroll-anim-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-scroll-anim] { opacity: 1; transform: none; transition: none; }
+}
+
+/* ─── 5. Nav condensée au scroll ──────────────────────────── */
+#main-nav.condensed,
+.main-nav.condensed {
+  --nav-h: 64px;
+  height: 64px;
+  background: rgba(10, 20, 16, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(176, 142, 74, .14),
+              0 12px 32px rgba(0, 0, 0, .4);
+}
+#main-nav.condensed .nav-logo-sub,
+.main-nav.condensed .nav-logo-sub {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity .3s ease, max-width .3s ease;
+}
+:root[data-theme="light"] #main-nav.condensed,
+:root[data-theme="auto"] #main-nav.condensed {
+  background: rgba(244, 239, 224, 0.96);
+}
+
+/* ─── 6. Ripple effect ────────────────────────────────────── */
+.ccs-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(202, 163, 91, 0.35);
+  pointer-events: none;
+  transform: scale(0);
+  animation: ccs-ripple-go 0.6s ease-out;
+  z-index: 0;
+}
+@keyframes ccs-ripple-go {
+  to { transform: scale(1); opacity: 0; }
+}
+.btn { position: relative; overflow: hidden; }
+.btn > * { position: relative; z-index: 1; }
+
+/* ─── 7. Magnetic buttons : transition fluide ───────────── */
+[data-magnetic],
+.btn-brass,
+.nav-cta {
+  transition: transform .35s cubic-bezier(.18, .89, .32, 1.28);
+}
+
+/* ─── 8. Spotlight (section data-spotlight) ──────────────── */
+.ccs-spotlight-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle 280px at var(--mx, 50%) var(--my, 50%),
+                              rgba(202, 163, 91, 0.10),
+                              transparent 60%);
+  opacity: 0;
+  transition: opacity .3s ease;
+  z-index: 0;
+  mix-blend-mode: lighten;
+}
+[data-spotlight] > *:not(.ccs-spotlight-layer) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── 9. Split text reveal (caractère par caractère) ──────── */
+.ccs-split-char {
+  opacity: 0;
+  transform: translateY(50%) rotate(8deg);
+  transition: opacity .55s cubic-bezier(.22, .9, .35, 1),
+              transform .55s cubic-bezier(.22, .9, .35, 1);
+  transition-delay: var(--char-delay, 0s);
+}
+.ccs-split-char.ccs-split-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ccs-split-char {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ─── 10. Link underline fancy draw ──────────────────────── */
+.ccs-link-fancy {
+  position: relative;
+  text-decoration: none;
+}
+.ccs-link-fancy::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform .45s cubic-bezier(.22, .9, .35, 1);
+}
+.ccs-link-fancy:hover::after,
+.ccs-link-fancy:focus-visible::after,
+.ccs-link-fancy.active::after,
+.ccs-link-fancy.nav-active::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* ─── 11. Image overlay reveal ────────────────────────────── */
+.ccs-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 20, 16, .92), rgba(10, 20, 16, 0) 60%);
+  display: flex;
+  align-items: flex-end;
+  padding: 18px 22px;
+  color: var(--cream);
+  font-family: var(--f-sans);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .4s ease, transform .4s ease;
+  pointer-events: none;
+}
+[data-img-reveal]:hover .ccs-img-overlay,
+[data-img-reveal]:focus-within .ccs-img-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── 12. Custom cursor (opt-in via body[data-cursor]) ──── */
+.ccs-cursor {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: difference;
+}
+.ccs-cursor-dot {
+  position: absolute;
+  top: -4px; left: -4px;
+  width: 8px; height: 8px;
+  background: var(--brass);
+  border-radius: 50%;
+}
+.ccs-cursor-ring {
+  position: absolute;
+  top: -16px; left: -16px;
+  width: 32px; height: 32px;
+  border: 1px solid var(--brass);
+  border-radius: 50%;
+  transition: transform .2s ease, width .2s ease, height .2s ease;
+}
+.ccs-cursor.hover .ccs-cursor-ring {
+  transform: scale(1.6);
+}
+body[data-cursor] * { cursor: none !important; }
+
+/* ─── 13. Focus glow on inputs ───────────────────────────── */
+.ccs-focus-glow {
+  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+}
+.ccs-focus-glow:focus,
+.ccs-focus-glow:focus-visible {
+  outline: none;
+  border-color: var(--brass) !important;
+  box-shadow: 0 0 0 3px rgba(176, 142, 74, 0.18),
+              inset 0 0 0 1px var(--brass);
+}
+
+/* ─── 14. Card hover : glow shadow (subtil) ────────────── */
+.rc:hover {
+  box-shadow: 0 16px 36px rgba(0, 0, 0, .35),
+              0 0 0 1px rgba(176, 142, 74, .14),
+              0 0 30px rgba(176, 142, 74, .12);
+}
+
+/* ─── 15. Card image : ken-burns subtil (zoom continu lent) ─── */
+@media (hover: hover) {
+  .rc-img img,
+  .story-img img {
+    transition: transform 1.4s cubic-bezier(.22, .9, .35, 1);
+  }
+}
+
+/* ─── 16. Section dividers ornés ─────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 48px 0;
+  color: var(--brass);
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--brass), transparent);
+}
+.section-divider::after {
+  background: linear-gradient(to right, var(--brass), transparent);
+}
+.section-divider::before {
+  background: linear-gradient(to right, transparent, var(--brass));
+}
+.section-divider-ornament {
+  font-family: var(--f-disp);
+  font-style: italic;
+  font-size: 18px;
+}
+
+/* ─── 17. Floating arrow (scroll cue) ────────────────────── */
+.ccs-scroll-cue {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--parch-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: ccs-cue-pulse 2.4s ease-in-out infinite;
+}
+.ccs-scroll-cue::after {
+  content: '';
+  width: 1px;
+  height: 36px;
+  background: linear-gradient(to bottom, var(--brass) 0%, transparent 100%);
+}
+@keyframes ccs-cue-pulse {
+  0%, 100% { opacity: .6; transform: translate(-50%, 0); }
+  50%      { opacity: 1;  transform: translate(-50%, 4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ccs-scroll-cue { animation: none; }
+}
+
+/* ─── 18. Badge glow (live indicators) ────────────────────── */
+.tag-live,
+.pulse-dot {
+  position: relative;
+}
+.tag-live::before,
+.pulse-dot.glow::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: inherit;
+  filter: blur(8px);
+  opacity: .5;
+  z-index: -1;
+}
+
+/* ─── 19. Reveal sur la nav-cta CTA principal ────────────── */
+.nav-cta {
+  position: relative;
+  overflow: hidden;
+}
+.nav-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(202, 163, 91, .2) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform .8s cubic-bezier(.22, .9, .35, 1);
+}
+.nav-cta:hover::before {
+  transform: translateX(100%);
+}
+
+/* ─── 20. Body smooth scroll (CSS, sans lib) ──────────────── */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}

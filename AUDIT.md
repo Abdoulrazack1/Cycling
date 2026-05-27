@@ -295,3 +295,44 @@ Voir le README pour la documentation complète d'utilisation.
 - Bouton "Connecter mon Strava" sur profil utilise désormais la modal explicative au lieu de partir direct sur OAuth.
 - Bouton "Synchroniser" sur profil utilise désormais la modal preview (au lieu de sync direct sur 90 j).
 - Banner "Connecter Strava" auto-injecté sur le profil pour les users non-strava.
+
+---
+
+## 🎨 Itération 2026-05-28 (bis) — animations & scroll FX renforcés
+
+### Nouveaux modules JS + CSS (chargés globalement par main.js)
+
+- **`scroll-fx.js`** :
+  - Barre de progression scroll en haut de page (style article long).
+  - **Parallax multi-couches** sur `[data-parallax="0.3"]` (speed 0-1) avec direction X ou Y. rAF-batched.
+  - **Card image parallax** : les images dans `.rc-img / .story-img` bougent à 8% du scroll dans la viewport pour effet profondeur.
+  - **Cascade reveal** sur `[data-cascade]` : chaque enfant a un delay incrémental.
+  - **Scroll-anim** sur `[data-scroll-anim="fade-up|fade-down|zoom-in|zoom-out|rotate-in"]`.
+  - **Nav condensée** : se réduit à 64px après 80px de scroll + backdrop-blur.
+  - **Section tracker** : met `.nav-active` sur les liens correspondant à la section visible.
+  - **Velocity-aware marquees** (opt-in via `CCS_SCROLL_FX.initMarqueeVelocity()`).
+
+- **`micro-fx.js`** :
+  - **Magnetic buttons** : `.btn-brass` et `.nav-cta` suivent légèrement le curseur (transform smooth bezier).
+  - **Ink ripple** au click sur tous les boutons.
+  - **Cursor spotlight** sur `[data-spotlight]` : halo discret qui suit le curseur dans une section.
+  - **Split text** sur `[data-split-text]` : reveal caractère par caractère avec rotation.
+  - **Link underline fancy draw** sur les liens nav + footer (`.ccs-link-fancy`).
+  - **Image overlay reveal** sur `[data-img-reveal="texte"]`.
+  - **Custom cursor** (opt-in via `<body data-cursor>`).
+  - **Focus glow** sur tous les inputs/textareas/selects.
+
+- **`fx.css`** : 20 sections d'effets (progress bar, parallax, cascade, scroll-anim variants, nav condensée, ripple, magnetic, spotlight, split, links, overlay, cursor, focus, glow, ken-burns subtil, dividers ornés, scroll cue, badge glow, nav-cta shimmer, smooth scroll). Toujours avec garde `prefers-reduced-motion`.
+
+### Application sur les pages existantes
+
+- `index.html` : hero avec `data-spotlight` + `data-parallax="0.25"` sur l'image, stats-row avec `data-cascade`.
+- `evenements.html` : image hero avec `data-parallax="0.15"`.
+
+### Performance
+
+- Tous les listeners scroll sont **rAF-batched** (1 update / frame max).
+- `IntersectionObserver` partout où on peut éviter le scroll listener.
+- `will-change: transform` posé statiquement pour éviter le composite layer churn.
+- Skip total sous `prefers-reduced-motion: reduce` (valeurs finales appliquées sans transition).
+- Skip sur mobile (`hover: none`) pour magnetic/spotlight/cursor (économise la batterie).
