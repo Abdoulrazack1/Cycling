@@ -65,6 +65,9 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Copier
           </button>
+          <button class="fav-toggle" id="fav-toggle" type="button" title="Ajouter aux favoris" hidden aria-label="Ajouter aux favoris">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
         </div>
       </div>
 
@@ -73,6 +76,14 @@
       <p class="sortie-head-sub" id="sortie-sub"></p>
 
       <div class="sortie-head-stats" id="sortie-stats"></div>
+
+      <!-- Inscription 1-clic (visible si user connecté + sortie future) -->
+      <div class="sortie-head-cta" style="margin-top:20px;">
+        <button id="sortie-inscrire" class="sortie-inscrire" type="button" hidden>
+          S'inscrire à cette sortie
+        </button>
+        <span id="sortie-inscrits-count" class="sortie-inscrits-count" style="margin-left:14px;color:var(--parch-3);font-family:var(--f-sans);font-size:12px;"></span>
+      </div>
     </div>
   </section>
 

@@ -203,3 +203,35 @@ Voir le README pour la documentation complète d'utilisation.
 - **Raccourcis clavier globaux** : `t` cycle le thème, `?` ouvre l'aide, `g h/s/e/m/c/p/k` navigation rapide entre pages.
 - Modal d'aide raccourcis stylé (Backdrop blur + animation modal-in).
 - **Anime.js v3** chargé depuis cdn.jsdelivr.net (déjà whitelist CSP).
+
+---
+
+## 🚴 Itération 2026-05-27 — renforcement parcours utilisateurs
+
+### Backend
+
+- **Migration 011** : nouvelles tables `user_favorites`, `notifications`, `sortie_inscriptions` + extension ENUM `audit_log.action` (inscription, annulation, favorite, notification).
+- **`/api/favorites`** : CRUD sorties favorites par membre (POST, DELETE, GET, GET /check/:id).
+- **`/api/notifications`** : flux centralisé (liste, unread, read-all, read/:id, delete, POST admin push). Helper `notify(userId, type, ...)` exporté pour les autres routes.
+- **`/api/sorties/:id/inscription`** : inscription 1-clic membre (POST/DELETE). Endpoint public `/inscriptions` retourne la liste (sans email/téléphone). Admin peut patch le statut (`inscrit` / `liste-attente` / `annule`).
+- **Notifications auto-générées** :
+  - `sortie.updated` : envoyée à tous les inscrits quand un admin modifie une sortie.
+  - `inscription.confirmed` : envoyée au user lors d'une inscription 1-clic.
+  - `inscription.status_changed` : envoyée quand admin change le statut.
+  - `broadcast` : envoyée à tous les destinataires d'un broadcast email.
+- **`/api/auth/me` étendu** : ajoute `strava_linked` (bool) et `inscriptions_count` (int) pour alimenter la checklist d'onboarding.
+
+### Frontend
+
+- **`member-journey.js`** + **`journey.css`** :
+  - **Cloche de notifications** dans la nav avec badge unread + animation shake + panneau dépliant. Polling 60s.
+  - **Bouton favori** (étoile) sur la page sortie avec animation scale + état toggle persistant.
+  - **Bouton inscription 1-clic** sur la page sortie avec compteur d'inscrits public.
+  - **Checklist d'onboarding** sur le profil (4 étapes : profil / équipement / Strava / inscription première sortie) avec progress bar + bouton "Faire" qui scroll vers la bonne section.
+- **`admin-palette.js`** : palette d'actions admin (Ctrl+Shift+P) avec fuzzy-search, 19 commandes (nouveau membre/sortie/event, broadcast, maintenance toggle, audit log, scraper, Strava config, etc.). Active uniquement si user.role === 'admin'.
+- **`breadcrumbs.js`** : fil d'Ariane auto-injecté en début de `<main>` selon la page courante (15 pages mappées). Désactivable via `data-no-breadcrumbs`.
+
+### Tests
+
+- **Nouveau fichier** `tests/integration/journey.test.js` : 15 cas pour favorites, notifications, sortie inscriptions, /auth/me étendu.
+- **78/78 tests passent** (63 → 78).

@@ -1,0 +1,469 @@
+/* ═════════════════════════════════════════════════════════════════
+   journey.css — Styles pour le renforcement parcours utilisateur
+   ─────────────────────────────────────────────────────────────────
+   Cloche de notifications, panneau, favori star, inscription btn,
+   onboarding checklist, breadcrumbs.
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Notification bell ──────────────────────────────────── */
+.ccs-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--cream);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: all .2s ease;
+}
+.ccs-bell:hover {
+  border-color: var(--brass);
+  color: var(--brass-hi);
+}
+.ccs-bell.has-unread {
+  border-color: var(--brass);
+}
+.ccs-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--ox);
+  color: #FDFBF4;
+  font-family: var(--f-sans);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+  border: 2px solid var(--ink);
+  line-height: 1;
+}
+.ccs-bell.has-unread svg {
+  animation: ccs-bell-shake 0.6s ease 0s 1;
+}
+@keyframes ccs-bell-shake {
+  0%, 100% { transform: rotate(0); }
+  20%      { transform: rotate(-12deg); }
+  40%      { transform: rotate(10deg); }
+  60%      { transform: rotate(-6deg); }
+  80%      { transform: rotate(4deg); }
+}
+
+/* Panel notifications */
+.ccs-notif-panel {
+  position: fixed;
+  width: min(380px, calc(100vw - 24px));
+  max-height: 480px;
+  background: var(--ink-2);
+  border: 1px solid var(--brass);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  animation: ccs-panel-in .25s cubic-bezier(.22, .9, .35, 1) both;
+}
+@keyframes ccs-panel-in {
+  from { opacity: 0; transform: translateY(-8px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ccs-notif-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.ccs-notif-title {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 600;
+}
+.ccs-notif-x {
+  background: none;
+  border: none;
+  color: var(--parch-3);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.ccs-notif-x:hover { color: var(--cream); }
+.ccs-notif-list {
+  overflow-y: auto;
+  flex: 1;
+}
+.ccs-notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--cream);
+  text-decoration: none;
+  transition: background .2s ease;
+  cursor: default;
+}
+a.ccs-notif-item { cursor: pointer; }
+.ccs-notif-item:hover {
+  background: rgba(176, 142, 74, 0.04);
+}
+.ccs-notif-item.unread {
+  background: rgba(176, 142, 74, 0.06);
+}
+.ccs-notif-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: var(--brass);
+}
+.ccs-notif-dot[data-type^="kom"] { background: #E0B065; }
+.ccs-notif-dot[data-type^="inscription"] { background: #6CB87A; }
+.ccs-notif-dot[data-type^="broadcast"] { background: var(--brass-hi); }
+.ccs-notif-item-title {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--cream);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.ccs-notif-item.unread .ccs-notif-item-title {
+  color: var(--brass-hi);
+  font-weight: 600;
+}
+.ccs-notif-item-body {
+  font-size: 12px;
+  color: var(--parch-2);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.ccs-notif-item-time {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  color: var(--parch-3);
+  letter-spacing: .04em;
+}
+.ccs-notif-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--parch-3);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ─── 2. Favorite star toggle ──────────────────────────────────── */
+.fav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--parch-2);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: all .2s ease;
+}
+.fav-toggle:hover {
+  border-color: var(--brass);
+  color: var(--brass-hi);
+  transform: scale(1.06);
+}
+.fav-toggle.is-fav {
+  background: var(--brass);
+  color: var(--ink);
+  border-color: var(--brass);
+}
+.fav-toggle.is-fav:hover {
+  background: var(--brass-hi);
+  border-color: var(--brass-hi);
+}
+.fav-toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform .25s ease;
+}
+.fav-toggle.is-fav svg {
+  transform: scale(1.1);
+  fill: currentColor;
+}
+
+/* ─── 3. Bouton inscription sortie ──────────────────────────── */
+.sortie-inscrire {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--brass);
+  color: var(--ink);
+  border: 1px solid var(--brass);
+  font-family: var(--f-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all .2s ease;
+}
+.sortie-inscrire:hover {
+  background: var(--brass-hi);
+  border-color: var(--brass-hi);
+  transform: translateY(-1px);
+}
+.sortie-inscrire:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+}
+.sortie-inscrire.is-inscrit {
+  background: transparent;
+  color: var(--brass);
+  border-color: var(--brass);
+}
+.sortie-inscrire.is-inscrit:hover {
+  background: rgba(176, 142, 74, 0.08);
+  color: var(--ox-hi);
+  border-color: var(--ox-hi);
+}
+
+/* ─── 4. Onboarding checklist (profil) ─────────────────────── */
+.ccs-onboard {
+  background: linear-gradient(135deg, rgba(176, 142, 74, 0.08) 0%, rgba(176, 142, 74, 0.02) 100%);
+  border: 1px solid var(--brass);
+  padding: 24px;
+  border-radius: 4px;
+  margin-bottom: 32px;
+}
+.ccs-onboard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 18px;
+}
+.ccs-onboard-chapter {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.ccs-onboard-title {
+  font-family: var(--f-disp);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--cream);
+  margin: 0;
+}
+.ccs-onboard-x {
+  background: none;
+  border: none;
+  color: var(--parch-3);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.ccs-onboard-x:hover { color: var(--cream); }
+.ccs-onboard-bar {
+  height: 4px;
+  background: rgba(176, 142, 74, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.ccs-onboard-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brass), var(--brass-hi));
+  transition: width 0.6s cubic-bezier(.22, .9, .35, 1);
+}
+.ccs-onboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ccs-onboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  transition: all .2s ease;
+}
+.ccs-onboard-item.done {
+  opacity: .55;
+  background: transparent;
+}
+.ccs-onboard-check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brass);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--brass);
+  font-weight: 700;
+}
+.ccs-onboard-item.done .ccs-onboard-check {
+  background: var(--brass);
+  color: var(--ink);
+}
+.ccs-onboard-label {
+  flex: 1;
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--cream);
+}
+.ccs-onboard-item.done .ccs-onboard-label {
+  text-decoration: line-through;
+  color: var(--parch-3);
+}
+.ccs-onboard-go {
+  background: transparent;
+  border: 1px solid var(--brass);
+  color: var(--brass);
+  padding: 4px 12px;
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all .2s ease;
+}
+.ccs-onboard-go:hover {
+  background: var(--brass);
+  color: var(--ink);
+}
+
+/* ─── 5. Breadcrumbs ───────────────────────────────────────── */
+.ccs-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--parch-3);
+  padding: 12px 0;
+  flex-wrap: wrap;
+}
+.ccs-breadcrumbs a {
+  color: var(--parch-2);
+  text-decoration: none;
+  transition: color .2s ease;
+}
+.ccs-breadcrumbs a:hover { color: var(--brass-hi); }
+.ccs-breadcrumbs-sep {
+  color: var(--parch-3);
+  opacity: .5;
+}
+.ccs-breadcrumbs-current {
+  color: var(--cream);
+}
+
+/* ─── 6. Quick actions palette (Cmd+Shift+P) ─────────────── */
+.ccs-cmd-palette {
+  position: fixed; inset: 0; z-index: 10000;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 14vh;
+}
+.ccs-cmd-back {
+  position: absolute; inset: 0;
+  background: rgba(10,20,16,.78);
+  backdrop-filter: blur(8px);
+}
+.ccs-cmd-card {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  background: var(--ink-2);
+  border: 1px solid var(--brass);
+  border-radius: 4px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.55);
+  overflow: hidden;
+}
+.ccs-cmd-input {
+  width: 100%;
+  padding: 18px 22px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--cream);
+  font-family: var(--f-sans);
+  font-size: 15px;
+  border-bottom: 1px solid var(--line);
+}
+.ccs-cmd-list {
+  max-height: 56vh;
+  overflow-y: auto;
+}
+.ccs-cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  cursor: pointer;
+  color: var(--cream);
+  transition: background .15s ease;
+}
+.ccs-cmd-item:hover,
+.ccs-cmd-item.active {
+  background: rgba(176,142,74,.08);
+}
+.ccs-cmd-item-icon {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--brass-hi);
+}
+.ccs-cmd-item-label {
+  flex: 1;
+  font-family: var(--f-sans);
+  font-size: 13px;
+}
+.ccs-cmd-item-hint {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  color: var(--parch-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.ccs-cmd-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--parch-3);
+  font-style: italic;
+  font-family: var(--f-sans);
+  font-size: 13px;
+}
+
+/* Mobile : ajustements */
+@media (max-width: 600px) {
+  .ccs-notif-panel { right: 8px !important; left: 8px; }
+  .ccs-onboard { padding: 16px; }
+  .ccs-onboard-go { padding: 4px 10px; font-size: 10px; }
+}

@@ -201,6 +201,27 @@
       ms.dataset.maps = '1';
       document.head.appendChild(ms);
     }
+    // Charge journey.css + member-journey.js (cloche notifs, favori, inscription)
+    if (!document.querySelector('script[data-journey]')) {
+      const jcss = document.createElement('link');
+      jcss.rel = 'stylesheet';
+      jcss.href = 'asset/css/journey.css';
+      document.head.appendChild(jcss);
+      const js = document.createElement('script');
+      js.src = 'asset/js/member-journey.js';
+      js.defer = true;
+      js.dataset.journey = '1';
+      document.head.appendChild(js);
+      const bs = document.createElement('script');
+      bs.src = 'asset/js/breadcrumbs.js';
+      bs.defer = true;
+      document.head.appendChild(bs);
+      // Admin palette : chargé partout, n'agit que si user.role === 'admin'
+      const aps = document.createElement('script');
+      aps.src = 'asset/js/admin-palette.js';
+      aps.defer = true;
+      document.head.appendChild(aps);
+    }
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');
     });
