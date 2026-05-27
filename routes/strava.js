@@ -169,6 +169,60 @@ router.post('/disconnect', requireAuth, async (req, res) => {
   } catch (err) { errResponse(req, res, err, 500, 'Erreur déconnexion Strava'); }
 });
 
+// ── GET /api/strava/preview-sync ─────────────────────────────
+// Donne un apercu de ce qui SERAIT importé avec ces parametres,
+// sans rien sauver. Utile pour la modal de confirmation côté UI.
+// Query : ?since_days=N&max_pages=M
+router.get('/preview-sync', requireAuth, async (req, res) => {
+  try {
+    const sinceDays = Math.max(1, parseInt(req.query.since_days) || 90);
+    const maxPages  = Math.min(5, parseInt(req.query.max_pages) || 1);
+    const sinceSec  = Math.floor((Date.now() - sinceDays * 86400000) / 1000);
+
+    // On scanne juste la 1ere page pour avoir une estimation rapide
+    let total = 0;
+    let firstPage = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const acts = await strava.stravaGet(req.user.id, '/athlete/activities', {
+        page, per_page: 30, after: sinceSec,
+      });
+      if (!Array.isArray(acts) || acts.length === 0) break;
+      total += acts.length;
+      if (page === 1) firstPage = acts;
+      if (acts.length < 30) break;
+    }
+
+    // Vérifie combien déjà en base
+    const ids = firstPage.map(a => a.id);
+    let already = [];
+    if (ids.length) {
+      already = await query(
+        `SELECT id FROM strava_activities WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
+        [req.user.id, ...ids]
+      );
+    }
+    const alreadySet = new Set(already.map(r => r.id));
+    const willImport = firstPage.filter(a => !alreadySet.has(a.id));
+
+    res.json({
+      ok: true,
+      since_days: sinceDays,
+      total_scanned: total,
+      already_imported: alreadySet.size,
+      will_import: willImport.length,
+      preview: willImport.slice(0, 5).map(a => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        distance_km: Math.round(((a.distance || 0) / 100)) / 10,
+        date: a.start_date,
+      })),
+    });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur preview sync');
+  }
+});
+
 // ── POST /api/strava/sync ────────────────────────────────────
 // Synchronise les activités récentes. Body: { since_days?, max_pages? }
 router.post('/sync', requireAuth, async (req, res) => {
@@ -365,6 +419,149 @@ router.post('/import-route/:routeId', requireAuth, async (req, res) => {
     errResponse(req, res, err, 500, 'Erreur import route Strava');
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// POST /api/strava/import-activity/:activityId — Import 1 activité Strava
+// du membre comme sortie club.
+//
+// Note : Strava ne fournit pas le GPX brut pour une activité standard
+// (réservé au compte premium ou via Webhook detailed stream).
+// On reconstitue le GPX depuis le polyline encodé (Google polyline algo)
+// + on calcule les métriques. Sans altitudes (sauf si streams accessibles).
+//
+// Body : { date?, title?, statut?, chapter? }
+// ═══════════════════════════════════════════════════════════════════
+router.post('/import-activity/:activityId', requireAuth, async (req, res) => {
+  try {
+    const { requireModo } = require('../middleware/auth');
+    // Vérification manuelle role moderateur+ (on est déjà passé par requireAuth)
+    if (!['admin', 'moderateur'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Modérateur+ requis pour transformer une activité en sortie' });
+    }
+    const activityId = parseInt(req.params.activityId, 10);
+    if (!activityId) return res.status(400).json({ error: 'Activity ID invalide' });
+
+    // 1. Cherche l'activité dans notre BDD (déjà syncée), sinon re-sync
+    let act = await query(
+      'SELECT * FROM strava_activities WHERE id = ? AND user_id = ? LIMIT 1',
+      [activityId, req.user.id]
+    );
+    if (!act.length) {
+      await strava.syncSingleActivity(req.user.id, activityId);
+      act = await query('SELECT * FROM strava_activities WHERE id = ? AND user_id = ? LIMIT 1', [activityId, req.user.id]);
+      if (!act.length) return res.status(404).json({ error: 'Activité Strava introuvable' });
+    }
+    const a = act[0];
+
+    // 2. Détermine les meta
+    const startDate = new Date(a.start_date);
+    const date  = req.body?.date || startDate.toISOString().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Date invalide (YYYY-MM-DD)' });
+    }
+    const title    = (req.body?.title || a.name || `Activité ${activityId}`).trim();
+    const chapter  = req.body?.chapter || 'route';
+    const statut   = new Date(date) > new Date() ? 'future' : 'passee';
+    const slug     = _slugify(title) || `activity-${activityId}`;
+    const sortieId = `${slug}-${date}`;
+
+    const existing = await query('SELECT id FROM sorties WHERE id = ? OR slug = ?', [sortieId, slug]);
+    if (existing.length) {
+      return res.status(409).json({ error: `Sortie déjà existante : ${existing[0].id}.` });
+    }
+
+    // 3. Décode le polyline en coordonnées + génère un GPX minimal
+    if (!a.polyline) return res.status(400).json({ error: "Activité sans tracé (polyline absent) — l'import GPX n'est pas possible." });
+    const coords = decodePolyline(a.polyline);
+    if (!coords.length) return res.status(400).json({ error: 'Polyline invalide ou vide.' });
+
+    // GPX minimal généré depuis le polyline (sans altitudes — Strava ne les exporte
+    // pas en standard pour les non-premium ; on peut les ajouter via Open-Meteo si besoin)
+    const gpxXml = buildGpxFromCoords(coords, title, startDate);
+    const gpxFilename = `${slug}.gpx`;
+    const gpxPath = path.join(ASSET_GPX_DIR, gpxFilename);
+    fs.writeFileSync(gpxPath, gpxXml);
+
+    // 4. INSERT sortie (même schéma que /import-route)
+    const heroMap = {
+      route: 'asset/img/img-route.webp',  gravel: 'asset/img/img-gravel.webp',
+      cote:  'asset/img/img-cote.webp',   monts: 'asset/img/img-monts.webp',
+      pave:  'asset/img/img-pave.webp',   peloton: 'asset/img/img-peloton.webp',
+      clm:   'asset/img/img-clm.webp',
+    };
+    const heroImg = heroMap[chapter] || heroMap.route;
+    const distanceKm = Math.round((a.distance_m || 0) / 100) / 10;
+    await query(
+      `INSERT INTO sorties (id, slug, title, title_html, subtitle, chapter, description,
+         date, date_label, distance_km, elevation_gain,
+         hero_img, card_img, location_name, location_lat, location_lng, gpx_filename, statut, created_by)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        sortieId, slug, title, title,
+        `Importé depuis activité Strava ${a.id}`,
+        chapter,
+        a.name || null,
+        date, null,
+        distanceKm,
+        Math.round(a.elevation_gain_m || 0),
+        heroImg, heroImg,
+        null, a.start_lat, a.start_lng,
+        gpxFilename, statut, req.user.id,
+      ]
+    );
+
+    logger.info({ userId: req.user.id, activityId, sortieId, distance: distanceKm }, '[strava] activity imported as sortie');
+    res.status(201).json({
+      ok: true,
+      sortie: {
+        id: sortieId, slug, title,
+        distance_km: distanceKm,
+        elevation_gain: Math.round(a.elevation_gain_m || 0),
+        gpx_filename: gpxFilename,
+        statut, date,
+      },
+      from_activity: { id: a.id, name: a.name },
+      url: `/sortie.html?id=${encodeURIComponent(sortieId)}`,
+    });
+  } catch (err) {
+    req.log?.error({ err }, '[strava] import-activity');
+    errResponse(req, res, err, 500, 'Erreur import activité Strava');
+  }
+});
+
+// Helper : décode un polyline Google (algorithme standard utilisé par Strava)
+function decodePolyline(str) {
+  const points = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < str.length) {
+    let b, shift = 0, result = 0;
+    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    points.push([lat * 1e-5, lng * 1e-5]);
+  }
+  return points;
+}
+
+function buildGpxFromCoords(coords, name, startDate) {
+  const safeName = String(name).replace(/[<>&]/g, '');
+  const dateIso = (startDate instanceof Date ? startDate : new Date()).toISOString();
+  const trkpts = coords.map(([lat, lng]) =>
+    `  <trkpt lat="${lat.toFixed(6)}" lon="${lng.toFixed(6)}"></trkpt>`
+  ).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="CCS Salouel (Strava import)" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>${safeName}</name><time>${dateIso}</time></metadata>
+  <trk>
+    <name>${safeName}</name>
+    <trkseg>
+${trkpts}
+    </trkseg>
+  </trk>
+</gpx>`;
+}
 
 // ── GET /api/strava/webhook ─────────────────────────────────
 // Validation du webhook par Strava à l'enregistrement (challenge GET).

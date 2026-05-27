@@ -268,3 +268,30 @@ Voir le README pour la documentation complète d'utilisation.
 
 - **Nouveau fichier** `tests/integration/my-dashboard.test.js` : 9 cas (dashboard, recent, Strava webhook GET/POST, GPX preview auth).
 - **87/87 tests passent** (78 → 87).
+
+---
+
+## 🔗 Itération 2026-05-28 — faciliter Strava + import
+
+### Backend
+
+- **`GET /api/strava/preview-sync`** : dry-run du sync avec choix période. Renvoie `{will_import, already_imported, total_scanned, preview[5]}` sans rien sauver.
+- **`POST /api/strava/import-activity/:activityId`** : transforme une activité Strava du membre en sortie club. Décode le polyline Google encoded en coordonnées + génère un GPX minimal + INSERT sortie. Modo+ requis.
+  - Helper `decodePolyline()` + `buildGpxFromCoords()` inclus dans la route.
+  - Si l'activité n'est pas en base, re-sync via `syncSingleActivity` automatiquement.
+
+### Frontend
+
+- **`strava-ux.js` + `strava-ux.css`** :
+  - **Modal "Connecter Strava"** explicite avant l'OAuth (bénéfices + permissions précisées : lecture activités/profil/itinéraires, AUCUNE écriture). Active sur `[data-strava-connect]`.
+  - **Banner inline** auto-injecté sur `[data-strava-banner]` quand user connecté CCS mais pas Strava (avec dismiss persistant 7j).
+  - **Modal de sync** avec choix période (30/90/180/365 j) + preview avant lancement (combien d'activités nouvelles, déjà connues, 5 exemples affichés).
+- **Page `/strava-activites.html`** : liste des activités Strava du membre + recherche + filtre par type + bouton "Importer → Sortie" pour modérateurs.
+- **Page `/strava-routes.html`** : liste des itinéraires Strava sauvegardés + modal d'import (date/titre/chapitre) → POST `/strava/import-route/:id`.
+- Liens directs depuis le profil (boutons "Mes activités" + "Mes itinéraires" dans la section Strava).
+
+### UX
+
+- Bouton "Connecter mon Strava" sur profil utilise désormais la modal explicative au lieu de partir direct sur OAuth.
+- Bouton "Synchroniser" sur profil utilise désormais la modal preview (au lieu de sync direct sur 90 j).
+- Banner "Connecter Strava" auto-injecté sur le profil pour les users non-strava.

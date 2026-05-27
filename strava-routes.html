@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes itinéraires Strava · C.C. Salouel</title>
+  <meta name="description" content="Itinéraires Strava sauvegardés du membre — possibilité d'import en sortie club.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#B08E4A">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <a href="#main" class="skip-link">Aller au contenu</a>
+  <main id="main">
+
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb" style="font-family:var(--f-sans);font-size:11px;letter-spacing:.06em;color:var(--parch-3);margin-bottom:14px;">
+        <a href="index.html" style="color:var(--parch-2);text-decoration:none;">Accueil</a>
+        <span style="opacity:.5;"> / </span>
+        <a href="profil.html" style="color:var(--parch-2);text-decoration:none;">Mon profil</a>
+        <span style="opacity:.5;"> / </span>
+        <span style="color:var(--cream);">Mes itinéraires Strava</span>
+      </nav>
+      <div class="page-head-chapter"><em>Connecté.</em></div>
+      <h1 class="d-l page-head-title">Mes <span class="it">itinéraires</span> Strava</h1>
+      <p class="page-head-sub">Tes routes sauvegardées sur Strava. Les modérateurs peuvent les transformer en sorties club avec GPX complet.</p>
+    </div>
+  </section>
+
+  <section class="section-sm">
+    <div class="wrap">
+      <div id="strava-routes-empty" hidden class="ccs-empty">
+        <div class="ccs-empty-icon">—</div>
+        <div class="ccs-empty-title">Aucun itinéraire</div>
+        <div class="ccs-empty-sub">Crée un itinéraire sur Strava (Routes > Crear une route) puis recharge cette page.</div>
+        <a href="profil.html#strava-section" class="btn btn-brass btn-sm">Aller au profil</a>
+      </div>
+      <div id="strava-routes-list"></div>
+    </div>
+  </section>
+
+  <!-- Modal d'import (date + chapter + import) -->
+  <div id="route-import-modal" class="ccs-strava-modal" hidden>
+    <div class="ccs-strava-modal-back" data-close></div>
+    <div class="ccs-strava-modal-card" style="max-width:480px;">
+      <button class="ccs-strava-modal-x" data-close aria-label="Fermer">×</button>
+      <div class="ccs-strava-modal-head">
+        <div class="ccs-strava-modal-chapter">Strava · Import</div>
+        <h3 id="route-import-title">Importer comme sortie</h3>
+      </div>
+      <div id="route-import-meta" style="font-family:var(--f-sans);font-size:12px;color:var(--parch-2);margin-bottom:16px;"></div>
+      <form id="route-import-form" style="display:flex;flex-direction:column;gap:12px;">
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-family:var(--f-sans);font-size:11px;letter-spacing:.06em;color:var(--parch-2);">Date de la sortie *</span>
+          <input type="date" name="date" required
+                 style="padding:8px 12px;background:var(--ink-3);border:1px solid var(--line);color:var(--cream);font-family:var(--f-sans);border-radius:2px;">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-family:var(--f-sans);font-size:11px;letter-spacing:.06em;color:var(--parch-2);">Titre (auto si vide)</span>
+          <input type="text" name="title" placeholder="Hérité du nom Strava si vide"
+                 style="padding:8px 12px;background:var(--ink-3);border:1px solid var(--line);color:var(--cream);font-family:var(--f-sans);border-radius:2px;">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-family:var(--f-sans);font-size:11px;letter-spacing:.06em;color:var(--parch-2);">Chapitre</span>
+          <select name="chapter"
+                  style="padding:8px 12px;background:var(--ink-3);border:1px solid var(--line);color:var(--cream);font-family:var(--f-sans);border-radius:2px;">
+            <option value="route">Route</option>
+            <option value="gravel">Gravel</option>
+            <option value="pave">Pavé</option>
+            <option value="monts">Monts</option>
+            <option value="cote">Côte</option>
+            <option value="peloton">Peloton</option>
+            <option value="clm">CLM</option>
+          </select>
+        </label>
+        <div class="ccs-strava-modal-actions">
+          <button type="submit" class="btn btn-brass btn-lg">Importer le GPX</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-close>Annuler</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  </main>
+
+  <script src="asset/js/config.js"></script>
+  <script src="asset/js/utils.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script src="asset/js/pages/strava-routes.js" defer></script>
+</body>
+</html>
