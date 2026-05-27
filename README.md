@@ -38,6 +38,12 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 - **Newsletter** : inscription opt-in (double confirmation) directement depuis le footer
 - **Stats publiques** : `/api/stats` agrège km/D+/sorties/membres pour les widgets home et footer
 - **Couche premium UX** : progress bar fetch globale, view transitions (fade page-to-page), pull-to-refresh mobile, file de notifications (3 max), copie de lien direct sortie
+- **Light mode** : 3 modes clair/sombre/auto avec switcher 3-way dans la nav, persistance localStorage, suivi `prefers-color-scheme` en mode auto
+- **Vues cartographiques** : 5 presets (standard / sombre / satellite / topo / OSM) accessibles via layer control Leaflet sur les cartes sortie
+- **Animations premium** : anime.js v3 (counters animés, hero parallax 3D, titre mot-par-mot rotateX, stagger reveal, card tilt 3D au hover)
+- **Web Share API** : bouton partager utilise l'API native mobile (iOS/Android) avec fallback copie sur desktop
+- **Raccourcis clavier globaux** : `t` cycle thème, `?` aide, `g h/s/e/m/c/p/k` navigation rapide
+- **Panneau POI renforcé** : barre de recherche live + tri (km/type/A-Z) sur la page sortie
 
 ### Membre (auth requis)
 - **Profil enrichi** : équipement éditable, FTP + zones de puissance, dashboard stats personnelles (vs club)

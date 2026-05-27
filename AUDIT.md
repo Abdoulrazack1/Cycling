@@ -159,3 +159,47 @@ Voir le README pour la documentation complète d'utilisation.
 - `fetchpriority="high"` sur l'image hero d'`evenements.html`.
 - Lazy-fade pour `img[loading="lazy"]` (transition opacity douce).
 - Focus-ring uniformisé brass + shadow halo sur tous les boutons et liens.
+
+---
+
+## 🌗 Itération 2026-05-25 — thèmes, satellite, animations 3D
+
+### Light mode (`theme.css` + `theme.js`)
+
+- 3 modes : **clair / sombre / auto** (suit `prefers-color-scheme` du système).
+- Tokens light dupliqués (crème parchemin éclairé, encre profonde pour le texte, laiton conservé).
+- Switcher 3-way injecté automatiquement dans la nav (icônes soleil/écran/lune).
+- Persistance `localStorage.ccs.theme`, transition douce 400 ms au switch.
+- `meta[name="theme-color"]` mis à jour dynamiquement (barre status mobile).
+- Évènement DOM `ccs:themechange` exposé pour les modules qui doivent réagir (cartes notamment).
+
+### Vues cartographiques (`maps.js`)
+
+- 5 presets de tuiles : **standard** (CARTO Positron), **sombre** (CARTO Dark), **satellite** (Esri World Imagery), **topo** (OpenTopoMap), **OSM**.
+- Helper `CCS_MAPS.addLayerControl(map, opts)` ajoute un Leaflet `L.control.layers` avec switcher.
+- `bindToTheme(map, holder)` permet le switch auto de la couche selon le thème courant.
+- Intégré sur la carte fallback de `sortie.html` (standard / satellite / topo accessible via control coin haut-droit).
+
+### Animations 3D (`animations.js` + anime.js v3.2.2 via CDN)
+
+- **Counters** animés (chiffres .page-head-meta-v, .stats-v, .stat-card-value) au scroll-into-view, format FR avec séparateurs de milliers.
+- **Hero parallax** : image et titre se déplacent à des vitesses différentes au scroll (effet profondeur).
+- **Title reveal** : titre hero animé mot-par-mot avec rotation 3D (`rotateX`) + stagger 70ms.
+- **Stagger reveal** sur `[data-stagger]` : entrée séquentielle des items d'une liste.
+- **3D card tilt** sur `.rc / .stat-card / .member-card` (mouse-move calcule l'angle de perspective).
+- **Live-time pulse** sur le compteur horloge footer.
+- Respect `prefers-reduced-motion` : applique les valeurs finales sans transition.
+
+### Panneau POI renforcé
+
+- **Barre de recherche** live (debounce 120ms) sur titre / description / contact / type.
+- **Tri** : km croissant / km décroissant / par type / A→Z.
+- Filtre supplémentaire : **Directions** (en plus de Tous / Signaleurs / Ravitos / Secteurs / Dangers).
+- Pipeline filter → search → sort dans `filteredPois()`.
+
+### Autres
+
+- **Web Share API** : bouton sortie utilise `navigator.share()` sur mobile (sheet natif iOS/Android), fallback copie sur desktop.
+- **Raccourcis clavier globaux** : `t` cycle le thème, `?` ouvre l'aide, `g h/s/e/m/c/p/k` navigation rapide entre pages.
+- Modal d'aide raccourcis stylé (Backdrop blur + animation modal-in).
+- **Anime.js v3** chargé depuis cdn.jsdelivr.net (déjà whitelist CSP).

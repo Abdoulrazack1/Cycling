@@ -1,0 +1,182 @@
+/* ════════════════════════════════════════════════════════════════
+   theme.css — Système de thème clair / sombre / auto
+   ────────────────────────────────────────────────────────────────
+   Le mode "auto" suit prefers-color-scheme du système.
+   Force-mode via attribut [data-theme="light"] | [data-theme="dark"]
+   posé sur <html> par theme.js.
+
+   Tous les tokens de style.css sont surchargés ici en clair, en
+   conservant la même palette laiton/oxblood pour cohérence.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Tokens light mode ────────────────────────────────────────── */
+:root[data-theme="light"] {
+  /* Fonds — crème parchemin éclairé */
+  --ink:       #F4EFE0;
+  --ink-2:     #ECE5D1;
+  --ink-3:     #E3DBC4;
+  --ink-4:     #D5C9A8;
+  --ink-5:     #C0B488;
+
+  /* Verts club house clair */
+  --green:     #D8E2D6;
+  --green-hi:  #B8C9B0;
+  --green-lo:  #EDF1E5;
+  --green-a:   rgba(46,85,63,.06);
+
+  /* Crème → vire en encre profonde pour le texte */
+  --parch:     #1A2620;
+  --parch-2:   #3A4538;
+  --parch-3:   #6A6952;
+  --cream:     #1A2620;
+  --cream-2:   #2A3A2E;
+  --cream-3:   #4A5A4A;
+  --cream-4:   #6A6952;
+
+  /* Laiton garde sa teinte (cohérence) mais légèrement plus sombre */
+  --brass:     #9E7A38;
+  --brass-hi:  #B08E4A;
+  --brass-lo:  #7A5E2A;
+  --brass-a:   rgba(158,122,56,.16);
+  --brass-b:   rgba(158,122,56,.30);
+
+  /* Oxblood inchangé */
+  --ox:        #6E2A1E;
+  --ox-hi:     #8B3726;
+  --ox-a:      rgba(110,42,30,.12);
+
+  /* Cream sur fond clair = encre profonde */
+  --t-cream:    #0A1410;
+  --t-cream-1:  #1A2620;
+  --t-cream-2:  rgba(10,20,16,0.78);
+  --t-cream-3:  rgba(10,20,16,0.56);
+  --t-cream-4:  rgba(10,20,16,0.32);
+
+  /* Lines visibles sur fond clair */
+  --line:      rgba(58,69,56,0.12);
+  --line-2:    rgba(58,69,56,0.22);
+  --line-3:    rgba(58,69,56,0.36);
+  --line-brass: rgba(158,122,56,0.38);
+
+  /* Shadows plus douces sur fond clair */
+  --sh-1: 0 1px 2px rgba(58,69,56,.10);
+  --sh-2: 0 8px 28px rgba(58,69,56,.14);
+  --sh-3: 0 20px 60px rgba(58,69,56,.18);
+  --sh-4: 0 40px 120px rgba(58,69,56,.22);
+}
+
+/* ─── Auto-mode : suit le système si data-theme="auto" ─────────── */
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --ink:       #F4EFE0;
+    --ink-2:     #ECE5D1;
+    --ink-3:     #E3DBC4;
+    --ink-4:     #D5C9A8;
+    --ink-5:     #C0B488;
+    --green:     #D8E2D6;
+    --green-hi:  #B8C9B0;
+    --green-lo:  #EDF1E5;
+    --green-a:   rgba(46,85,63,.06);
+    --parch:     #1A2620;
+    --parch-2:   #3A4538;
+    --parch-3:   #6A6952;
+    --cream:     #1A2620;
+    --cream-2:   #2A3A2E;
+    --cream-3:   #4A5A4A;
+    --cream-4:   #6A6952;
+    --brass:     #9E7A38;
+    --brass-hi:  #B08E4A;
+    --brass-lo:  #7A5E2A;
+    --brass-a:   rgba(158,122,56,.16);
+    --brass-b:   rgba(158,122,56,.30);
+    --t-cream:    #0A1410;
+    --t-cream-1:  #1A2620;
+    --t-cream-2:  rgba(10,20,16,0.78);
+    --t-cream-3:  rgba(10,20,16,0.56);
+    --t-cream-4:  rgba(10,20,16,0.32);
+    --line:      rgba(58,69,56,0.12);
+    --line-2:    rgba(58,69,56,0.22);
+    --line-3:    rgba(58,69,56,0.36);
+    --line-brass: rgba(158,122,56,0.38);
+    --sh-1: 0 1px 2px rgba(58,69,56,.10);
+    --sh-2: 0 8px 28px rgba(58,69,56,.14);
+    --sh-3: 0 20px 60px rgba(58,69,56,.18);
+    --sh-4: 0 40px 120px rgba(58,69,56,.22);
+  }
+}
+
+/* ─── Transition douce lors du switch ──────────────────────────── */
+html { color-scheme: dark light; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark; }
+
+html.theme-transition,
+html.theme-transition * {
+  transition: background-color .4s ease, color .4s ease,
+              border-color .4s ease, box-shadow .4s ease !important;
+}
+
+/* ─── Inversions ciblées pour les éléments qui assument un fond sombre ── */
+:root[data-theme="light"] .hero-bg::after,
+:root[data-theme="auto"] .hero-bg::after {
+  background: linear-gradient(180deg, rgba(244,239,224,0.4) 0%, rgba(244,239,224,0.8) 100%);
+}
+
+/* Cartes Leaflet : on garde la teinte sombre des tuiles standard
+   en clair pour le contraste avec le tracé jaune.
+   Pas d'inversion brutale. */
+
+/* Scrollbar */
+:root[data-theme="light"] ::-webkit-scrollbar-track,
+:root[data-theme="auto"] ::-webkit-scrollbar-track { background: var(--ink-2); }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb,
+:root[data-theme="auto"] ::-webkit-scrollbar-thumb { background: var(--ink-5); border-color: var(--ink-2); }
+
+/* Toast : assure que le contraste reste lisible en clair */
+:root[data-theme="light"] .ccs-toast {
+  background: #FDFBF4;
+  color: #1A2620;
+  border-color: rgba(158,122,56,0.32);
+}
+
+/* ─── Theme switcher (3-way toggle) ──────────────────────────── */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: var(--ink-3);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 3px;
+  height: 32px;
+}
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  color: var(--parch-3);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: background .25s ease, color .25s ease;
+}
+.theme-toggle-btn:hover {
+  color: var(--brass-hi);
+}
+.theme-toggle-btn.active {
+  background: var(--brass);
+  color: var(--ink);
+}
+.theme-toggle-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* En mobile : version compacte (un seul bouton qui cycle) */
+@media (max-width: 720px) {
+  .theme-toggle { padding: 2px; height: 28px; }
+  .theme-toggle-btn { width: 22px; height: 22px; }
+}

@@ -213,9 +213,19 @@
 
     if (document.getElementById('sv-fallback-map')) {
       state.mapFallback = L.map('sv-fallback-map', { center, zoom: 11 });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd', maxZoom: 19, attribution: '© OpenStreetMap, © CARTO'
-      }).addTo(state.mapFallback);
+      // Si maps.js est chargé, on utilise le layer-control avec satellite/topo/standard
+      // Sinon fallback sur la tuile CARTO standard.
+      if (window.CCS_MAPS) {
+        window.CCS_MAPS.addLayerControl(state.mapFallback, {
+          defaultLayer: 'standard',
+          layers: ['standard', 'satellite', 'topo'],
+          position: 'topright',
+        });
+      } else {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          subdomains: 'abcd', maxZoom: 19, attribution: '© OpenStreetMap, © CARTO'
+        }).addTo(state.mapFallback);
+      }
       drawRoute(state.mapFallback);
       drawPois(state.mapFallback, true);
       state.mapFallback.on('click', onMapClick);
@@ -591,8 +601,25 @@
   }
 
   /* ─── Liste POI ──────────────────────────────────────────── */
+  // Pipeline : filter(type) → filter(search) → sort(option)
   function filteredPois() {
-    return state.activeFilter === 'all' ? state.pois : state.pois.filter(p => p.type === state.activeFilter);
+    let pois = state.activeFilter === 'all'
+      ? state.pois.slice()
+      : state.pois.filter(p => p.type === state.activeFilter);
+    const q = (state.poiSearch || '').trim().toLowerCase();
+    if (q) {
+      pois = pois.filter(p => {
+        const hay = [p.label, p.desc, p.contact?.name, p.contact?.phone, p.type]
+          .filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+    }
+    const sort = state.poiSort || 'km';
+    if (sort === 'km')        pois.sort((a, b) => numKm(a.km) - numKm(b.km));
+    else if (sort === 'km-desc') pois.sort((a, b) => numKm(b.km) - numKm(a.km));
+    else if (sort === 'type')    pois.sort((a, b) => (a.type || '').localeCompare(b.type || '') || numKm(a.km) - numKm(b.km));
+    else if (sort === 'title')   pois.sort((a, b) => (a.label || '').localeCompare(b.label || '', 'fr'));
+    return pois;
   }
 
   function renderPoiList() {
@@ -782,6 +809,36 @@
         renderPoiList(); redrawAllPois();
       });
     });
+    // Recherche live (debounced)
+    const searchInput = document.getElementById('poi-search-input');
+    const clearBtn = document.getElementById('poi-search-clear');
+    if (searchInput) {
+      let t;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(t);
+        const val = searchInput.value;
+        clearBtn.hidden = !val;
+        t = setTimeout(() => {
+          state.poiSearch = val;
+          renderPoiList();
+        }, 120);
+      });
+      clearBtn?.addEventListener('click', () => {
+        searchInput.value = '';
+        state.poiSearch = '';
+        clearBtn.hidden = true;
+        renderPoiList();
+        searchInput.focus();
+      });
+    }
+    // Tri
+    const sortSel = document.getElementById('poi-sort');
+    if (sortSel) {
+      sortSel.addEventListener('change', () => {
+        state.poiSort = sortSel.value;
+        renderPoiList();
+      });
+    }
   }
 
   /* ─── Formulaire ajout POI ────────────────────────────────── */
