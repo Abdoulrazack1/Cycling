@@ -371,6 +371,7 @@ app.use('/api/stats',      require('./routes/stats'));
 app.use('/api/newsletter', require('./routes/newsletter'));
 app.use('/api/favorites',  require('./routes/favorites'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/my',         require('./routes/my'));
 app.use('/api/strava',     require('./routes/strava'));
 app.use('/api/pois',       require('./routes/pois-admin'));
 

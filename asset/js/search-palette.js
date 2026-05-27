@@ -17,11 +17,12 @@
 (function () {
   'use strict';
 
+  // Initiales sobres en lieu et place d'emojis pour cohérence visuelle
   const ICONS = {
-    sortie:    '🚴',
-    evenement: '📅',
-    membre:    '👤',
-    segment:   '📍',
+    sortie:    'S',
+    evenement: 'E',
+    membre:    'M',
+    segment:   'K',
   };
   const TYPE_LABEL = {
     sortie:    'Sortie',

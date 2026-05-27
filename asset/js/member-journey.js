@@ -371,6 +371,24 @@
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   }
 
+  /* ─── 5. Tracker "Récemment vues" (sortie pages) ─────────────── */
+  const RecentTracker = (() => {
+    function init() {
+      if (!isLogged()) return;
+      // Détecte si on est sur sortie.html avec un ID
+      const m = location.pathname.match(/sortie\.html$/i);
+      if (!m) return;
+      const id = (new URLSearchParams(location.search)).get('id');
+      if (!id) return;
+      // Track après 3 secondes (le user a vraiment regardé la page)
+      setTimeout(() => {
+        api('/my/recent/' + encodeURIComponent(id), { method: 'POST' }).catch(() => {});
+      }, 3000);
+    }
+    return { init };
+  })();
+  NS.recentTracker = RecentTracker;
+
   /* ─── Boot ──────────────────────────────────────────────────── */
   function boot() {
     // Attend que CCS_AUTH soit prêt
@@ -380,6 +398,7 @@
         Fav.init().catch(() => {});
         Inscription.init().catch(() => {});
         Onboarding.init().catch(() => {});
+        RecentTracker.init();
       });
     } else {
       // Pas d'auth chargée : on init quand même les composants public

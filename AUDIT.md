@@ -235,3 +235,36 @@ Voir le README pour la documentation complète d'utilisation.
 
 - **Nouveau fichier** `tests/integration/journey.test.js` : 15 cas pour favorites, notifications, sortie inscriptions, /auth/me étendu.
 - **78/78 tests passent** (63 → 78).
+
+---
+
+## ⚙ Itération 2026-05-27 (bis) — features manquantes + Strava/GPX
+
+### Nettoyage
+
+- Emojis retirés de `admin-palette.js`, `search-palette.js`, `admin.js`. Remplacés par initiales lettre (S/E/M/B…) ou texte ("Photos", "Vélo", "Course").
+
+### Backend
+
+- **Migration 012** : `sorties.capacity_max` + `inscription_ouverte` + table `user_recent_views`.
+- **Capacité + liste d'attente automatique** sur `POST /api/sorties/:id/inscription` :
+  - Si `capacity_max` atteint → placement auto en `liste-attente`.
+  - Si quelqu'un se désinscrit → premier de la file promu automatiquement (+ notification `inscription.promoted`).
+  - Si `inscription_ouverte = 0` → 403 (admin peut fermer manuellement).
+- **`/api/my/dashboard`** : agrégat favoris + inscriptions + récemment vues + count non-lues en 1 call.
+- **`/api/my/inscriptions`** + **`/api/my/recent`** + **`POST /api/my/recent/:sortieId`** (track silencieux).
+- **`POST /api/sorties/preview-gpx`** : parse GPX uploadé sans rien sauvegarder, renvoie metrics + warnings + titre suggéré (depuis `<trk><name>`).
+- **`GET/POST /api/strava/webhook`** : endpoint d'enregistrement Strava (challenge GET) + receveur d'événements (POST). Re-sync auto de l'activité concernée + notif `strava.synced`.
+- **`POST /api/strava/resync/:activityId`** : re-sync manuel d'une activité (debug/data-drift).
+- **`syncSingleActivity()`** dans `services/strava-client.js` : UPSERT robuste utilisé par webhook + re-sync.
+
+### Frontend
+
+- **`gpx-drop.js`** + CSS : composant réutilisable de drag & drop GPX avec preview (distance/D+/points/titre suggéré + warnings). Active sur `[data-gpx-drop]`.
+- **`member-journey.js`** étendu : `RecentTracker.init()` track les consultations sortie après 3s.
+- Empty states stylés (`.ccs-empty` + variants) prêts à servir sur les pages dashboard / inscriptions / favoris.
+
+### Tests
+
+- **Nouveau fichier** `tests/integration/my-dashboard.test.js` : 9 cas (dashboard, recent, Strava webhook GET/POST, GPX preview auth).
+- **87/87 tests passent** (78 → 87).

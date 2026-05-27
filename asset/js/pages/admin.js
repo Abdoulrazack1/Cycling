@@ -403,7 +403,7 @@
         const km    = (r.distance_m / 1000).toFixed(1);
         const dplus = r.elevation_gain_m || 0;
         const dur   = r.estimated_moving_time_s ? Math.round(r.estimated_moving_time_s / 60) + ' min' : '—';
-        const type  = r.type === 'ride' ? '🚴' : (r.type === 'run' ? '🏃' : '·');
+        const type  = r.type === 'ride' ? 'Vélo' : (r.type === 'run' ? 'Course' : '·');
         const star  = r.starred ? ' ⭐' : '';
         const priv  = r.private ? ' 🔒' : '';
         return `
@@ -529,7 +529,7 @@
               <td style="display:flex;gap:6px;align-items:center;">
                 <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="btn-xs" target="_blank">↗</a>
                 <button class="btn-xs btn-edit-sortie" data-id="${escHtml(s.id)}">Éditer</button>
-                <button class="btn-xs btn-photos-sortie" data-id="${escHtml(s.id)}" title="Gérer les photos">📷</button>
+                <button class="btn-xs btn-photos-sortie" data-id="${escHtml(s.id)}" title="Gérer les photos">Photos</button>
                 <button class="btn-xs btn-diag-sortie" data-id="${escHtml(s.id)}" title="Diagnostiquer cette sortie (pourquoi la page apparaît vide ?)">⚕</button>
                 <button class="btn-xs btn-xs-danger btn-del-sortie" data-id="${escHtml(s.id)}">✕</button>
               </td>
@@ -1059,7 +1059,7 @@
               <td><a href="sortie.html?id=${encodeURIComponent(p.sortie_id)}" target="_blank" style="color:var(--brass);">${escHtml(p.sortie_title)}</a></td>
               <td style="opacity:.7;">${p.km != null ? Number(p.km).toFixed(1) : '—'}</td>
               <td style="font-family:'DM Mono',monospace;font-size:11px;opacity:.6;">${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</td>
-              <td style="opacity:.7;">${p.user_added ? '👤 ' : '🤖 '}${escHtml(p.creator || '—')}</td>
+              <td style="opacity:.7;">${p.user_added ? 'Utilisateur · ' : 'Auto · '}${escHtml(p.creator || '—')}</td>
               <td>
                 <button class="btn-xs btn-xs-danger btn-del-poi" data-id="${escHtml(p.id)}" data-label="${escHtml(p.label || p.id)}">✕ Suppr.</button>
               </td>
@@ -1424,7 +1424,7 @@
     const wrap = document.getElementById('scraped-events');
     status.style.display = 'block';
     status.style.color = 'var(--t-cream-2)';
-    status.textContent = '🔄 Scraping en cours…';
+    status.textContent = 'Scraping en cours…';
     wrap.innerHTML = '';
 
     try {
@@ -1481,7 +1481,7 @@
 
   async function generateCourse(offline) {
     const result = document.getElementById('generate-result');
-    result.innerHTML = '<div style="padding:16px;background:var(--ink-2);font-family:var(--f-sans);font-size:12px;">🔄 Génération en cours…</div>';
+    result.innerHTML = '<div style="padding:16px;background:var(--ink-2);font-family:var(--f-sans);font-size:12px;">Génération en cours…</div>';
 
     const wpText = document.getElementById('auto-waypoints').value.trim();
     const waypoints = [];

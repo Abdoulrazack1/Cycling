@@ -211,6 +211,54 @@ async function getAthlete(userId) {
   return stravaGet(userId, '/athlete');
 }
 
+/** Re-sync une activité Strava précise (utilisé par le webhook et le re-sync manuel) */
+async function syncSingleActivity(userId, activityId) {
+  const a = await stravaGet(userId, `/activities/${activityId}`);
+  if (!a || !a.id) throw new Error('Activité Strava introuvable');
+
+  // UPSERT : on remplace les valeurs (utile pour update events du webhook)
+  await query(
+    `INSERT INTO strava_activities
+      (id, user_id, name, type, distance_m, moving_time_s, elapsed_time_s,
+       elevation_gain_m, average_speed_ms, max_speed_ms, average_heartrate,
+       max_heartrate, average_watts, kilojoules, start_date, start_lat, start_lng,
+       polyline, raw_json)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+     ON DUPLICATE KEY UPDATE
+       name = VALUES(name),
+       type = VALUES(type),
+       distance_m = VALUES(distance_m),
+       moving_time_s = VALUES(moving_time_s),
+       elapsed_time_s = VALUES(elapsed_time_s),
+       elevation_gain_m = VALUES(elevation_gain_m),
+       average_speed_ms = VALUES(average_speed_ms),
+       max_speed_ms = VALUES(max_speed_ms),
+       average_heartrate = VALUES(average_heartrate),
+       max_heartrate = VALUES(max_heartrate),
+       average_watts = VALUES(average_watts),
+       kilojoules = VALUES(kilojoules),
+       polyline = VALUES(polyline),
+       raw_json = VALUES(raw_json)`,
+    [
+      a.id, userId, a.name, a.type,
+      Math.round(a.distance || 0),
+      a.moving_time, a.elapsed_time,
+      Math.round(a.total_elevation_gain || 0),
+      a.average_speed, a.max_speed,
+      a.average_heartrate ? Math.round(a.average_heartrate) : null,
+      a.max_heartrate     ? Math.round(a.max_heartrate)     : null,
+      a.average_watts     ? Math.round(a.average_watts)     : null,
+      a.kilojoules        ? Math.round(a.kilojoules)        : null,
+      a.start_date,
+      a.start_latlng?.[0] ?? null,
+      a.start_latlng?.[1] ?? null,
+      a.map?.summary_polyline ?? a.map?.polyline ?? null,
+      JSON.stringify(a),
+    ]
+  );
+  return { id: a.id, name: a.name, distance_m: Math.round(a.distance || 0), updated: true };
+}
+
 module.exports = {
   buildAuthorizeUrl,
   exchangeCodeForToken,
@@ -218,6 +266,7 @@ module.exports = {
   getValidAccessToken,
   stravaGet,
   syncActivities,
+  syncSingleActivity,
   getAthlete,
   isConfigured: () => !!(process.env.STRAVA_CLIENT_ID && process.env.STRAVA_CLIENT_SECRET),
 };
