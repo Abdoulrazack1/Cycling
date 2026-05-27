@@ -457,21 +457,29 @@
     history.replaceState(null, '', location.pathname);
   }
 
+  // Le bouton "Synchroniser" est maintenant data-strava-sync-modal :
+  // strava-ux.js le câble pour ouvrir la modal de preview + choix période.
+  // En fallback (si strava-ux pas chargé), on garde l'ancien comportement.
   document.getElementById('strava-sync-btn')?.addEventListener('click', async (e) => {
+    if (window.CCS_STRAVA_UX?.showSyncModal) return; // déjà géré par strava-ux
+    e.preventDefault();
     const btn = e.target;
     const msg = document.getElementById('strava-msg');
-    btn.disabled = true; btn.textContent = 'Sync en cours…';
+    btn.disabled = true; btn.textContent = 'Sync…';
     if (msg) msg.textContent = '';
     try {
       const r = await _stravaApi('/strava/sync', { method: 'POST', body: JSON.stringify({ since_days: 90, max_pages: 3 }) });
-      if (msg) msg.textContent = `✓ ${r.imported} nouvelles activités importées (${r.skipped} déjà connues, ${r.total} scannées).`;
+      if (msg) msg.textContent = `${r.imported} nouvelles activités importées (${r.skipped} déjà connues, ${r.total} scannées).`;
       loadStrava();
     } catch (err) {
-      if (msg) msg.textContent = '❌ ' + err.message;
+      if (msg) msg.textContent = err.message;
     } finally {
-      btn.disabled = false; btn.textContent = '↻ Synchroniser';
+      btn.disabled = false; btn.textContent = 'Synchroniser';
     }
   });
+
+  // Expose loadStrava globalement pour que la modal puisse rafraîchir
+  window.loadStrava = loadStrava;
 
   document.getElementById('strava-disconnect-btn')?.addEventListener('click', async () => {
     if (!confirm('Déconnecter ton compte Strava ? Les activités importées resteront en base mais ne seront plus mises à jour.')) return;

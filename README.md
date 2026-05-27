@@ -54,6 +54,10 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 - **Mon espace** : `/api/my/dashboard` agrège favoris + inscriptions + récemment vues + notifications en 1 call
 - **GPX drag & drop** + preview live : distance/D+/points/titre suggéré + warnings avant import
 - **Strava webhook** : sync push temps réel + `POST /api/strava/resync/:id` pour re-sync manuel d'activité
+- **Strava onboarding facilité** : modal explicative bénéfices/permissions avant OAuth, banner inline auto-injecté pour membres non-connectés
+- **Strava sync intelligent** : choix période (30/90/180/365 j) + preview "X activités à importer" avant lancement
+- **Pages dédiées** : `/strava-activites.html` (liste activités + import → sortie pour modos) et `/strava-routes.html` (itinéraires sauvegardés + import GPX complet)
+- **Import 1-clic activité → sortie** : `POST /api/strava/import-activity/:id` décode le polyline en GPX + INSERT sortie automatique
 
 ### Membre (auth requis)
 - **Profil enrichi** : équipement éditable, FTP + zones de puissance, dashboard stats personnelles (vs club)

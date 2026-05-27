@@ -221,6 +221,15 @@
       aps.src = 'asset/js/admin-palette.js';
       aps.defer = true;
       document.head.appendChild(aps);
+      // Strava UX : modal connect + banner + sync preview
+      const sxcss = document.createElement('link');
+      sxcss.rel = 'stylesheet';
+      sxcss.href = 'asset/css/strava-ux.css';
+      document.head.appendChild(sxcss);
+      const sxs = document.createElement('script');
+      sxs.src = 'asset/js/strava-ux.js';
+      sxs.defer = true;
+      document.head.appendChild(sxs);
     }
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');

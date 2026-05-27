@@ -59,6 +59,8 @@
   <section class="section-sm" style="padding-top:0;">
     <div class="wrap">
       <div id="onboarding-checklist" hidden></div>
+      <!-- Banner Strava auto-injecté si user pas connecté à Strava + serveur configuré -->
+      <div data-strava-banner></div>
     </div>
   </section>
 
@@ -137,9 +139,10 @@ STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback</pre>
         <!-- État 2 : configuré mais pas connecté -->
         <div id="strava-disconnected" hidden>
           <p style="font-family:var(--f-sans); font-size:13px; color:var(--parch-2); margin-bottom:14px;">
-            Ton compte Strava n'est pas encore lié. Clique pour autoriser le Club à lire tes activités (read + activity:read uniquement, aucune écriture).
+            Ton compte Strava n'est pas encore lié. Clique pour voir les bénéfices et les permissions avant d'autoriser le Club.
           </p>
-          <a href="/api/strava/connect" class="btn btn-brass btn-sm">↗ Connecter mon Strava</a>
+          <a href="/api/strava/connect" class="btn btn-brass btn-sm" data-strava-connect>Connecter mon Strava</a>
+          <p style="font-family:var(--f-sans); font-size:11px; color:var(--parch-3); margin-top:10px;">Aucune saisie d'identifiants — l'autorisation passe par Strava.com.</p>
         </div>
 
         <!-- État 3 : connecté -->
@@ -153,7 +156,9 @@ STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback</pre>
           </div>
           <div id="strava-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:18px;"></div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-brass btn-sm" id="strava-sync-btn" type="button">↻ Synchroniser</button>
+            <button class="btn btn-brass btn-sm" id="strava-sync-btn" type="button" data-strava-sync-modal>Synchroniser avec preview</button>
+            <a class="btn btn-ghost btn-sm" href="strava-activites.html" style="text-decoration:none;">Mes activités</a>
+            <a class="btn btn-ghost btn-sm" href="strava-routes.html" style="text-decoration:none;">Mes itinéraires</a>
             <button class="btn btn-ghost btn-sm" id="strava-disconnect-btn" type="button">Déconnecter</button>
           </div>
           <div id="strava-msg" style="margin-top:14px; font-family:var(--f-sans); font-size:11px; color:var(--parch-3);"></div>
