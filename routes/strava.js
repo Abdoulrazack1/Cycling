@@ -366,4 +366,74 @@ router.post('/import-route/:routeId', requireAuth, async (req, res) => {
   }
 });
 
+// ── GET /api/strava/webhook ─────────────────────────────────
+// Validation du webhook par Strava à l'enregistrement (challenge GET).
+// Cf. https://developers.strava.com/docs/webhooks/
+router.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const challenge = req.query['hub.challenge'];
+  const token = req.query['hub.verify_token'];
+  const expected = process.env.STRAVA_WEBHOOK_VERIFY_TOKEN || 'CCS_STRAVA_WEBHOOK';
+  if (mode === 'subscribe' && token === expected) {
+    return res.json({ 'hub.challenge': challenge });
+  }
+  return res.status(403).json({ error: 'Forbidden' });
+});
+
+// ── POST /api/strava/webhook ────────────────────────────────
+// Reçoit les évents Strava en temps réel.
+// Body : { object_type, object_id, aspect_type, owner_id, subscription_id, event_time, ... }
+// Cf. https://developers.strava.com/docs/webhooks/#event-data
+router.post('/webhook', async (req, res) => {
+  // Réponse en < 2s exigée par Strava — on traite en async
+  res.status(200).json({ ok: true });
+  try {
+    const { object_type, aspect_type, object_id, owner_id } = req.body || {};
+    if (!object_type || !object_id || !owner_id) return;
+
+    // On ne traite que les activités (pas les athletes)
+    if (object_type !== 'activity') return;
+
+    // Cherche le user lié à cet athlete Strava
+    const { query } = require('../config/database');
+    const rows = await query(
+      'SELECT user_id FROM user_strava_link WHERE strava_athlete_id = ? LIMIT 1',
+      [owner_id]
+    );
+    if (!rows.length) return;
+    const userId = rows[0].user_id;
+
+    if (aspect_type === 'create' || aspect_type === 'update') {
+      // Re-sync de cette activité spécifique
+      await strava.syncSingleActivity(userId, object_id).catch(err => {
+        req.log?.warn({ err: err.message }, '[strava webhook] sync échec');
+      });
+      // Notifie le user (s'il a une notif déjà → idempotence par titre)
+      try {
+        const { notify } = require('./notifications');
+        await notify(userId, 'strava.synced',
+          aspect_type === 'create' ? 'Nouvelle activité Strava' : 'Activité Strava mise à jour',
+          'Une activité a été synchronisée depuis Strava.', '/profil.html#strava-section');
+      } catch {}
+    } else if (aspect_type === 'delete') {
+      await query('DELETE FROM strava_activities WHERE user_id = ? AND strava_id = ?', [userId, object_id]);
+    }
+  } catch (err) {
+    req.log?.error({ err: err.message }, '[strava webhook] erreur');
+  }
+});
+
+// ── POST /api/strava/resync/:activityId ─────────────────────
+// Re-synchronise une activité Strava unique (debug / fix data drift).
+router.post('/resync/:activityId', requireAuth, async (req, res) => {
+  try {
+    const activityId = parseInt(req.params.activityId, 10);
+    if (!activityId) return res.status(400).json({ error: 'Activity ID invalide' });
+    const result = await strava.syncSingleActivity(req.user.id, activityId);
+    res.json({ ok: true, activity: result });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur re-sync activité');
+  }
+});
+
 module.exports = router;

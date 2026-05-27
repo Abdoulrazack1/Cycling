@@ -495,6 +495,71 @@ router.delete('/:id/photos/:photoId', requireAuth, requireModo, async (req, res)
   }
 });
 
+// ── POST /api/sorties/preview-gpx ───────────────────────────────
+// Preview-only : parse le GPX uploadé et retourne les métriques sans
+// rien créer en BDD. Utilisé par l'UI admin pour montrer à l'utilisateur
+// ce qui sera importé (distance, D+, départ/arrivée, bbox, etc.).
+router.post('/preview-gpx',
+  requireAuth, requireAdmin,
+  (req, res, next) => {
+    importUpload.single('gpx')(req, res, (err) => {
+      if (err) return res.status(400).json({ error: 'Upload GPX échoué : ' + err.message });
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      if (!req.file?.buffer?.length) {
+        return res.status(400).json({ error: 'Fichier GPX manquant ou vide' });
+      }
+      if (!isLikelyGpx(req.file.buffer)) {
+        return res.status(400).json({ error: 'Contenu GPX invalide' });
+      }
+      const xml = req.file.buffer.toString('utf8');
+      let m;
+      try {
+        m = parseGpx(xml);
+      } catch (err) {
+        return res.status(400).json({ error: 'GPX invalide : ' + err.message });
+      }
+      // Détection nom du tracé dans le GPX (balises <name>)
+      const nameMatch = xml.match(/<trk>\s*<name>([^<]+)<\/name>/i) || xml.match(/<metadata>[\s\S]*?<name>([^<]+)<\/name>/i);
+      const suggestedTitle = nameMatch ? nameMatch[1].trim() : null;
+
+      // Warnings non-bloquants à afficher dans l'UI
+      const warnings = [];
+      if (m.points.length < 10) warnings.push('Très peu de points (' + m.points.length + ') — tracé peut-être inutilisable');
+      if (m.distance_km < 1)    warnings.push('Distance courte (' + m.distance_km + ' km) — vérifier que c\'est bien le bon fichier');
+      if (m.points.filter(p => p.ele != null).length < m.points.length * 0.5) {
+        warnings.push('Plus de la moitié des points n\'ont pas d\'altitude — profil altimétrique limité');
+      }
+      if (m.distance_km > 500) warnings.push('Distance très longue (' + m.distance_km + ' km) — confirmer');
+
+      res.json({
+        ok: true,
+        suggested_title: suggestedTitle,
+        metrics: {
+          points_count:   m.points.length,
+          distance_km:    m.distance_km,
+          elevation_gain: m.elevation_gain,
+          elevation_loss: m.elevation_loss,
+          start:          m.start,
+          end:            m.end,
+          bbox:           m.bbox,
+        },
+        warnings,
+        file: {
+          name: req.file.originalname,
+          size: req.file.size,
+        },
+      });
+    } catch (err) {
+      req.log?.error({ err }, '[preview-gpx]');
+      errResponse(req, res, err, 500, 'Erreur preview');
+    }
+  }
+);
+
 // ── POST /api/sorties/import-gpx ────────────────────────────────
 // Upload d'un GPX + métadonnées de formulaire → crée la sortie.
 // Le serveur parse le GPX, calcule distance/D+/D-/coords départ

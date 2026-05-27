@@ -50,6 +50,10 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 - **Checklist d'onboarding** : 4 étapes sur le profil (profil/équipement/Strava/première sortie) avec progress bar
 - **Palette d'actions admin** : `Ctrl+Shift+P` ouvre une command palette avec 19 commandes (nouveau membre/sortie/event, broadcast, maintenance, audit, scraper, etc.)
 - **Breadcrumbs** auto-injectés selon la page
+- **Capacité + liste d'attente auto** : sortie remplie → inscription en file d'attente, premier promu automatiquement à la première désinscription
+- **Mon espace** : `/api/my/dashboard` agrège favoris + inscriptions + récemment vues + notifications en 1 call
+- **GPX drag & drop** + preview live : distance/D+/points/titre suggéré + warnings avant import
+- **Strava webhook** : sync push temps réel + `POST /api/strava/resync/:id` pour re-sync manuel d'activité
 
 ### Membre (auth requis)
 - **Profil enrichi** : équipement éditable, FTP + zones de puissance, dashboard stats personnelles (vs club)
