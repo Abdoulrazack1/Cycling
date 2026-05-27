@@ -230,6 +230,19 @@
       sxs.src = 'asset/js/strava-ux.js';
       sxs.defer = true;
       document.head.appendChild(sxs);
+      // FX : scroll progress, parallax, micro-interactions, magnetic buttons
+      const fxcss = document.createElement('link');
+      fxcss.rel = 'stylesheet';
+      fxcss.href = 'asset/css/fx.css';
+      document.head.appendChild(fxcss);
+      const scrollFx = document.createElement('script');
+      scrollFx.src = 'asset/js/scroll-fx.js';
+      scrollFx.defer = true;
+      document.head.appendChild(scrollFx);
+      const microFx = document.createElement('script');
+      microFx.src = 'asset/js/micro-fx.js';
+      microFx.defer = true;
+      document.head.appendChild(microFx);
     }
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');
