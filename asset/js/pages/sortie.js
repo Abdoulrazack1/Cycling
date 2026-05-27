@@ -43,18 +43,26 @@
   tryInit();
 })();
 
-/* ─── Bouton "Copier lien" : copie l'URL canonique de la sortie ──── */
-(function initCopyLink() {
+/* ─── Bouton "Partager" : Web Share API (mobile) ou copie (desktop) ── */
+(function initShareButton() {
   const btn = document.getElementById('copy-sortie-link');
   if (!btn) return;
+  // Si l'API native est dispo, on relabelise le bouton "Partager"
+  if (navigator.share) {
+    const span = Array.from(btn.childNodes).find(n => n.nodeType === 3 || (n.nodeType === 1 && n.tagName === 'SPAN'));
+    btn.lastChild.textContent = 'Partager';
+  }
   btn.addEventListener('click', () => {
     const sortie = window.CCS_SORTIE_STATE?.sortie;
     const url = location.href;
-    const label = sortie?.title ? `Lien copié — ${sortie.title}` : 'Lien copié';
-    if (window.CCS_PREMIUM?.copyLink) {
-      window.CCS_PREMIUM.copyLink(url, label);
+    const title = sortie?.title || document.title;
+    const text = sortie?.subtitle || sortie?.chapter || '';
+    if (window.CCS_PREMIUM?.share) {
+      window.CCS_PREMIUM.share({ url, title, text });
+    } else if (window.CCS_PREMIUM?.copyLink) {
+      window.CCS_PREMIUM.copyLink(url, 'Lien copié');
     } else if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(url).then(() => window.toast?.(label, 'success'));
+      navigator.clipboard.writeText(url).then(() => window.toast?.('Lien copié', 'success'));
     }
   });
 })();

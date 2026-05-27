@@ -282,6 +282,71 @@ a:focus-visible {
 .skeleton-line { height: 14px; margin: 6px 0; border-radius: 2px; }
 .skeleton-avatar { width: 48px; height: 48px; border-radius: 50%; }
 
+/* ─── POI toolbar (recherche + tri) ──────────────────────── */
+.poi-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 16px;
+  flex-wrap: wrap;
+}
+.poi-search {
+  flex: 1 1 240px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  transition: border-color .2s ease;
+}
+.poi-search:focus-within {
+  border-color: var(--brass);
+}
+.poi-search svg {
+  color: var(--parch-3);
+  flex-shrink: 0;
+}
+.poi-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--cream);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  min-width: 0;
+}
+.poi-search input::placeholder {
+  color: var(--parch-3);
+}
+#poi-search-clear {
+  background: none;
+  border: none;
+  color: var(--parch-3);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+#poi-search-clear:hover { color: var(--cream); }
+.poi-sort {
+  padding: 8px 12px;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  color: var(--cream);
+  font-family: var(--f-sans);
+  font-size: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.poi-sort:focus { outline: none; border-color: var(--brass); }
+@media (max-width: 600px) {
+  .poi-toolbar { flex-direction: column; align-items: stretch; }
+  .poi-sort { width: 100%; }
+}
+
 /* ─── Newsletter widget (footer) ──────────────────────────── */
 .footer-newsletter {
   grid-column: 1 / -1;
@@ -328,6 +393,80 @@ a:focus-visible {
   font-size: 12px;
   color: var(--brass-hi, #CAA35B);
   min-height: 18px;
+}
+
+/* ─── Modal raccourcis clavier ──────────────────────────── */
+#ccs-shortcuts-modal {
+  position: fixed; inset: 0; z-index: 10001;
+  display: flex; align-items: center; justify-content: center;
+}
+.ccs-shortcuts-back {
+  position: absolute; inset: 0;
+  background: rgba(10, 20, 16, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.ccs-shortcuts-card {
+  position: relative;
+  width: min(520px, calc(100vw - 32px));
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--ink-2);
+  border: 1px solid var(--brass);
+  color: var(--cream);
+  padding: 24px 28px;
+  font-family: var(--f-sans);
+  font-size: 13px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  animation: ccs-modal-in .3s cubic-bezier(.22, .9, .35, 1) both;
+}
+@keyframes ccs-modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ccs-shortcuts-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.ccs-shortcuts-head h3 {
+  font-family: var(--f-disp); font-size: 22px; font-weight: 500; color: var(--brass-hi);
+  margin: 0;
+}
+.ccs-shortcuts-x {
+  background: none; border: none; color: var(--parch-3);
+  cursor: pointer; font-size: 24px; line-height: 1; padding: 0 6px;
+}
+.ccs-shortcuts-x:hover { color: var(--cream); }
+.ccs-shortcuts-body h4 {
+  font-family: var(--f-sans); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--brass); margin: 20px 0 8px;
+  font-weight: 600;
+}
+.ccs-shortcuts-body dl {
+  display: grid; grid-template-columns: 140px 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+.ccs-shortcuts-body dt {
+  display: flex; gap: 4px; align-items: center;
+  color: var(--parch-2);
+}
+.ccs-shortcuts-body dd {
+  color: var(--cream); margin: 0;
+}
+.ccs-shortcuts-body kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  background: var(--ink-3);
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: var(--cream);
+  min-width: 18px;
+  text-align: center;
 }
 
 /* ─── 15. Pulse dot (live indicator) ──────────────────────── */

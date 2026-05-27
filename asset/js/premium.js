@@ -141,6 +141,27 @@
     return ToastQueue.push(msg, type, duration);
   };
 
+  /* ─── 2b. Web Share API (mobile-first) ─────────────────── */
+  NS.share = async function share(data) {
+    const payload = {
+      title: data.title || document.title,
+      text: data.text || (document.querySelector('meta[name="description"]')?.content || ''),
+      url: data.url || location.href,
+    };
+    if (navigator.share && navigator.canShare?.(payload)) {
+      try {
+        await navigator.share(payload);
+        return { ok: true, method: 'native' };
+      } catch (err) {
+        // L'utilisateur a annulé — ne pas afficher de toast d'erreur
+        if (err?.name === 'AbortError') return { ok: false, method: 'cancelled' };
+      }
+    }
+    // Fallback : copie le lien
+    NS.copyLink(payload.url, 'Lien copié — partage prêt');
+    return { ok: true, method: 'clipboard' };
+  };
+
   /* ─── 3. Copy-link helper avec feedback ─────────────────── */
   NS.copyLink = function copyLink(url, label = 'Lien copié') {
     const text = url || location.href;
@@ -256,6 +277,103 @@
       localStorage.setItem('ccs.vitals', JSON.stringify(log));
     } catch {}
   });
+
+  /* ─── 6b. Raccourcis clavier globaux ───────────────────────── */
+  // g h = home, g s = sorties, g e = events, g p = profil, g c = club
+  // ? = afficher les raccourcis, t = cycle theme, esc = ferme modal/menu
+  const SHORTCUTS = {
+    'g h': '/index.html',
+    'g s': '/sorties.html',
+    'g e': '/evenements.html',
+    'g p': '/profil.html',
+    'g c': '/club.html',
+    'g m': '/membres.html',
+    'g k': '/segments.html',
+    'g a': '/admin.html',
+  };
+  let chordBuffer = '';
+  let chordTimer = null;
+  document.addEventListener('keydown', (e) => {
+    // Ignore si dans un champ saisie
+    const t = e.target;
+    if (t.matches && t.matches('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    // Theme cycle
+    if (e.key === 't' && !e.shiftKey) {
+      if (window.CCS_THEME?.cycle) {
+        const next = window.CCS_THEME.cycle();
+        ToastQueue.push(`Thème : ${next}`, 'info', 1800);
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // Help
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      showShortcutsHelp();
+      e.preventDefault();
+      return;
+    }
+
+    // Chord g+x
+    if (e.key === 'g' && !chordBuffer) {
+      chordBuffer = 'g ';
+      clearTimeout(chordTimer);
+      chordTimer = setTimeout(() => { chordBuffer = ''; }, 1100);
+      return;
+    }
+    if (chordBuffer === 'g ') {
+      const combo = chordBuffer + e.key;
+      const target = SHORTCUTS[combo];
+      chordBuffer = '';
+      clearTimeout(chordTimer);
+      if (target) {
+        e.preventDefault();
+        location.href = target;
+      }
+    }
+  });
+
+  function showShortcutsHelp() {
+    let m = document.getElementById('ccs-shortcuts-modal');
+    if (m) { m.remove(); return; }
+    m = document.createElement('div');
+    m.id = 'ccs-shortcuts-modal';
+    m.innerHTML = `
+      <div class="ccs-shortcuts-back"></div>
+      <div class="ccs-shortcuts-card">
+        <div class="ccs-shortcuts-head">
+          <h3>Raccourcis clavier</h3>
+          <button class="ccs-shortcuts-x" aria-label="Fermer">×</button>
+        </div>
+        <div class="ccs-shortcuts-body">
+          <dl>
+            <dt><kbd>Ctrl</kbd>+<kbd>K</kbd></dt><dd>Recherche globale</dd>
+            <dt><kbd>t</kbd></dt><dd>Cycle thème (clair / sombre / auto)</dd>
+            <dt><kbd>?</kbd></dt><dd>Ce panneau</dd>
+            <dt><kbd>Esc</kbd></dt><dd>Fermer modal / menu</dd>
+          </dl>
+          <h4>Navigation rapide</h4>
+          <dl>
+            <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Accueil</dd>
+            <dt><kbd>g</kbd> <kbd>s</kbd></dt><dd>Sorties</dd>
+            <dt><kbd>g</kbd> <kbd>e</kbd></dt><dd>Événements</dd>
+            <dt><kbd>g</kbd> <kbd>m</kbd></dt><dd>Membres</dd>
+            <dt><kbd>g</kbd> <kbd>c</kbd></dt><dd>Club</dd>
+            <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>Profil</dd>
+            <dt><kbd>g</kbd> <kbd>k</kbd></dt><dd>Segments KOM</dd>
+          </dl>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.querySelector('.ccs-shortcuts-back').addEventListener('click', close);
+    m.querySelector('.ccs-shortcuts-x').addEventListener('click', close);
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+    });
+  }
 
   /* ─── 7. Pull-to-refresh (mobile uniquement, opt-in) ─────── */
   // Activé sur <body data-ptr> uniquement, pour éviter conflits scroll.

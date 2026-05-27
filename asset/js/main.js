@@ -174,6 +174,33 @@
       s.dataset.premium = '1';
       document.head.appendChild(s);
     }
+    // Charge le thème (clair/sombre/auto) + injecte le switcher
+    if (!window.CCS_THEME && !document.querySelector('script[data-theme-js]')) {
+      const tcss = document.createElement('link');
+      tcss.rel = 'stylesheet';
+      tcss.href = 'asset/css/theme.css';
+      document.head.appendChild(tcss);
+      const ts = document.createElement('script');
+      ts.src = 'asset/js/theme.js';
+      ts.dataset.themeJs = '1';
+      document.head.appendChild(ts);
+    }
+    // Charge les animations (anime.js + animations.js)
+    if (!window.CCS_ANIM && !document.querySelector('script[data-anim]')) {
+      const as = document.createElement('script');
+      as.src = 'asset/js/animations.js';
+      as.defer = true;
+      as.dataset.anim = '1';
+      document.head.appendChild(as);
+    }
+    // Charge maps.js (helpers Leaflet) si Leaflet est en cours d'utilisation
+    if (document.querySelector('[id^="sv-fallback"], #minimap-map, #parcours-map') && !window.CCS_MAPS && !document.querySelector('script[data-maps]')) {
+      const ms = document.createElement('script');
+      ms.src = 'asset/js/maps.js';
+      ms.defer = true;
+      ms.dataset.maps = '1';
+      document.head.appendChild(ms);
+    }
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');
     });

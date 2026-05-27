@@ -199,10 +199,26 @@
 
         <div class="filter-row">
           <button class="filter-chip active" data-filter="all">Tous</button>
+          <button class="filter-chip" data-filter="direction"><span class="filter-chip-dot" style="background:#9F9578"></span>Directions</button>
           <button class="filter-chip" data-filter="signaleur"><span class="filter-chip-dot" style="background:#8B3726"></span>Signaleurs</button>
           <button class="filter-chip" data-filter="ravito"><span class="filter-chip-dot" style="background:#B08E4A"></span>Ravitos</button>
           <button class="filter-chip" data-filter="secteur"><span class="filter-chip-dot" style="background:#B08E4A"></span>Secteurs</button>
           <button class="filter-chip" data-filter="danger"><span class="filter-chip-dot" style="background:#CAA35B"></span>Dangers</button>
+        </div>
+
+        <!-- Recherche + tri (renforcement panneau POI) -->
+        <div class="poi-toolbar">
+          <div class="poi-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="poi-search-input" placeholder="Filtrer par titre, description, contact…" autocomplete="off" aria-label="Rechercher dans les POI">
+            <button id="poi-search-clear" type="button" aria-label="Vider la recherche" hidden>×</button>
+          </div>
+          <select id="poi-sort" class="poi-sort" aria-label="Trier les POI">
+            <option value="km">↑ Km croissant</option>
+            <option value="km-desc">↓ Km décroissant</option>
+            <option value="type">Par type</option>
+            <option value="title">A → Z</option>
+          </select>
         </div>
 
         <div id="poi-items" class="poi-items"></div>
