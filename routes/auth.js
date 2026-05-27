@@ -355,7 +355,22 @@ router.get('/me', requireAuth, async (req, res) => {
       [req.user.id]
     );
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
-    res.json(userPublic(user));
+    const pub = userPublic(user);
+
+    // Enrichit avec les flags pour l'onboarding checklist
+    try {
+      const [strava] = await query('SELECT 1 FROM user_strava_link WHERE user_id = ? LIMIT 1', [req.user.id]).catch(() => [[]]);
+      pub.strava_linked = !!strava;
+    } catch { pub.strava_linked = false; }
+    try {
+      const [{ n } = { n: 0 }] = await query(
+        "SELECT COUNT(*) AS n FROM sortie_inscriptions WHERE user_id = ? AND statut != 'annule'",
+        [req.user.id]
+      );
+      pub.inscriptions_count = n || 0;
+    } catch { pub.inscriptions_count = 0; }
+
+    res.json(pub);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[auth]');
     errResponse(req, res, err, 500, 'Erreur serveur :');

@@ -43,6 +43,41 @@
   tryInit();
 })();
 
+/* ─── Affichage conditionnel du bouton inscription (sortie future) ── */
+(function initInscriptionVisibility() {
+  const tryInit = (attempt = 0) => {
+    const sortie = window.CCS_SORTIE_STATE?.sortie;
+    if (!sortie) {
+      if (attempt < 80) return setTimeout(() => tryInit(attempt + 1), 200);
+      return;
+    }
+    const btn = document.getElementById('sortie-inscrire');
+    if (!btn) return;
+    btn.dataset.sortieId = sortie.id;
+    // Affiche seulement si sortie future
+    const future = sortie.statut === 'future' || (sortie.date && new Date(sortie.date) > new Date());
+    btn.hidden = !future;
+
+    // Affiche le compteur d'inscrits
+    const countEl = document.getElementById('sortie-inscrits-count');
+    if (countEl && future) {
+      const API = window.CCS_CFG?.API || window.CCS_CONFIG?.apiBase || '/api';
+      fetch(API + '/sorties/' + encodeURIComponent(sortie.id) + '/inscriptions')
+        .then(r => r.json())
+        .then(d => {
+          const n = d.inscrits || 0;
+          countEl.textContent = n > 0 ? `${n} inscrit${n > 1 ? 's' : ''}` : 'Aucun inscrit pour l\'instant';
+        })
+        .catch(() => {});
+    }
+
+    // Idem pour le bouton favori (initialise data-sortie-id)
+    const favBtn = document.getElementById('fav-toggle');
+    if (favBtn) favBtn.dataset.sortieId = sortie.id;
+  };
+  tryInit();
+})();
+
 /* ─── Bouton "Partager" : Web Share API (mobile) ou copie (desktop) ── */
 (function initShareButton() {
   const btn = document.getElementById('copy-sortie-link');

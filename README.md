@@ -44,6 +44,12 @@ Site web complet du C.C. Salouel : frontend statique + API REST Express + MySQL 
 - **Web Share API** : bouton partager utilise l'API native mobile (iOS/Android) avec fallback copie sur desktop
 - **Raccourcis clavier globaux** : `t` cycle thème, `?` aide, `g h/s/e/m/c/p/k` navigation rapide
 - **Panneau POI renforcé** : barre de recherche live + tri (km/type/A-Z) sur la page sortie
+- **Cloche de notifications** dans la nav (badge unread, panneau dépliant, polling 60s)
+- **Favoris sorties** : étoile sur la page sortie, liste consultable via `/api/favorites`
+- **Inscription 1-clic** : bouton sur la page sortie pour les membres connectés, compteur d'inscrits public
+- **Checklist d'onboarding** : 4 étapes sur le profil (profil/équipement/Strava/première sortie) avec progress bar
+- **Palette d'actions admin** : `Ctrl+Shift+P` ouvre une command palette avec 19 commandes (nouveau membre/sortie/event, broadcast, maintenance, audit, scraper, etc.)
+- **Breadcrumbs** auto-injectés selon la page
 
 ### Membre (auth requis)
 - **Profil enrichi** : équipement éditable, FTP + zones de puissance, dashboard stats personnelles (vs club)

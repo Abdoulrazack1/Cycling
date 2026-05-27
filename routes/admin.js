@@ -284,6 +284,13 @@ router.post('/broadcast', requireAuth, requireAdmin, [
       await new Promise(rs => setTimeout(rs, 200));
     }
     audit(req, 'create', 'broadcast', null, { subject, target, sent, failed });
+
+    // Pousse une notif in-app à tous les destinataires (même sans email config)
+    try {
+      const { notifyMany } = require('./notifications');
+      await notifyMany(recipients.map(r => r.id), 'broadcast', subject, message.slice(0, 280), null);
+    } catch (e) { req.log?.warn({ err: e.message }, '[notif] broadcast'); }
+
     res.json({ ok: true, total: recipients.length, sent, failed, errors });
   } catch (err) { errResponse(req, res, err, 500, 'Erreur broadcast'); }
 });

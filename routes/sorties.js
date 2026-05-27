@@ -371,6 +371,23 @@ router.put('/:id', requireAuth, requireModo, [
 
     const sortie = await buildSortie((await query('SELECT * FROM sorties WHERE id = ?', [id]))[0]);
     audit(req, 'update', 'sortie', id, { title: s.title, date: s.date, statut: s.statut });
+
+    // Notifie les membres inscrits à cette sortie qu'elle a été modifiée
+    try {
+      const { notifyMany } = require('./notifications');
+      const inscrits = await query(
+        "SELECT user_id FROM sortie_inscriptions WHERE sortie_id = ? AND statut = 'inscrit'",
+        [id]
+      );
+      const ids = inscrits.map(r => r.user_id);
+      if (ids.length) {
+        await notifyMany(ids, 'sortie.updated',
+          `Sortie "${sortie.title}" mise à jour`,
+          'Un changement a été apporté à cette sortie. Vérifie les détails.',
+          `/sortie.html?id=${encodeURIComponent(id)}`);
+      }
+    } catch (e) { req.log?.warn({ err: e.message }, '[notif] sortie.updated'); }
+
     res.json(sortie);
   } catch (err) {
     req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error');
