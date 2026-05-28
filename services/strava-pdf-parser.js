@@ -91,6 +91,11 @@ function parseStravaCueSheet(text) {
     if (/^(distance|d[ée]nivel[ée]|dur[ée]e|elev|total|speed|vitesse|moy)/i.test(cueText)) continue;
     if (/^https?:\/\//i.test(cueText)) continue;
     if (/\d+[.,]\d+\s*km.*\d+[.,]\d+\s*km/i.test(rawLine)) continue;
+    // Timecode (Strava montre la durée estimée : "26:39", "1h05", "36m 26:47")
+    if (/^\d{1,3}[mh]?\s*\d{1,2}:\d{2}/i.test(cueText)) continue;
+    if (/^\d+m\s+\d+:\d+/i.test(cueText)) continue;
+    // Ligne avec uniquement chiffres + ponctuation (résidu OCR pur)
+    if (!/[A-Za-zÀ-ÿ]{3,}/.test(cueText)) continue;
 
     // Reconnaît l'action
     let matched = null;
@@ -116,17 +121,44 @@ function parseStravaCueSheet(text) {
     });
   }
 
-  // Tri par km croissant (l'OCR sort les colonnes désordonnées sur les
-  // PDFs 2-colonnes Strava)
-  results.sort((a, b) => a.km - b.km);
+  // Filtre les résidus OCR : street avec trop de caractères non-mots
+  // (typiquement des résidus de stats/graph)
+  const looksLikeStreet = (s) => {
+    if (!s) return true; // pas de rue = OK (Continuer seul)
+    if (s.length < 3) return false;
+    if (s.length > 80) return false; // trop long = phrase OCR mal coupée
+    // Ratio caractères ASCII alphanumériques + accents
+    const wordy = (s.match(/[A-Za-zÀ-ÿ0-9 ]/g) || []).length;
+    if (wordy / s.length < 0.7) return false;
+    // Pas de séquence trop bruitée (3+ caractères non-ascii consécutifs)
+    if (/[^\w\s'éèêàâïîôöüçÉÈÊÀÂÏÎÔÖÜÇ.-]{3,}/.test(s)) return false;
+    return true;
+  };
+  const filtered = results.filter(r => looksLikeStreet(r.street));
+
+  // Tri par km croissant
+  filtered.sort((a, b) => a.km - b.km);
 
   // Dédup : si 2 POIs même km + même action consécutifs, on garde le 1er
   const dedup = [];
-  for (const r of results) {
+  for (const r of filtered) {
     const prev = dedup[dedup.length - 1];
     if (prev && Math.abs(r.km - prev.km) < 0.01 && r.action === prev.action) continue;
+    // Dedup aussi sur "same street name" même action successifs (Strava
+    // répète chaque rue avec un km incrémenté de 0.1km pour les longs
+    // chemins — on ne garde que le PREMIER passage sur cette rue)
+    if (prev && r.street && r.street === prev.street && r.action === prev.action) continue;
     dedup.push(r);
   }
+
+  // Heuristique : si premier POI est à km 0 et type "direction", le promouvoir
+  // en "depart" (Strava utilise "Poursuivre sur Grande Rue 0,0km" pour le départ).
+  if (dedup.length > 0 && dedup[0].km === 0 && dedup[0].type === 'direction') {
+    dedup[0].type   = 'depart';
+    dedup[0].action = 'Départ';
+  }
+  // Idem pour le dernier POI si sa km == distance totale et type direction
+  // mais on ne connaît pas la distance ici — projectDirectionsOnGpx le saura.
 
   // Synthétise un départ si manquant et que le premier POI est > 0,5 km
   if (dedup.length > 0 && !dedup.some(r => r.type === 'depart') && dedup[0].km > 0.5) {
@@ -154,21 +186,28 @@ function projectDirectionsOnGpx(directions, trackPoints, haversineFn) {
   }
   const totalM = cum[cum.length - 1];
 
+  const totalKm = totalM / 1000;
   const out = [];
   for (const d of directions) {
     const targetM = d.km * 1000;
-    if (targetM < 0 || targetM > totalM + 200) continue; // hors tracé
-    // Cherche le point le plus proche
+    if (targetM < 0 || targetM > totalM + 200) continue;
     let idx = 0;
     for (let i = 0; i < cum.length; i++) {
       if (cum[i] >= targetM) { idx = i; break; }
       idx = i;
     }
     const p = trackPoints[idx];
-    const label = d.street ? `${d.action} — ${d.street}` : d.action;
+    // Heuristique : POI au tout dernier km est l'arrivée
+    let type = d.type;
+    let action = d.action;
+    if (d.km >= totalKm - 0.3 && type === 'direction') {
+      type = 'arrivee';
+      action = 'Arrivée';
+    }
+    const label = d.street ? `${action} — ${d.street}` : action;
     out.push({
       km: d.km,
-      type: d.type,
+      type,
       label,
       description: d.raw,
       lat: p.lat,
