@@ -12,41 +12,45 @@
     });
   }
 
-  // ── Préchargement minimal des couches FX/CSS/JS ─────────────
-  // On charge SEULEMENT ce qui est utilisé sur la page courante :
-  // - Les scripts theme + scroll-fx + micro-fx sont nécessaires partout
-  //   pour les animations et le switch thème.
-  // - Le reste est chargé en `prefetch` (hint au navigateur, fetch en
-  //   idle time, ne bloque pas le rendu).
-  (function preloadFx() {
-    const critical = {
-      css: ['asset/css/fx.css', 'asset/css/theme.css'],
-      js:  ['asset/js/theme.js', 'asset/js/scroll-fx.js', 'asset/js/micro-fx.js'],
-    };
-    // Optionnel (lazy) : ces modules chargent à idle / interaction
-    const lazy = {
-      css: ['asset/css/premium.css', 'asset/css/journey.css', 'asset/css/strava-ux.css'],
-      js:  ['asset/js/premium.js', 'asset/js/animations.js', 'asset/js/member-journey.js',
-            'asset/js/breadcrumbs.js', 'asset/js/admin-palette.js', 'asset/js/strava-ux.js'],
-    };
-    function inject(tag, attr, val) {
-      if (document.querySelector(`${tag}[${attr.split('=')[0]}="${val}"]`)) return;
+  // ── Chargement progressif des couches FX/CSS/JS ─────────────
+  // CRITIQUE : seulement theme.css + theme.js (immédiat pour éviter
+  // le flash de couleur au switch dark/light).
+  // TOUT LE RESTE : chargé après que la page soit interactive
+  // (requestIdleCallback) — n'impacte plus le LCP.
+  (function loadFx() {
+    function inject(tag, val) {
+      if (document.querySelector(`${tag}[${tag === 'link' ? 'href' : 'src'}="${val}"]`)) return;
       const el = document.createElement(tag);
       if (tag === 'link') { el.rel = 'stylesheet'; el.href = val; }
       else { el.src = val; el.defer = true; }
       document.head.appendChild(el);
     }
-    critical.css.forEach(v => inject('link', 'href', v));
-    critical.js.forEach(v => inject('script', 'src', v));
-    // Lazy : on attend que la page soit interactive avant d'injecter
-    function injectLazy() {
-      lazy.css.forEach(v => inject('link', 'href', v));
-      lazy.js.forEach(v => inject('script', 'src', v));
+    // Critical : seul le thème pour éviter le flash de couleur
+    inject('link', 'asset/css/theme.css');
+    inject('script', 'asset/js/theme.js');
+    // Tout le reste en idle
+    function loadLazy() {
+      [
+        'asset/css/fx.css',
+        'asset/css/premium.css',
+        'asset/css/journey.css',
+        'asset/css/strava-ux.css',
+      ].forEach(v => inject('link', v));
+      [
+        'asset/js/premium.js',
+        'asset/js/scroll-fx.js',
+        'asset/js/micro-fx.js',
+        'asset/js/animations.js',
+        'asset/js/member-journey.js',
+        'asset/js/breadcrumbs.js',
+        'asset/js/admin-palette.js',
+        'asset/js/strava-ux.js',
+      ].forEach(v => inject('script', v));
     }
     if ('requestIdleCallback' in window) {
-      requestIdleCallback(injectLazy, { timeout: 1500 });
+      requestIdleCallback(loadLazy, { timeout: 1500 });
     } else {
-      setTimeout(injectLazy, 200);
+      setTimeout(loadLazy, 100);
     }
   })();
 

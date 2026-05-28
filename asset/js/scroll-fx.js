@@ -283,9 +283,10 @@
     const tag = (el, attr, val = '') => {
       if (!el.hasAttribute(attr)) el.setAttribute(attr, val);
     };
-    // a) Toutes les sections .section / .section-sm
+    // a) Toutes les sections .section / .section-sm (sauf hero)
     document.querySelectorAll('.section, .section-sm').forEach(el => {
       if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
+      if (el.closest('.hero')) return;
       el.setAttribute('data-scroll-anim', 'fade-up');
     });
     // b) Story blocks
@@ -299,9 +300,12 @@
     document.querySelectorAll('.row-cards, [data-cards], .sec-cards, .stats-row, .members-grid, .list-ornate').forEach(el => tag(el, 'data-cascade'));
     // e) Card images : data-card-parallax
     document.querySelectorAll('.rc-img, .rc-image').forEach(el => tag(el, 'data-card-parallax', '1'));
-    // f) Hero h1 / titres principaux → fade-up
-    document.querySelectorAll('.hero-title, .page-head-title, .d-l, .d-xl, .d-m').forEach(el => {
+    // f) Page-head-title et display titles (mais PAS .hero-title qui a déjà
+    //    sa propre animation `fadeIn` dans style.css → conflit transform)
+    document.querySelectorAll('.page-head-title, .d-l, .d-xl, .d-m').forEach(el => {
       if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
+      // Skip si on est à l'intérieur du hero (déjà animé)
+      if (el.closest('.hero')) return;
       el.setAttribute('data-scroll-anim', 'fade-up');
     });
     // g) section heads (sec-head)
@@ -309,10 +313,11 @@
       if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
       el.setAttribute('data-scroll-anim', 'fade-up');
     });
-    // h) Images héro : parallax MARQUÉ pour effet profondeur
-    document.querySelectorAll('.hero-bg, .page-head-hero, [data-hero-bg]').forEach(el => {
-      tag(el, 'data-parallax', '0.4');
-    });
+    // h) Wrapper du hero : parallax SEULEMENT sur le conteneur, pas
+    //    sur l'image elle-même (qui a déjà scale(1.06) + heroBreathe).
+    //    Ajouter parallax sur l'image dégradait l'effet visuel.
+    document.querySelectorAll('.hero-bg').forEach(el => tag(el, 'data-parallax', '0.25'));
+    document.querySelectorAll('.page-head-hero, [data-hero-bg]').forEach(el => tag(el, 'data-parallax', '0.2'));
     // i) Footers, mentions : zoom-in subtil
     document.querySelectorAll('.site-footer, footer.site-footer').forEach(el => {
       tag(el, 'data-scroll-anim', 'fade-up');
