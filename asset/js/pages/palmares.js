@@ -53,7 +53,18 @@
 
   try {
     const rows = await window.CCS_DATA.palmares();
-    if (!rows?.length) return;
+    if (!rows?.length) {
+      container.innerHTML = `
+        <div class="ccs-empty" style="padding:64px 24px;">
+          <div class="ccs-empty-icon">—</div>
+          <div class="ccs-empty-title">Pas encore de palmarès</div>
+          <div class="ccs-empty-sub">Les résultats du club apparaîtront ici après chaque course. Tu peux les ajouter depuis l'administration.</div>
+          <a href="admin.html#tab-palmares" class="btn btn-brass btn-sm">Gérer (admin)</a>
+        </div>`;
+      const metas = document.querySelectorAll('.page-head-meta-v');
+      metas.forEach(m => { m.textContent = '0'; });
+      return;
+    }
 
     const byYear = {};
     for (const r of rows) {

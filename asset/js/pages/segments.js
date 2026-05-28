@@ -43,7 +43,20 @@
 
   try {
     const segs = await window.CCS_DATA.segments();
-    if (!segs?.length) return;
+    if (!segs?.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="7">
+          <div class="ccs-empty" style="padding:48px 24px;">
+            <div class="ccs-empty-icon">—</div>
+            <div class="ccs-empty-title">Aucun segment KOM</div>
+            <div class="ccs-empty-sub">Les segments seront synchronisés depuis Strava (KOM, secteurs chrono) ou ajoutés via l'admin.</div>
+            <a href="profil.html#strava-section" class="btn btn-brass btn-sm">Connecter Strava</a>
+          </div>
+        </td></tr>`;
+      const metas = document.querySelectorAll('.page-head-meta-v');
+      metas.forEach(m => { m.textContent = '0'; });
+      return;
+    }
 
     tbody.innerHTML = segs.map((s, i) => `
       <tr>
