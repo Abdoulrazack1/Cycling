@@ -62,8 +62,8 @@
         <p class="hero-tagline">Club de cyclisme de cyclistes du Nord. Trois générations, un seul peloton, des dimanches qui ne pardonnent pas la météo.</p>
         <div class="hero-cta-col">
           <div class="hero-cta">
-            <a href="sortie.html?id=arenberg-2025-04-05" class="btn btn-brass btn-lg">
-              Suivre la sortie en cours
+            <a href="sorties.html" class="btn btn-brass btn-lg" data-nav-sortie>
+              Voir les sorties
               <span class="btn-arrow">→</span>
             </a>
             <a href="club.html" class="btn btn-ghost btn-lg">Découvrir le Club</a>
@@ -118,39 +118,41 @@
         </div>
       </div>
 
-      <div class="story-two" data-reveal data-delay="100">
+      <!-- "Sortie en avant" hydratée par pages/index.js depuis /api/sorties.
+           Skeleton montré pendant le fetch — pas de fausses données figées. -->
+      <div class="story-two" data-reveal data-delay="100" id="home-featured">
         <div class="story-img">
-          <div class="story-img-stamp">Live · sortie en cours</div>
+          <div class="story-img-stamp">Dernière sortie</div>
           <img loading="eager"
             src="asset/img/img-route.webp"
-            onerror="this.onerror=null;this.src='asset/img/hero-pave.svg'"
-            alt="Pavé Paris-Roubaix">
+            onerror="this.onerror=null;this.src='asset/img/hero-route.svg'"
+            alt="">
           <div class="story-img-frame" aria-hidden="true"></div>
-          <div class="story-img-caption">247 — Reconnaissance Paris-Roubaix · 5 avril 2025</div>
+          <div class="story-img-caption">—</div>
         </div>
         <div class="story-body">
-          <div class="label mb-4">Sortie ouverte</div>
-          <h3 class="d-m">Reconnaissance <span class="it">Paris–Roubaix</span></h3>
+          <div class="label mb-4">Sortie en avant</div>
+          <h3 class="d-m">—</h3>
           <span class="hr-brass" aria-hidden="true"></span>
-          <p class="lede">Compiègne, 8 h. Vingt-sept secteurs s'enchaînent jusqu'au vélodrome André-Pétrieux. Cette reconnaissance ouverte aux licenciés du Club se court à allure de groupe, deux arrêts marqués à Arenberg et au Carrefour de l'Arbre.</p>
+          <p class="lede">Chargement…</p>
 
           <div class="story-meta">
             <div class="story-meta-item">
               <div class="story-meta-l">Distance</div>
-              <div class="story-meta-v">172<span class="unit">km</span></div>
+              <div class="story-meta-v">—</div>
             </div>
             <div class="story-meta-item">
-              <div class="story-meta-l">Pavé</div>
-              <div class="story-meta-v">54<span class="unit">km</span></div>
+              <div class="story-meta-l">Dénivelé</div>
+              <div class="story-meta-v">—</div>
             </div>
             <div class="story-meta-item">
-              <div class="story-meta-l">Secteurs</div>
-              <div class="story-meta-v">27</div>
+              <div class="story-meta-l">Date</div>
+              <div class="story-meta-v">—</div>
             </div>
           </div>
 
           <div class="story-cta">
-            <a href="sortie.html?id=arenberg-2025-04-05" class="btn btn-brass">Ouvrir l'explorateur <span class="btn-arrow">→</span></a>
+            <a href="sorties.html" class="btn btn-brass" id="featured-cta">Ouvrir l'explorateur <span class="btn-arrow">→</span></a>
             <a href="sorties.html" class="btn btn-ghost">Toutes les sorties</a>
           </div>
         </div>
@@ -175,7 +177,10 @@
         </div>
       </div>
 
-      <div class="list-ornate" data-reveal data-delay="100">
+      <!-- Liste hydratée dynamiquement depuis /api/sorties par pages/index.js.
+           Le squelette skeleton est rendu pendant le fetch pour éviter le
+           trou blanc. -->
+      <div class="list-ornate" data-reveal data-delay="100" id="home-recent-list">
         <div class="list-ornate-head">
           <span>Date</span>
           <span>Sortie</span>
@@ -183,58 +188,9 @@
           <span>Distance</span>
           <span></span>
         </div>
-        <a href="sortie.html?id=monts-flandres-2025-03-28" class="list-ornate-row">
-          <div class="list-ornate-date">28 mars<span class="list-ornate-date-small">samedi</span></div>
-          <div>
-            <div class="list-ornate-title">Monts <span class="it">des</span> Flandres</div>
-            <div class="list-ornate-sub">Cassel · Kemmelberg · Mont Noir — sortie #246</div>
-          </div>
-          <div class="list-ornate-meta">
-            <b>+1 640 m</b> D+ · 8 monts<br>
-            <span>Cassel · 9 h 00</span>
-          </div>
-          <div class="list-ornate-dist">76<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a href="sortie.html?id=avesnois-2025-03-15" class="list-ornate-row">
-          <div class="list-ornate-date">15 mars<span class="list-ornate-date-small">samedi</span></div>
-          <div>
-            <div class="list-ornate-title">Tour <span class="it">de</span> l'Avesnois</div>
-            <div class="list-ornate-sub">Bocage · Maroilles · Sars-Poteries — sortie #245</div>
-          </div>
-          <div class="list-ornate-meta">
-            <b>+1 980 m</b> D+ · bocage<br>
-            <span>Maroilles · 8 h 30</span>
-          </div>
-          <div class="list-ornate-dist">112<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a href="sortie.html?id=scarpe-gravel-2025-03-02" class="list-ornate-row">
-          <div class="list-ornate-date">2 mars<span class="list-ornate-date-small">dimanche</span></div>
-          <div>
-            <div class="list-ornate-title">La Scarpe <span class="it">en gravel</span></div>
-            <div class="list-ornate-sub">Forêt de Saint-Amand · Raismes · Mortagne — sortie #244</div>
-          </div>
-          <div class="list-ornate-meta">
-            <b>80 %</b> chemin · gravel<br>
-            <span>Saint-Amand · 9 h 00</span>
-          </div>
-          <div class="list-ornate-dist">68<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
-        <a href="sortie.html?id=opale-2025-02-22" class="list-ornate-row">
-          <div class="list-ornate-date">22 fév.<span class="list-ornate-date-small">samedi</span></div>
-          <div>
-            <div class="list-ornate-title">Côte <span class="it">d'</span>Opale</div>
-            <div class="list-ornate-sub">Boulogne · Cap Gris-Nez · Audinghen — sortie #243</div>
-          </div>
-          <div class="list-ornate-meta">
-            <b>6 caps</b> · vent de face<br>
-            <span>Boulogne · 8 h 30</span>
-          </div>
-          <div class="list-ornate-dist">104<span class="unit">km</span></div>
-          <div class="list-ornate-arrow">→</div>
-        </a>
+        <div class="skeleton skeleton-row" style="margin:8px 0;"></div>
+        <div class="skeleton skeleton-row" style="margin:8px 0;"></div>
+        <div class="skeleton skeleton-row" style="margin:8px 0;"></div>
       </div>
     </div>
   </section>
@@ -299,110 +255,13 @@
         </div>
       </div>
 
-      <div class="card-grid" data-reveal data-delay="100">
-        <a href="sortie.html?id=arenberg-2025-04-05" class="rc">
-          <div class="rc-img">
-            <img loading="lazy" decoding="async"
-              src="asset/img/img-pave.webp"
-              onerror="this.onerror=null;this.src='asset/img/hero-pave.svg'"
-              alt="Pavé Paris-Roubaix">
-            <div class="rc-img-frame" aria-hidden="true"></div>
-            <div class="rc-sv-badge">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Street View
-            </div>
-            <div class="rc-tags"><span class="tag tag-brass">Pavé · ★★★★★</span></div>
-            <div class="rc-number">№ 01</div>
-            <div class="rc-caption"><em>Compiègne → Roubaix</em></div>
-          </div>
-          <div class="rc-body">
-            <h3 class="rc-title">Paris–Roubaix <span class="it">reco</span></h3>
-            <p class="rc-sub">Vingt-sept secteurs pavés, du sous-bois d'Arenberg au vélodrome.</p>
-            <div class="rc-stats">
-              <div class="rc-stat"><div class="rc-stat-v">172<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">820<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">54<span class="unit">km</span></div><div class="rc-stat-l">Pavé</div></div>
-            </div>
-          </div>
-        </a>
-
-        <a href="sortie.html?id=monts-flandres-2025-03-28" class="rc">
-          <div class="rc-img">
-            <img loading="lazy" decoding="async"
-              src="asset/img/img-monts.webp"
-              onerror="this.onerror=null;this.src='asset/img/hero-monts.svg'"
-              alt="Route vallonnée des Flandres">
-            <div class="rc-img-frame" aria-hidden="true"></div>
-            <div class="rc-sv-badge">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Street View
-            </div>
-            <div class="rc-tags"><span class="tag tag-brass">Monts</span></div>
-            <div class="rc-number">№ 02</div>
-            <div class="rc-caption"><em>Cassel · Kemmelberg</em></div>
-          </div>
-          <div class="rc-body">
-            <h3 class="rc-title">Monts <span class="it">des</span> Flandres</h3>
-            <p class="rc-sub">Boucle vallonnée de la Flandre française au Heuvelland belge.</p>
-            <div class="rc-stats">
-              <div class="rc-stat"><div class="rc-stat-v">76<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">1 640<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">8</div><div class="rc-stat-l">Côtes</div></div>
-            </div>
-          </div>
-        </a>
-
-        <a href="sortie.html?id=scarpe-gravel-2025-03-02" class="rc">
-          <div class="rc-img">
-            <img loading="lazy" decoding="async"
-              src="asset/img/img-gravel.webp"
-              onerror="this.onerror=null;this.src='asset/img/hero-gravel.svg'"
-              alt="Gravel en forêt">
-            <div class="rc-img-frame" aria-hidden="true"></div>
-            <div class="rc-sv-badge">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Street View
-            </div>
-            <div class="rc-tags"><span class="tag tag-brass">Gravel</span></div>
-            <div class="rc-number">№ 03</div>
-            <div class="rc-caption"><em>Forêt de Saint-Amand</em></div>
-          </div>
-          <div class="rc-body">
-            <h3 class="rc-title">La Scarpe <span class="it">en gravel</span></h3>
-            <p class="rc-sub">Chemins forestiers, traverses de Mortagne, ravito au Mortier.</p>
-            <div class="rc-stats">
-              <div class="rc-stat"><div class="rc-stat-v">68<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">1 240<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">80<span class="unit">%</span></div><div class="rc-stat-l">Chemin</div></div>
-            </div>
-          </div>
-        </a>
-
-        <a href="sortie.html?id=opale-2025-02-22" class="rc">
-          <div class="rc-img">
-            <img loading="lazy" decoding="async"
-              src="asset/img/img-cote.webp"
-              onerror="this.onerror=null;this.src='asset/img/hero-cote.svg'"
-              alt="Côte d'Opale">
-            <div class="rc-img-frame" aria-hidden="true"></div>
-            <div class="rc-sv-badge">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Street View
-            </div>
-            <div class="rc-tags"><span class="tag tag-brass">Côte</span></div>
-            <div class="rc-number">№ 04</div>
-            <div class="rc-caption"><em>Boulogne · Cap Gris-Nez</em></div>
-          </div>
-          <div class="rc-body">
-            <h3 class="rc-title">Côte <span class="it">d'</span>Opale</h3>
-            <p class="rc-sub">Falaises, vent de face, six caps signés à la chaîne.</p>
-            <div class="rc-stats">
-              <div class="rc-stat"><div class="rc-stat-v">104<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">1 380<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>
-              <div class="rc-stat"><div class="rc-stat-v">6</div><div class="rc-stat-l">Caps</div></div>
-            </div>
-          </div>
-        </a>
+      <!-- Cartes hydratees par pages/index.js depuis /api/sorties (4 plus
+           récentes). Skeleton pendant le fetch. -->
+      <div class="card-grid" data-reveal data-delay="100" id="home-routes-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
       </div>
     </div>
   </section>
