@@ -47,14 +47,22 @@
 
   let allMembres = [];
   let activeRole = 'all';
+  let activeSearch = '';
 
   function renderGrid() {
     let filtered = allMembres;
     if (activeRole !== 'all') {
-      filtered = allMembres.filter(m => (m.role || 'membre') === activeRole);
+      filtered = filtered.filter(m => (m.role || 'membre') === activeRole);
+    }
+    if (activeSearch) {
+      const q = activeSearch.toLowerCase();
+      filtered = filtered.filter(m => {
+        const hay = [m.prenom, m.nom, m.username, m.licence_ffc].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      });
     }
     if (!filtered.length) {
-      grid.innerHTML = '<div class="members-empty" style="grid-column:1/-1;">Aucun sociétaire dans cette catégorie.</div>';
+      grid.innerHTML = '<div class="members-empty" style="grid-column:1/-1;">Aucun sociétaire ne correspond.</div>';
       return;
     }
     grid.innerHTML = filtered.map(renderCard).join('');

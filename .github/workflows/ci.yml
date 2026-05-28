@@ -106,7 +106,24 @@ jobs:
           $MYSQL -N -e "SELECT 1 FROM ccs_salouel.user_recent_views LIMIT 0" >/dev/null || (echo "::error::user_recent_views table missing"; exit 1)
           $MYSQL -N -e "SELECT 1 FROM ccs_salouel.newsletter_subscribers LIMIT 0" >/dev/null || (echo "::error::newsletter_subscribers table missing"; exit 1)
 
-      - run: npm test
+      - name: Run tests with diagnostics on failure
+        run: |
+          # On capture la sortie complète et on l'affiche normalement.
+          # Si fail, on remonte un résumé propre + les 200 lignes utiles.
+          set -o pipefail
+          if ! npm test 2>&1 | tee test-output.log; then
+            echo ""
+            echo "============================================"
+            echo "TESTS FAILED — diagnostic"
+            echo "============================================"
+            echo "::group::Failing test lines (not ok / Error)"
+            grep -nE "^(not ok|Error:|AssertionError|TypeError|ReferenceError|^# fail)" test-output.log | head -80 || true
+            echo "::endgroup::"
+            echo "::group::Last 200 lines of full output"
+            tail -200 test-output.log
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Validate GPX files (informative)
         run: node scripts/validate-gpx.js || true

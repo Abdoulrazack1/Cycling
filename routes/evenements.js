@@ -32,6 +32,64 @@ router.get('/', async (req, res) => {
   } catch (err) { req.log.error({ err, code: err.code, sqlMessage: err.sqlMessage }, 'route error'); errResponse(req, res, err, 500, 'Erreur serveur :'); }
 });
 
+// ── GET /api/evenements/:id/ical ────────────────────────────
+// Export iCalendar (.ics) pour ajouter l'événement à son agenda
+// (Google Calendar, Apple Calendar, Outlook). Pas d'auth requise.
+router.get('/:id/ical', async (req, res) => {
+  try {
+    const idOrSlug = req.params.id;
+    const isNumeric = /^\d+$/.test(idOrSlug);
+    const [ev] = await query(
+      isNumeric
+        ? 'SELECT * FROM evenements WHERE id = ?'
+        : 'SELECT * FROM evenements WHERE slug = ? OR id = ?',
+      isNumeric ? [parseInt(idOrSlug)] : [idOrSlug, idOrSlug]
+    );
+    if (!ev) return res.status(404).send('Événement introuvable');
+
+    function fmtUtc(d) {
+      return new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    }
+    function esc(s) {
+      // Échappement iCal RFC 5545
+      return String(s ?? '').replace(/[\\;,]/g, '\\$&').replace(/\n/g, '\\n');
+    }
+    const start = ev.date;
+    const startUtc = fmtUtc(start);
+    const endDate = new Date(start);
+    endDate.setHours(endDate.getHours() + 4); // durée par défaut 4h
+    const endUtc = fmtUtc(endDate);
+    const uid = `${ev.slug || ev.id}@cc-salouel.fr`;
+    const url = `${req.protocol}://${req.get('host')}/evenement.html?id=${encodeURIComponent(ev.slug || ev.id)}`;
+
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//C.C. Salouel//Evenements//FR',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${fmtUtc(new Date())}`,
+      `DTSTART:${startUtc}`,
+      `DTEND:${endUtc}`,
+      `SUMMARY:${esc(ev.title)}`,
+      ev.description ? `DESCRIPTION:${esc(ev.description)}` : '',
+      ev.lieu ? `LOCATION:${esc(ev.lieu)}` : '',
+      `URL:${esc(url)}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].filter(Boolean).join('\r\n');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${ev.slug || ev.id}.ics"`);
+    res.send(ics);
+  } catch (err) {
+    req.log?.error({ err }, '[ical export]');
+    res.status(500).send('Erreur génération iCal');
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const idOrSlug = req.params.id;

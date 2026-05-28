@@ -68,11 +68,17 @@
         </div>
       </div>
 
-      <div class="member-filters" data-reveal data-delay="100">
-        <button class="filter-chip active" data-role="all">Tous</button>
-        <button class="filter-chip" data-role="admin">Bureau</button>
-        <button class="filter-chip" data-role="moderateur">Modérateurs</button>
-        <button class="filter-chip" data-role="membre">Membres</button>
+      <div class="member-filters" data-reveal data-delay="100" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="filter-chip active" data-role="all">Tous</button>
+          <button class="filter-chip" data-role="admin">Bureau</button>
+          <button class="filter-chip" data-role="moderateur">Modérateurs</button>
+          <button class="filter-chip" data-role="membre">Membres</button>
+        </div>
+        <div class="poi-search" style="flex:1;min-width:200px;max-width:320px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="member-search" placeholder="Rechercher un sociétaire…" autocomplete="off" aria-label="Rechercher un sociétaire">
+        </div>
       </div>
 
       <div class="members-grid" id="members-grid" data-reveal data-delay="200">
