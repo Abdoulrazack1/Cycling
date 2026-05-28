@@ -404,8 +404,9 @@ html.theme-transition * {
   height: 14px;
 }
 
-/* En mobile : version compacte */
+/* Mobile : touch targets minimum 36px (raisonnable pour 3 boutons côte à côte) */
 @media (max-width: 720px) {
-  .theme-toggle { padding: 2px; height: 28px; }
-  .theme-toggle-btn { width: 22px; height: 22px; }
+  .theme-toggle { padding: 3px; height: 36px; }
+  .theme-toggle-btn { width: 30px; height: 30px; }
+  .theme-toggle-btn svg { width: 16px; height: 16px; }
 }
