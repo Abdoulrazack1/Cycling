@@ -19,7 +19,8 @@ async function freePort() {
   });
 }
 
-async function waitForServer(url, maxMs = 8000) {
+// 15 s : tolère CI froid avec MySQL container qui démarre lentement.
+async function waitForServer(url, maxMs = 15000) {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     try {
@@ -58,8 +59,8 @@ async function startServer() {
   if (process.env.TEST_SERVER_LOGS) proc.stdout.on('data', d => process.stdout.write('[srv] ' + d));
 
   try {
-    await waitForServer(`http://localhost:${PORT}/api/health`, 8000)
-      .catch(() => waitForServer(`http://localhost:${PORT}/`, 8000));
+    await waitForServer(`http://localhost:${PORT}/api/health`, 15000)
+      .catch(() => waitForServer(`http://localhost:${PORT}/`, 15000));
   } catch (e) {
     proc.kill();
     throw new Error(`Server start failed: ${e.message}\nstderr: ${lastErr.slice(0, 500)}`);

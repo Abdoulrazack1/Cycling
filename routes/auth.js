@@ -357,18 +357,22 @@ router.get('/me', requireAuth, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
     const pub = userPublic(user);
 
-    // Enrichit avec les flags pour l'onboarding checklist
+    // Enrichit avec les flags pour l'onboarding checklist.
+    // Try/catch pour rester compatible avec les BDD où les migrations
+    // 008 (Strava) ou 011 (sortie_inscriptions) ne sont pas encore appliquées.
+    pub.strava_linked = false;
+    pub.inscriptions_count = 0;
     try {
-      const [strava] = await query('SELECT 1 FROM user_strava_link WHERE user_id = ? LIMIT 1', [req.user.id]).catch(() => [[]]);
-      pub.strava_linked = !!strava;
-    } catch { pub.strava_linked = false; }
+      const rows = await query('SELECT 1 FROM user_strava_link WHERE user_id = ? LIMIT 1', [req.user.id]);
+      pub.strava_linked = rows.length > 0;
+    } catch (e) { /* table absente — flag reste false */ }
     try {
-      const [{ n } = { n: 0 }] = await query(
+      const rows = await query(
         "SELECT COUNT(*) AS n FROM sortie_inscriptions WHERE user_id = ? AND statut != 'annule'",
         [req.user.id]
       );
-      pub.inscriptions_count = n || 0;
-    } catch { pub.inscriptions_count = 0; }
+      pub.inscriptions_count = rows[0]?.n || 0;
+    } catch (e) { /* table absente — count reste 0 */ }
 
     res.json(pub);
   } catch (err) {

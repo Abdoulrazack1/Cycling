@@ -375,6 +375,49 @@
     });
   }
 
+  /* ─── 6c. PWA install prompt ─────────────────────────────── */
+  // Détecte beforeinstallprompt + propose un bouton "Installer l'app"
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Affiche un mini-banner discret en bas
+    const dismissed = parseInt(localStorage.getItem('ccs.pwa.dismissed') || '0', 10);
+    if (Date.now() - dismissed < 14 * 86400_000) return; // 14j de dismiss
+    if (matchMedia('(display-mode: standalone)').matches) return; // déjà installé
+    showInstallBanner();
+  });
+  function showInstallBanner() {
+    if (document.getElementById('ccs-pwa-banner')) return;
+    const el = document.createElement('div');
+    el.id = 'ccs-pwa-banner';
+    el.className = 'ccs-pwa-banner';
+    el.innerHTML = `
+      <div class="ccs-pwa-banner-body">
+        <strong>Installer C.C. Salouel</strong>
+        <span>Accès rapide + mode hors-ligne</span>
+      </div>
+      <button class="ccs-pwa-banner-install">Installer</button>
+      <button class="ccs-pwa-banner-x" aria-label="Plus tard">×</button>
+    `;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    el.querySelector('.ccs-pwa-banner-install').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      el.remove();
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        ToastQueue.push('App installée — retrouve-la sur ton écran d\'accueil', 'success', 5000);
+      }
+      deferredPrompt = null;
+    });
+    el.querySelector('.ccs-pwa-banner-x').addEventListener('click', () => {
+      el.remove();
+      try { localStorage.setItem('ccs.pwa.dismissed', Date.now().toString()); } catch {}
+    });
+  }
+
   /* ─── 7. Pull-to-refresh (mobile uniquement, opt-in) ─────── */
   // Activé sur <body data-ptr> uniquement, pour éviter conflits scroll.
   (function initPullToRefresh() {

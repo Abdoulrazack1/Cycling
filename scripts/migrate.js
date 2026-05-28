@@ -31,6 +31,45 @@ function _checksum(sql) {
   return require('crypto').createHash('sha256').update(sql).digest('hex').slice(0, 16);
 }
 
+/**
+ * Split un fichier SQL en statements, en respectant les `DELIMITER $$` etc.
+ * (le driver mysql2 ne comprend pas DELIMITER — c'est une directive du
+ * client mysql interactif).
+ *
+ * Stratégie : on lit ligne par ligne, on extrait DELIMITER xx pour
+ * connaître le séparateur courant, et on split sur ce séparateur.
+ * Tout est gardé dans son ordre original.
+ *
+ * Limitations connues : ne gère pas les délimiteurs à l'intérieur de
+ * commentaires multi-lignes /* * /, mais c'est suffisant pour nos
+ * migrations qui restent simples.
+ */
+function _splitWithDelimiters(sql) {
+  const lines = sql.split(/\r?\n/);
+  const out = [];
+  let cur = '';
+  let delim = ';';
+  for (const line of lines) {
+    const m = line.match(/^\s*DELIMITER\s+(\S+)\s*$/i);
+    if (m) {
+      if (cur.trim()) { out.push(cur); cur = ''; }
+      delim = m[1];
+      continue;
+    }
+    cur += line + '\n';
+    // Si la ligne se termine par le délimiteur courant, on push le statement
+    const trimmed = line.trim();
+    if (trimmed.endsWith(delim)) {
+      // Retire le délimiteur final
+      const stmt = cur.trimEnd().slice(0, -delim.length);
+      if (stmt.trim()) out.push(stmt);
+      cur = '';
+    }
+  }
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+
 (async () => {
   const argv = process.argv.slice(2);
   const dryRun = argv.includes('--dry-run');
@@ -83,13 +122,21 @@ function _checksum(sql) {
 
   for (const f of pending) {
     const fullPath = path.join(MIG_DIR, f);
-    const sql = fs.readFileSync(fullPath, 'utf8');
-    const sum = _checksum(sql);
+    const rawSql = fs.readFileSync(fullPath, 'utf8');
+    const sum = _checksum(rawSql);
     const t0 = Date.now();
     console.log(`\n▶ ${f}…`);
     try {
       await conn.query('START TRANSACTION');
-      await conn.query(sql);
+      // Le client mysql comprend `DELIMITER $$` mais pas le driver mysql2.
+      // On split nous-mêmes : si DELIMITER est utilisé, on transforme chaque
+      // bloc et exécute statement-par-statement.
+      const statements = _splitWithDelimiters(rawSql);
+      for (const stmt of statements) {
+        const trimmed = stmt.trim();
+        if (!trimmed) continue;
+        await conn.query(trimmed);
+      }
       await conn.query(
         'INSERT INTO schema_migrations (filename, checksum, duration_ms) VALUES (?, ?, ?)',
         [f, sum, Date.now() - t0]

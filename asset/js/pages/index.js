@@ -33,9 +33,20 @@
     if (storyCta)                          storyCta.href = 'sortie.html?id=' + encodeURIComponent(featured.id);
     if (storyNum && featured.number)       storyNum.textContent = `№ ${featured.number}`;
 
-    const totalKm = sorties.reduce((s, o) => s + (parseFloat(o.distance_km) || 0), 0);
-    const statKm  = document.querySelector('.stats-row .stats-cell:first-child .stats-v');
-    if (statKm && totalKm > 0) statKm.innerHTML = Math.round(totalKm) + '<span class="unit">km</span>';
+    // Hydratation des stats du club : on consomme /api/stats (cache 5 min)
+    // qui agrège côté serveur tous les compteurs sur la base ENTIÈRE,
+    // pas juste les 6 sorties qu'on a fetchées pour le hero.
+    try {
+      const API = window.CCS_CFG?.API || '/api';
+      const stats = await fetch(API + '/stats').then(r => r.json()).catch(() => null);
+      if (stats) {
+        const cells = document.querySelectorAll('.stats-row .stats-cell .stats-v');
+        if (cells[0]) cells[0].innerHTML = (stats.kilometres || 0).toLocaleString('fr-FR') + '<span class="unit">km</span>';
+        if (cells[1]) cells[1].textContent = stats.sorties?.passees || 0;
+        if (cells[2]) cells[2].textContent = stats.membres?.actifs || 0;
+        if (cells[3]) cells[3].innerHTML = (stats.denivele || 0).toLocaleString('fr-FR') + '<span class="unit">m</span>';
+      }
+    } catch (err) { /* silencieux — les valeurs en dur restent */ }
 
     const rows = document.querySelectorAll('.list-ornate .list-ornate-row');
     recent.forEach((s, i) => {
