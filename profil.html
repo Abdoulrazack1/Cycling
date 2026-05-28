@@ -64,7 +64,70 @@
     </div>
   </section>
 
-  <section class="section-sm">
+  <!-- Édition du profil : champs éditables par le membre -->
+  <section class="section-sm" id="profil-form-section">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <div class="sec-head-number">
+          <div class="sec-head-chapter"><em>Informations</em></div>
+          <div class="sec-head-marker">№ 00</div>
+        </div>
+        <div class="sec-head-right">
+          <h2 class="d-l sec-head-title">Mon <span class="it">profil</span></h2>
+          <p class="sec-head-desc">Bio publique (visible par les autres membres si activée), licence, année d'adhésion, FTP et zones de puissance. Tout est optionnel — remplis ce qui te plaît.</p>
+        </div>
+      </div>
+
+      <form id="profil-form" class="profil-form" autocomplete="off">
+        <div class="field-row">
+          <div class="field">
+            <label for="pf-licence">Licence FFC / UFOLEP</label>
+            <input id="pf-licence" name="licence_ffc" type="text" maxlength="50" placeholder="ex. 0801234567">
+          </div>
+          <div class="field">
+            <label for="pf-adhesion">Année d'adhésion</label>
+            <input id="pf-adhesion" name="annee_adhesion" type="number" min="1900" max="2100" placeholder="2024">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="pf-ftp">FTP (watts)</label>
+            <input id="pf-ftp" name="ftp_w" type="number" min="0" max="2000" placeholder="ex. 280">
+            <small class="field-hint">Functional Threshold Power — puissance soutenable 1 h. Utilisé pour calculer tes zones d'entraînement.</small>
+          </div>
+          <div class="field">
+            <label for="pf-km">Km saison (manuel)</label>
+            <input id="pf-km" name="km_saison" type="number" min="0" max="100000" placeholder="0">
+            <small class="field-hint">Auto-calculé si Strava connecté.</small>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pf-elev">D+ saison (m, manuel)</label>
+          <input id="pf-elev" name="elevation_saison" type="number" min="0" max="1000000" placeholder="0">
+        </div>
+
+        <div class="field">
+          <label for="pf-bio">Bio</label>
+          <textarea id="pf-bio" name="bio" maxlength="2000" rows="4" placeholder="Quelques mots sur toi, ton parcours cycliste, tes ambitions saison…"></textarea>
+          <small class="field-hint"><span id="pf-bio-count">0</span> / 2000 caractères</small>
+        </div>
+
+        <div class="field" style="flex-direction:row;align-items:center;gap:12px;">
+          <input id="pf-bio-public" name="bio_public" type="checkbox">
+          <label for="pf-bio-public" style="margin:0;cursor:pointer;text-transform:none;letter-spacing:0;font-family:var(--f-sans);font-size:13px;">Bio publique (visible par les autres membres sur ma page profil)</label>
+        </div>
+
+        <div class="profil-form-actions">
+          <button type="submit" class="btn btn-brass" id="pf-submit">Enregistrer</button>
+          <span id="pf-msg" class="profil-form-msg"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="section-sm" id="equipement-section">
     <div class="wrap">
       <div class="sec-head" data-reveal>
         <div class="sec-head-number">
