@@ -64,7 +64,18 @@
 
   try {
     const evs = await window.CCS_DATA.listEvenements({ limit: 20 });
-    if (!evs?.length) return;
+    if (!evs?.length) {
+      listEl.innerHTML = `
+        <div class="ccs-empty" style="padding:64px 24px;">
+          <div class="ccs-empty-icon">—</div>
+          <div class="ccs-empty-title">Pas d'événement à venir</div>
+          <div class="ccs-empty-sub">Les courses, cyclos et événements seront publiés ici dès leur annonce.</div>
+          <a href="sorties.html" class="btn btn-brass btn-sm">Voir les sorties</a>
+        </div>`;
+      const metas = document.querySelectorAll('.page-head-meta-v');
+      metas.forEach(m => { m.textContent = '0'; });
+      return;
+    }
     listEl.innerHTML = evs.map(renderRow).join('');
 
     listEl.querySelectorAll('[data-register]').forEach(btn => {

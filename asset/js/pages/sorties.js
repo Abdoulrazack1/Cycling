@@ -184,7 +184,15 @@
   try {
     const sorties = await window.CCS_DATA.sorties({ limit: 50 });
     if (!sorties?.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1;padding:48px;text-align:center;font-family:var(--f-sans);font-size:13px;color:var(--parch-2);">Aucune sortie enregistrée pour le moment.</div>`;
+      grid.innerHTML = `
+        <div class="ccs-empty" style="grid-column:1/-1;padding:64px 24px;">
+          <div class="ccs-empty-icon">—</div>
+          <div class="ccs-empty-title">Aucune sortie pour l'instant</div>
+          <div class="ccs-empty-sub">Connecte ton compte Strava et importe tes premières activités pour les voir apparaître ici.</div>
+          <a href="profil.html#strava-section" class="btn btn-brass btn-sm">Connecter Strava</a>
+        </div>`;
+      const metas = document.querySelectorAll('.page-head-meta-v');
+      metas.forEach(m => { m.textContent = '0'; });
       return;
     }
     allSorties = sorties;
