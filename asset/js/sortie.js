@@ -681,7 +681,16 @@
     }).join('');
 
     const counter = document.getElementById('poi-counter');
-    if (counter) counter.innerHTML = `<b>${pois.length}</b> point${pois.length > 1 ? 's' : ''} · total ${state.pois.length}`;
+    if (counter) {
+      const totalKm = state.sortie?.distance_km || 0;
+      // Density : un point tous les X mètres
+      let density = '';
+      if (totalKm > 0 && state.pois.length > 1) {
+        const mPerPoi = Math.round((totalKm * 1000) / state.pois.length);
+        density = ` · <span style="opacity:.6;">~1 point / ${mPerPoi >= 1000 ? (mPerPoi/1000).toFixed(1)+'km' : mPerPoi+'m'}</span>`;
+      }
+      counter.innerHTML = `<b>${pois.length}</b> point${pois.length > 1 ? 's' : ''} · total ${state.pois.length}${density}`;
+    }
 
     const summary = document.getElementById('poi-summary-list');
     if (summary) {
