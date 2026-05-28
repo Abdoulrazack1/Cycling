@@ -63,8 +63,9 @@
         <li><a href="membres.html"    class="mn-link" data-page="membres.html"><span>Les sociétaires</span><span class="mn-num">07</span></a></li>
         <li><a href="palmares.html"   class="mn-link" data-page="palmares.html"><span>Palmarès</span><span class="mn-num">08</span></a></li>
         <li><a href="segments.html"   class="mn-link" data-page="segments.html"><span>Segments · KOM</span><span class="mn-num">09</span></a></li>
-        <li><a href="profil.html"     class="mn-link" data-page="profil.html"><span>Mon profil</span><span class="mn-num">10</span></a></li>
-        <li><a href="contact.html"    class="mn-link" data-page="contact.html"><span>Contact</span><span class="mn-num">11</span></a></li>
+        <li><a href="mon-espace.html" class="mn-link" data-page="mon-espace.html"><span>Mon espace</span><span class="mn-num">10</span></a></li>
+        <li><a href="profil.html"     class="mn-link" data-page="profil.html"><span>Mon profil</span><span class="mn-num">11</span></a></li>
+        <li><a href="contact.html"    class="mn-link" data-page="contact.html"><span>Contact</span><span class="mn-num">12</span></a></li>
       </ul>
       <div class="mn-meta">
         <span>Salouel · Somme · 1978</span>

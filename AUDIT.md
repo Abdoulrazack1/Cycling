@@ -336,3 +336,35 @@ Voir le README pour la documentation complète d'utilisation.
 - `will-change: transform` posé statiquement pour éviter le composite layer churn.
 - Skip total sous `prefers-reduced-motion: reduce` (valeurs finales appliquées sans transition).
 - Skip sur mobile (`hover: none`) pour magnetic/spotlight/cursor (économise la batterie).
+
+---
+
+## 🛠 Itération 2026-05-28 (ter) — Fix CI + nouvelles features
+
+### CI
+
+- **CI workflow `.github/workflows/ci.yml` durci** :
+  - `fail-fast: false` sur la matrice (les deux Node versions tournent indépendamment, pour voir les vraies failures).
+  - `set -e` dans le step migrations + utilisation de `echo "::group::"` pour grouper les logs.
+  - Sanity checks explicites APRÈS migrations : on vérifie que `sortie_inscriptions`, `notifications`, `user_favorites`, `user_recent_views`, `newsletter_subscribers`, `sorties.capacity_max` existent. Si une migration a planté silencieusement, on l'attrape ici.
+- **`tests/helper.js`** : `waitForServer` passe de 8s à 15s (CI froid avec MySQL container peut être lent à démarrer).
+- **`scripts/migrate.js`** : supporte les `DELIMITER $$ ... END$$` désormais (le driver mysql2 ne comprend pas la directive DELIMITER du client mysql, on splitte côté JS). Permet à `npm run migrate` de fonctionner sur la migration 002 (procédure stockée).
+- **`/api/auth/me`** : bug fix sur l'enrichissement `strava_linked` — utilisait un destructure `[strava]` sur une promise catch qui retournait `[[]]` (rendait `!![]` true à tort).
+
+### Frontend — nouvelles pages
+
+- **`/mon-espace.html`** : dashboard membre dédié, consomme `/api/my/dashboard` en 1 call. Affiche :
+  - 4 compteurs en page-head (favoris, inscriptions actives, sorties vues, notifs non-lues)
+  - Section "Mes inscriptions" (avec badge statut `inscrit` / `liste-attente` / `annulé`)
+  - Grid "Mes favoris" + grid "Récemment consultées"
+  - Empty states cohérents avec CTA vers les sorties
+- Page ajoutée à la nav mobile (lien `Mon espace`).
+
+### Frontend — features
+
+- **PWA install banner** : détecte `beforeinstallprompt`, affiche un mini-banner discret en bas avec bouton "Installer". Dismiss persistant 14 jours. Skip si déjà en `display-mode: standalone`.
+- **Stats home hydratées** : `/api/stats` branché à la `.stats-row` de la home. Affiche en temps réel : km cumulés, sorties passées, membres actifs, D+ cumulé.
+
+### Statistiques
+
+- **87/87 tests passent** (rien cassé).

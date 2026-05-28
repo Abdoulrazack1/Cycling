@@ -40,6 +40,7 @@ jobs:
           --health-retries=20
 
     strategy:
+      fail-fast: false
       matrix:
         node-version: ['20.x', '22.x']
 
@@ -84,12 +85,26 @@ jobs:
 
       - name: Apply schema + migrations
         run: |
-          mysql -h 127.0.0.1 -uroot -prootpw ccs_salouel < schema.sql
+          set -e
+          MYSQL="mysql -h 127.0.0.1 -uroot -prootpw"
+          $MYSQL ccs_salouel < schema.sql
           for f in migrations/*.sql; do
-            echo "Applying $f"
-            mysql -h 127.0.0.1 -uroot -prootpw ccs_salouel < "$f"
+            echo "::group::Applying $f"
+            $MYSQL ccs_salouel < "$f"
+            echo "::endgroup::"
           done
-          mysql -h 127.0.0.1 -uroot -prootpw -e "GRANT ALL ON ccs_salouel.* TO 'ccs_user'@'%'; FLUSH PRIVILEGES;"
+          $MYSQL -e "GRANT ALL ON ccs_salouel.* TO 'ccs_user'@'%'; FLUSH PRIVILEGES;"
+          # Sanity checks pour faciliter le debug en cas de fail npm test
+          echo "::group::Tables in ccs_salouel"
+          $MYSQL -e "SHOW TABLES IN ccs_salouel;"
+          echo "::endgroup::"
+          # Vérif explicite que les colonnes/tables critiques sont présentes
+          $MYSQL -N -e "SELECT COUNT(*) FROM ccs_salouel.sortie_inscriptions" >/dev/null || (echo "::error::sortie_inscriptions table missing — migration 011 failed"; exit 1)
+          $MYSQL -N -e "SELECT capacity_max FROM ccs_salouel.sorties LIMIT 0" >/dev/null || (echo "::error::sorties.capacity_max missing — migration 012 failed"; exit 1)
+          $MYSQL -N -e "SELECT 1 FROM ccs_salouel.notifications LIMIT 0" >/dev/null || (echo "::error::notifications table missing"; exit 1)
+          $MYSQL -N -e "SELECT 1 FROM ccs_salouel.user_favorites LIMIT 0" >/dev/null || (echo "::error::user_favorites table missing"; exit 1)
+          $MYSQL -N -e "SELECT 1 FROM ccs_salouel.user_recent_views LIMIT 0" >/dev/null || (echo "::error::user_recent_views table missing"; exit 1)
+          $MYSQL -N -e "SELECT 1 FROM ccs_salouel.newsletter_subscribers LIMIT 0" >/dev/null || (echo "::error::newsletter_subscribers table missing"; exit 1)
 
       - run: npm test
 
