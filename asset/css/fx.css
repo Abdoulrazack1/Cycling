@@ -69,13 +69,14 @@ html.js-fx [data-scroll-anim] {
               transform .9s cubic-bezier(.22, .9, .35, 1);
   will-change: opacity, transform;
 }
-html.js-fx [data-scroll-anim="fade-up"]    { transform: translateY(40px); }
-html.js-fx [data-scroll-anim="fade-down"]  { transform: translateY(-40px); }
-html.js-fx [data-scroll-anim="fade-left"]  { transform: translateX(40px); }
-html.js-fx [data-scroll-anim="fade-right"] { transform: translateX(-40px); }
-html.js-fx [data-scroll-anim="zoom-in"]    { transform: scale(.92); }
-html.js-fx [data-scroll-anim="zoom-out"]   { transform: scale(1.08); }
-html.js-fx [data-scroll-anim="rotate-in"]  { transform: rotate(-3deg) scale(.95); }
+/* Mouvements amplifiés pour effet premium clairement visible */
+html.js-fx [data-scroll-anim="fade-up"]    { transform: translateY(80px); }
+html.js-fx [data-scroll-anim="fade-down"]  { transform: translateY(-80px); }
+html.js-fx [data-scroll-anim="fade-left"]  { transform: translateX(80px); }
+html.js-fx [data-scroll-anim="fade-right"] { transform: translateX(-80px); }
+html.js-fx [data-scroll-anim="zoom-in"]    { transform: scale(.85); }
+html.js-fx [data-scroll-anim="zoom-out"]   { transform: scale(1.15); }
+html.js-fx [data-scroll-anim="rotate-in"]  { transform: rotate(-6deg) scale(.9); }
 html.js-fx [data-scroll-anim].scroll-anim-in {
   opacity: 1;
   transform: none;
@@ -258,11 +259,89 @@ body[data-cursor] * { cursor: none !important; }
               inset 0 0 0 1px var(--brass);
 }
 
-/* ─── 14. Card hover : glow shadow (subtil) ────────────── */
+/* ─── 14. Card hover : 3D tilt + glow visible ──────────── */
+/* Effet 3D fort sur les cards, perspective profonde */
+.rc, .stat-card, .member-card, .list-ornate-row, .me-card {
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.22, .9, .35, 1),
+              box-shadow .4s ease,
+              border-color .3s ease;
+}
 .rc:hover {
-  box-shadow: 0 16px 36px rgba(0, 0, 0, .35),
-              0 0 0 1px rgba(176, 142, 74, .14),
-              0 0 30px rgba(176, 142, 74, .12);
+  transform: perspective(900px) translateY(-6px) rotateX(2deg);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, .45),
+              0 0 0 1px rgba(176, 142, 74, .28),
+              0 0 50px rgba(176, 142, 74, .22);
+}
+.stat-card:hover {
+  transform: perspective(900px) translateY(-4px) scale(1.03);
+}
+.member-card:hover {
+  transform: perspective(800px) translateY(-4px) rotateY(2deg);
+}
+.list-ornate-row:hover {
+  transform: translateX(8px);
+}
+
+/* Hero : effet "breathe" continu très subtil sur l'image bg */
+.hero-bg img {
+  animation: ccs-breathe 16s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes ccs-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg img { animation: none; }
+}
+
+/* Hero title : très léger glow pulsant */
+.hero-title .it {
+  animation: ccs-glow 4s ease-in-out infinite;
+}
+@keyframes ccs-glow {
+  0%, 100% { text-shadow: 0 0 0 transparent; }
+  50%      { text-shadow: 0 0 24px rgba(202, 163, 91, 0.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-title .it { animation: none; }
+}
+
+/* Boutons brass : shine sweep sur hover (continu) */
+.btn-brass {
+  position: relative;
+  overflow: hidden;
+}
+.btn-brass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .25) 50%, transparent 70%);
+  transform: translateX(-110%);
+  transition: transform .9s cubic-bezier(.22, .9, .35, 1);
+  pointer-events: none;
+}
+.btn-brass:hover::before {
+  transform: translateX(110%);
+}
+
+/* Ornement brass animé sur les section-marker / sec-head-marker */
+.sec-head-marker::after {
+  content: '';
+  display: block;
+  margin-top: 6px;
+  height: 1px;
+  background: linear-gradient(to right, var(--brass) 0%, transparent 100%);
+  animation: ccs-slide-in .8s cubic-bezier(.22, .9, .35, 1) .15s both;
+  transform-origin: left;
+}
+@keyframes ccs-slide-in {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sec-head-marker::after { animation: none; transform: scaleX(1); }
 }
 
 /* ─── 15. Card image : ken-burns subtil (zoom continu lent) ─── */
@@ -371,4 +450,39 @@ html {
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+}
+
+/* ─── 21. Entry animation : <main> fade-up at every page load ─── */
+/* Donne un signal visuel IMMÉDIAT que les animations sont actives. */
+html.js-fx main {
+  animation: ccs-page-in .7s cubic-bezier(.22, .9, .35, 1) both;
+}
+@keyframes ccs-page-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js-fx main { animation: none; }
+}
+
+/* ─── 22. Nav slide-in depuis le haut ─────────────────────── */
+html.js-fx #main-nav {
+  animation: ccs-nav-down .5s cubic-bezier(.22, .9, .35, 1) both;
+}
+@keyframes ccs-nav-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js-fx #main-nav { animation: none; }
+}
+
+/* ─── 23. Footer fade au scroll-bottom ────────────────────── */
+html.js-fx .site-footer {
+  opacity: 0;
+  transition: opacity .8s ease;
+}
+html.js-fx .site-footer.scroll-anim-in,
+html.js-fx .site-footer:focus-within {
+  opacity: 1;
 }

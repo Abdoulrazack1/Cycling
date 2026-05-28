@@ -196,29 +196,11 @@
     return { finished: Promise.resolve(r), ready: Promise.resolve(r), updateCallbackDone: Promise.resolve(r) };
   };
 
-  // Active automatiquement les transitions de page pour les liens internes
-  // (mêmes origine et chemin /xxx.html → swap doux via fade côté navigateur)
-  if (document.startViewTransition) {
-    document.addEventListener('click', (e) => {
-      const a = e.target.closest && e.target.closest('a[href]');
-      if (!a) return;
-      if (a.target === '_blank') return;
-      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-      const href = a.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
-      const url = new URL(a.href, location.href);
-      if (url.origin !== location.origin) return;
-      // Ne pas intercepter les vrais downloads
-      if (a.hasAttribute('download')) return;
-      // Ne traite que les pages .html (pas les téléchargements)
-      const isHtml = url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname.endsWith('/');
-      if (!isHtml) return;
-      e.preventDefault();
-      document.documentElement.classList.add('ccs-leaving');
-      // Petit délai pour que le fade soit visible
-      setTimeout(() => { window.location.href = a.href; }, 140);
-    }, true);
-  }
+  // DÉSACTIVÉ : l'interception de tous les clics ajoutait un délai
+  // de 140 ms avant chaque navigation, ce qui rendait le site lent
+  // au quotidien. Les View Transitions natives ne fonctionnent que pour
+  // les Same-Document Navigations (SPA), pas pour multi-page sans bundler
+  // — le délai n'apportait donc aucun vrai bénéfice visuel ici.
 
   /* ─── 5. Smooth scroll avec offset auto sous la nav fixe ── */
   NS.smoothScrollTo = function smoothScrollTo(target, extraOffset = 0) {

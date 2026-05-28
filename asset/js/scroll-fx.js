@@ -309,9 +309,9 @@
       if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
       el.setAttribute('data-scroll-anim', 'fade-up');
     });
-    // h) Images héro : parallax léger pour effet profondeur
-    document.querySelectorAll('.hero-bg img, .page-head-hero, [data-hero-bg]').forEach(el => {
-      tag(el, 'data-parallax', '0.2');
+    // h) Images héro : parallax MARQUÉ pour effet profondeur
+    document.querySelectorAll('.hero-bg, .page-head-hero, [data-hero-bg]').forEach(el => {
+      tag(el, 'data-parallax', '0.4');
     });
     // i) Footers, mentions : zoom-in subtil
     document.querySelectorAll('.site-footer, footer.site-footer').forEach(el => {

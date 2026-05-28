@@ -12,44 +12,41 @@
     });
   }
 
-  // ── Préchargement IMMÉDIAT des couches FX/CSS/JS ────────────
-  // Avant : ces scripts étaient injectés dans `boot()` (DOMContentLoaded
-  // puis injectChrome), trop tard — l'utilisateur voyait une page sans
-  // animations jusqu'à plusieurs centaines de ms après chargement.
-  // Maintenant : on les met dans <head> dès que main.js commence à
-  // s'exécuter, en parallèle du parse HTML restant.
+  // ── Préchargement minimal des couches FX/CSS/JS ─────────────
+  // On charge SEULEMENT ce qui est utilisé sur la page courante :
+  // - Les scripts theme + scroll-fx + micro-fx sont nécessaires partout
+  //   pour les animations et le switch thème.
+  // - Le reste est chargé en `prefetch` (hint au navigateur, fetch en
+  //   idle time, ne bloque pas le rendu).
   (function preloadFx() {
-    const css = [
-      'asset/css/premium.css',
-      'asset/css/theme.css',
-      'asset/css/journey.css',
-      'asset/css/strava-ux.css',
-      'asset/css/fx.css',
-    ];
-    const js = [
-      'asset/js/premium.js',
-      'asset/js/theme.js',
-      'asset/js/animations.js',
-      'asset/js/scroll-fx.js',
-      'asset/js/micro-fx.js',
-      'asset/js/member-journey.js',
-      'asset/js/breadcrumbs.js',
-      'asset/js/admin-palette.js',
-      'asset/js/strava-ux.js',
-    ];
-    for (const href of css) {
-      if (document.querySelector(`link[href="${href}"]`)) continue;
-      const l = document.createElement('link');
-      l.rel = 'stylesheet';
-      l.href = href;
-      document.head.appendChild(l);
+    const critical = {
+      css: ['asset/css/fx.css', 'asset/css/theme.css'],
+      js:  ['asset/js/theme.js', 'asset/js/scroll-fx.js', 'asset/js/micro-fx.js'],
+    };
+    // Optionnel (lazy) : ces modules chargent à idle / interaction
+    const lazy = {
+      css: ['asset/css/premium.css', 'asset/css/journey.css', 'asset/css/strava-ux.css'],
+      js:  ['asset/js/premium.js', 'asset/js/animations.js', 'asset/js/member-journey.js',
+            'asset/js/breadcrumbs.js', 'asset/js/admin-palette.js', 'asset/js/strava-ux.js'],
+    };
+    function inject(tag, attr, val) {
+      if (document.querySelector(`${tag}[${attr.split('=')[0]}="${val}"]`)) return;
+      const el = document.createElement(tag);
+      if (tag === 'link') { el.rel = 'stylesheet'; el.href = val; }
+      else { el.src = val; el.defer = true; }
+      document.head.appendChild(el);
     }
-    for (const src of js) {
-      if (document.querySelector(`script[src="${src}"]`)) continue;
-      const s = document.createElement('script');
-      s.src = src;
-      s.defer = true;
-      document.head.appendChild(s);
+    critical.css.forEach(v => inject('link', 'href', v));
+    critical.js.forEach(v => inject('script', 'src', v));
+    // Lazy : on attend que la page soit interactive avant d'injecter
+    function injectLazy() {
+      lazy.css.forEach(v => inject('link', 'href', v));
+      lazy.js.forEach(v => inject('script', 'src', v));
+    }
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(injectLazy, { timeout: 1500 });
+    } else {
+      setTimeout(injectLazy, 200);
     }
   })();
 
