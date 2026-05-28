@@ -495,6 +495,71 @@ router.delete('/:id/photos/:photoId', requireAuth, requireModo, async (req, res)
   }
 });
 
+// ── POST /api/sorties/cue-from-text ─────────────────────────────
+// Combine texte OCR (extrait côté client depuis un PDF Strava) avec
+// un GPX déjà importé, et génère des POIs sur la sortie en projetant
+// chaque direction du cue-sheet sur le tracé GPX.
+//
+// Body JSON : { sortieId, ocrText }
+//   sortieId : ID d'une sortie existante (avec gpx_filename)
+//   ocrText  : texte brut du cue-sheet Strava (extrait par ocr-pdf.js)
+// Retourne : { directionsParsed, poisCreated, projected[] }
+router.post('/cue-from-text', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { sortieId, ocrText, replace } = req.body || {};
+    if (!sortieId) return res.status(400).json({ error: 'sortieId requis' });
+    if (!ocrText) return res.status(400).json({ error: 'ocrText requis' });
+
+    // Récupère la sortie + son GPX
+    const [s] = await query('SELECT id, gpx_filename FROM sorties WHERE id = ?', [sortieId]);
+    if (!s) return res.status(404).json({ error: 'Sortie introuvable' });
+    if (!s.gpx_filename) return res.status(400).json({ error: 'Cette sortie n\'a pas de GPX — impossible de projeter les directions' });
+
+    const gpxPath = path.join(ASSET_GPX_DIR, s.gpx_filename);
+    if (!fs.existsSync(gpxPath)) return res.status(404).json({ error: 'GPX fichier manquant' });
+    const xml = fs.readFileSync(gpxPath, 'utf8');
+    const m = parseGpx(xml);
+    if (!m.points?.length) return res.status(400).json({ error: 'GPX sans trackpoints' });
+
+    const { parseStravaCueSheet, projectDirectionsOnGpx } = require('../services/strava-pdf-parser');
+    const directions = parseStravaCueSheet(ocrText);
+    if (!directions.length) {
+      return res.status(400).json({ error: 'Aucune direction reconnue dans le texte OCR.', hint: 'Vérifier que le PDF est bien un export Strava avec cue-sheet.' });
+    }
+
+    const projected = projectDirectionsOnGpx(directions, m.points, haversineMeters);
+
+    // Si replace=true, on efface les POIs existants de cette sortie d'abord
+    if (replace) {
+      await query('DELETE FROM pois WHERE sortie_id = ?', [sortieId]);
+    }
+
+    // Insère chaque POI
+    const crypto = require('crypto');
+    let inserted = 0;
+    for (const p of projected) {
+      const id = 'p-cue-' + crypto.randomBytes(5).toString('hex');
+      await query(
+        `INSERT INTO pois (id, sortie_id, type, label, description, lat, lng, km, user_added)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE)`,
+        [id, sortieId, p.type, p.label, p.description, p.lat, p.lng, p.km]
+      );
+      inserted++;
+    }
+
+    audit(req, 'create', 'pois-bulk', sortieId, { count: inserted, source: 'strava-cue' });
+    res.json({
+      ok: true,
+      directionsParsed: directions.length,
+      poisCreated: inserted,
+      projected,
+    });
+  } catch (err) {
+    req.log?.error({ err }, '[cue-from-text]');
+    errResponse(req, res, err, 500, 'Erreur cue-sheet');
+  }
+});
+
 // ── POST /api/sorties/preview-gpx ───────────────────────────────
 // Preview-only : parse le GPX uploadé et retourne les métriques sans
 // rien créer en BDD. Utilisé par l'UI admin pour montrer à l'utilisateur

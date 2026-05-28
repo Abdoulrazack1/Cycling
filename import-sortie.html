@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importer une sortie · C.C. Salouel</title>
+  <meta name="description" content="Importer un GPX et un PDF Strava — fusion automatique des directions sur le tracé.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#B08E4A">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23B08E4A' stroke-width='1.5'/%3E%3Ctext x='16' y='22' font-family='Playfair Display' font-style='italic' font-size='18' fill='%23B08E4A' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <a href="#main" class="skip-link">Aller au contenu</a>
+  <main id="main">
+
+  <section class="page-head">
+    <div class="wrap">
+      <nav style="font-family:var(--f-sans);font-size:11px;letter-spacing:.06em;color:var(--parch-3);margin-bottom:14px;">
+        <a href="index.html" style="color:var(--parch-2);text-decoration:none;">Accueil</a>
+        <span style="opacity:.5;"> / </span>
+        <a href="admin.html" style="color:var(--parch-2);text-decoration:none;">Administration</a>
+        <span style="opacity:.5;"> / </span>
+        <span style="color:var(--cream);">Importer une sortie</span>
+      </nav>
+      <div class="page-head-chapter"><em>Admin.</em></div>
+      <h1 class="d-l page-head-title">Importer <span class="it">une sortie</span></h1>
+      <p class="page-head-sub">Upload GPX + PDF Strava en une étape. Le PDF Strava (cue-sheet) est lu côté client (OCR si nécessaire) et chaque direction est projetée sur le tracé GPX pour créer des POIs.</p>
+    </div>
+  </section>
+
+  <section class="section-sm">
+    <div class="wrap" style="max-width:880px;">
+
+      <!-- Étape 1 : drop GPX -->
+      <div class="import-step" data-step="1">
+        <div class="import-step-head">
+          <span class="import-step-num">1</span>
+          <div>
+            <h2 class="import-step-title">Fichier GPX</h2>
+            <p class="import-step-desc">Glisse le GPX (export Strava ou ailleurs). Le tracé sera analysé pour distance, D+, points kilométriques.</p>
+          </div>
+        </div>
+        <div data-gpx-drop></div>
+        <div id="gpx-preview-summary" class="gpx-summary" hidden></div>
+      </div>
+
+      <!-- Étape 2 : drop PDF (optionnel) -->
+      <div class="import-step" data-step="2">
+        <div class="import-step-head">
+          <span class="import-step-num">2</span>
+          <div>
+            <h2 class="import-step-title">PDF Strava <span style="font-size:13px;color:var(--parch-3);font-weight:400;">(optionnel)</span></h2>
+            <p class="import-step-desc">Si tu as exporté la route en PDF depuis Strava, dépose-le ici. Les directions turn-by-turn seront extraites et placées comme POIs sur le tracé. Si le PDF est scanné (pas de texte natif), OCR Tesseract.js prend le relais (lent : ~10s/page).</p>
+          </div>
+        </div>
+        <div class="pdf-drop-zone" tabindex="0">
+          <input id="pdf-file" type="file" accept=".pdf,application/pdf" hidden>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <div>
+            <strong>Glisser un PDF Strava ici</strong>
+            <span style="display:block;font-size:11px;color:var(--parch-3);margin-top:4px;">ou clique pour parcourir</span>
+          </div>
+        </div>
+        <div id="pdf-status" class="pdf-status" hidden></div>
+        <div id="pdf-directions-preview" class="pdf-directions" hidden></div>
+      </div>
+
+      <!-- Étape 3 : metadata + import -->
+      <div class="import-step" data-step="3">
+        <div class="import-step-head">
+          <span class="import-step-num">3</span>
+          <div>
+            <h2 class="import-step-title">Métadonnées</h2>
+            <p class="import-step-desc">Titre, date, chapitre. Si le GPX contient un nom dans &lt;trk&gt;&lt;name&gt;, il sera suggéré.</p>
+          </div>
+        </div>
+        <form id="import-form" class="import-form" autocomplete="off">
+          <div class="field">
+            <label for="im-title">Titre *</label>
+            <input id="im-title" name="title" type="text" required maxlength="200" placeholder="ex. Tour de l'Avesnois">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="im-date">Date *</label>
+              <input id="im-date" name="date" type="date" required>
+            </div>
+            <div class="field">
+              <label for="im-chapter">Chapitre</label>
+              <select id="im-chapter" name="chapter">
+                <option value="route">Route</option>
+                <option value="gravel">Gravel</option>
+                <option value="pave">Pavé</option>
+                <option value="monts">Monts</option>
+                <option value="cote">Côte</option>
+                <option value="peloton">Peloton</option>
+                <option value="clm">CLM (chrono)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="im-slug">Slug (auto si vide)</label>
+            <input id="im-slug" name="slug" type="text" maxlength="80" pattern="[a-z0-9-]+" placeholder="auto-genere-depuis-le-titre">
+          </div>
+          <div class="field">
+            <label for="im-subtitle">Sous-titre</label>
+            <input id="im-subtitle" name="subtitle" type="text" maxlength="200" placeholder="Lieu · distance · description courte">
+          </div>
+          <div class="import-actions">
+            <button type="submit" class="btn btn-brass btn-lg" id="im-submit" disabled>Importer la sortie</button>
+            <span id="im-msg" class="import-msg"></span>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </section>
+  </main>
+
+  <style>
+    .import-step {
+      padding: 24px 28px;
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .import-step-head {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .import-step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brass);
+      color: var(--ink);
+      font-family: var(--f-sans);
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 50%;
+    }
+    .import-step-title {
+      font-family: var(--f-disp);
+      font-size: 22px;
+      margin: 0 0 4px;
+      color: var(--cream);
+    }
+    .import-step-desc {
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--parch-2);
+      margin: 0;
+    }
+    .gpx-summary {
+      margin-top: 12px;
+      padding: 14px 16px;
+      background: rgba(176,142,74,0.06);
+      border-left: 3px solid var(--brass);
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--cream);
+      border-radius: 2px;
+    }
+    .pdf-drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 32px;
+      border: 2px dashed var(--line-2);
+      border-radius: 4px;
+      background: var(--ink-3);
+      cursor: pointer;
+      color: var(--parch-2);
+      text-align: center;
+      transition: all .2s ease;
+    }
+    .pdf-drop-zone:hover, .pdf-drop-zone.drag-over {
+      border-color: var(--brass);
+      color: var(--brass-hi);
+      background: rgba(176,142,74,0.04);
+    }
+    .pdf-status {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: var(--ink-3);
+      border-left: 3px solid var(--brass);
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--cream);
+    }
+    .pdf-status.error { border-left-color: #E07A6E; color: #E07A6E; }
+    .pdf-status.success { border-left-color: #6CB87A; }
+    .pdf-directions {
+      margin-top: 14px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 12px 16px;
+      background: var(--ink-3);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px;
+      color: var(--cream);
+    }
+    .pdf-directions ul { margin: 0; padding-left: 20px; }
+    .pdf-directions li { margin: 3px 0; }
+    .pdf-directions li .km { color: var(--brass); font-weight: 600; min-width: 50px; display: inline-block; }
+    .import-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-family: var(--f-sans);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--parch-2);
+    }
+    .field input, .field select {
+      padding: 10px 14px;
+      background: var(--ink-3);
+      border: 1px solid var(--line);
+      color: var(--cream);
+      font-family: var(--f-sans);
+      font-size: 13px;
+      border-radius: 2px;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--brass);
+    }
+    .import-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .import-msg {
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--parch-3);
+    }
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script src="asset/js/config.js"></script>
+  <script src="asset/js/utils.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script src="asset/js/gpx-drop.js" defer></script>
+  <script src="asset/js/ocr-pdf.js" defer></script>
+  <script src="asset/js/pages/import-sortie.js" defer></script>
+</body>
+</html>
