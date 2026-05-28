@@ -61,7 +61,16 @@
     <nav id="main-nav" aria-label="Navigation principale">
       <a href="index.html" class="nav-logo" aria-label="Accueil">
         <span class="nav-monogram" aria-hidden="true">
-          <span class="nav-monogram-inner">S</span>
+          <svg viewBox="0 0 32 32" width="34" height="34">
+            <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.5"/>
+            <line x1="16" y1="3" x2="16" y2="29" stroke="currentColor" stroke-width="0.6" opacity="0.5" stroke-linecap="round"/>
+            <line x1="3" y1="16" x2="29" y2="16" stroke="currentColor" stroke-width="0.6" opacity="0.5" stroke-linecap="round"/>
+            <circle cx="16" cy="16" r="1.4" fill="currentColor"/>
+            <text x="16" y="22" font-family="Playfair Display, Georgia, serif" font-style="italic" font-size="16" font-weight="500"
+                  fill="currentColor" text-anchor="middle"
+                  style="paint-order:stroke; stroke:var(--ink, #0A1410); stroke-width:1.5px;">S</text>
+          </svg>
         </span>
         <span class="nav-logo-text">
           <span class="nav-logo-name">C.C. Salouel</span>

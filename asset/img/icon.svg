@@ -1,6 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1A140F"/>
-  <circle cx="256" cy="256" r="220" fill="none" stroke="#B08E4A" stroke-width="20"/>
-  <text x="256" y="350" font-family="Playfair Display, Georgia, serif" font-style="italic" font-size="280" fill="#B08E4A" text-anchor="middle">S</text>
-  <text x="256" y="430" font-family="Archivo, sans-serif" font-size="36" letter-spacing="8" fill="#B08E4A" text-anchor="middle">C.C.S.</text>
+  <!-- Fond ink profond -->
+  <rect width="512" height="512" fill="#0A1410"/>
+
+  <!-- Roue de vélo : 2 cercles concentriques (pneu + jante) -->
+  <circle cx="256" cy="232" r="190" fill="none" stroke="#B08E4A" stroke-width="6" opacity="0.85"/>
+  <circle cx="256" cy="232" r="170" fill="none" stroke="#B08E4A" stroke-width="2" opacity="0.55"/>
+
+  <!-- Moyeu central -->
+  <circle cx="256" cy="232" r="14" fill="#B08E4A"/>
+  <circle cx="256" cy="232" r="5" fill="#0A1410"/>
+
+  <!-- Rayons : 8 lignes brass à 45° d'écart -->
+  <g stroke="#B08E4A" stroke-width="2" opacity="0.55" stroke-linecap="round">
+    <line x1="256" y1="50"  x2="256" y2="414"/>
+    <line x1="74"  y1="232" x2="438" y2="232"/>
+    <line x1="120" y1="96"  x2="392" y2="368"/>
+    <line x1="392" y1="96"  x2="120" y2="368"/>
+  </g>
+
+  <!-- S italique en surimpression sur la roue (stroke noir pour masquer les rayons) -->
+  <text x="256" y="305" font-family="Playfair Display, Georgia, serif"
+        font-style="italic" font-size="220" font-weight="500"
+        fill="#CAA35B" text-anchor="middle"
+        style="paint-order:stroke; stroke:#0A1410; stroke-width:12px;">S</text>
+
+  <!-- Wordmark en bas -->
+  <text x="256" y="465" font-family="Archivo, sans-serif"
+        font-size="38" letter-spacing="12" font-weight="500"
+        fill="#B08E4A" text-anchor="middle">C.C.S.</text>
+  <text x="256" y="490" font-family="EB Garamond, Georgia, serif"
+        font-style="italic" font-size="16" letter-spacing="3"
+        fill="#B08E4A" text-anchor="middle" opacity="0.7">est. 1978</text>
 </svg>
