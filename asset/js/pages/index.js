@@ -27,11 +27,17 @@
     const storyNum    = document.querySelector('.sec-head-marker');
 
     if (storyImg && featured.hero_img)     storyImg.src = featured.hero_img;
-    if (storyCapt && featured.number)      storyCapt.textContent = `${featured.number} — ${featured.title} · ${featured.date_label || featured.date}`;
+    if (storyCapt) storyCapt.textContent = `${featured.title} · ${featured.date_label || (featured.date ? new Date(featured.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '')}`;
     if (storyTitle)                        storyTitle.innerHTML  = featured.title_html || featured.title;
-    if (storyDesc && featured.description) storyDesc.textContent = featured.description;
+    if (storyDesc)                          storyDesc.textContent = featured.description || featured.subtitle || '';
     if (storyCta)                          storyCta.href = 'sortie.html?id=' + encodeURIComponent(featured.id);
     if (storyNum && featured.number)       storyNum.textContent = `№ ${featured.number}`;
+
+    // Hydrate les 3 meta items du featured
+    const metaItems = document.querySelectorAll('#home-featured .story-meta-item .story-meta-v');
+    if (metaItems[0]) metaItems[0].innerHTML = featured.distance_km ? Math.round(featured.distance_km) + '<span class="unit">km</span>' : '—';
+    if (metaItems[1]) metaItems[1].innerHTML = featured.elevation_gain ? featured.elevation_gain + '<span class="unit">m</span>' : '—';
+    if (metaItems[2]) metaItems[2].textContent = featured.date ? new Date(featured.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
 
     // Hydratation des stats du club : on consomme /api/stats (cache 5 min)
     // qui agrège côté serveur tous les compteurs sur la base ENTIÈRE,
@@ -48,23 +54,100 @@
       }
     } catch (err) { /* silencieux — les valeurs en dur restent */ }
 
-    const rows = document.querySelectorAll('.list-ornate .list-ornate-row');
-    recent.forEach((s, i) => {
-      if (!rows[i]) return;
-      const a = rows[i];
-      a.href = 'sortie.html?id=' + encodeURIComponent(s.id);
-      const titleEl = a.querySelector('.list-ornate-title');
-      const subEl   = a.querySelector('.list-ornate-sub');
-      const distEl  = a.querySelector('.list-ornate-dist');
-      const dateEl  = a.querySelector('.list-ornate-date');
-      if (titleEl)  titleEl.innerHTML  = s.title_html || s.title;
-      if (subEl)    subEl.textContent   = `${s.subtitle || ''} — sortie #${s.number || ''}`.trim().replace(/^—\s/, '');
-      if (distEl && s.distance_km) distEl.innerHTML = `${Math.round(s.distance_km)}<span class="unit">km</span>`;
-      if (dateEl && s.date_label)  {
-        const parts = s.date_label.split(' ');
-        dateEl.innerHTML = `${parts.slice(1,3).join(' ')}<span class="list-ornate-date-small">${parts[0]?.toLowerCase()}</span>`;
+    // Hydrate aussi la "Featured CTA"
+    const featuredCta = document.getElementById('featured-cta');
+    if (featuredCta && featured?.id) {
+      featuredCta.href = 'sortie.html?id=' + encodeURIComponent(featured.id);
+    }
+
+    // Hydratation de la grille "Quatre parcours signatures"
+    const routesGrid = document.getElementById('home-routes-grid');
+    if (routesGrid) {
+      const TYPE_IMG = {
+        clm:    'asset/img/img-clm.webp',
+        pave:   'asset/img/img-pave.webp',
+        monts:  'asset/img/img-monts.webp',
+        gravel: 'asset/img/img-gravel.webp',
+        cote:   'asset/img/img-cote.webp',
+        route:  'asset/img/img-route.webp',
+      };
+      function deduceType(s) {
+        const t = ((s.chapter || '') + ' ' + (s.title || '')).toLowerCase();
+        if (/clm|contre.la.montre|chrono/.test(t)) return 'clm';
+        if (/pavé|pave|roubaix/.test(t)) return 'pave';
+        if (/mont|flandre|cassel/.test(t)) return 'monts';
+        if (/gravel|scarpe/.test(t)) return 'gravel';
+        if (/opale|côte|cap|boulogne/.test(t)) return 'cote';
+        return 'route';
       }
-    });
+      function escI(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      const card = (s, i) => {
+        const type = deduceType(s);
+        const img = s.card_img || s.hero_img || TYPE_IMG[type] || TYPE_IMG.route;
+        return `
+          <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="rc" data-type="${type}">
+            <div class="rc-img">
+              <img loading="lazy" decoding="async" src="${img}" onerror="this.onerror=null;this.src='asset/img/hero-route.svg'" alt="">
+              <div class="rc-img-frame" aria-hidden="true"></div>
+              <div class="rc-tags"><span class="tag tag-brass">${escI(s.chapter || 'Route')}</span></div>
+              <div class="rc-number">№ ${String(i + 1).padStart(2, '0')}</div>
+              ${s.date_label ? `<div class="rc-caption"><em>${escI(s.date_label)}</em></div>` : ''}
+            </div>
+            <div class="rc-body">
+              <h3 class="rc-title">${s.title_html || escI(s.title)}</h3>
+              <p class="rc-sub">${escI(s.subtitle || '')}</p>
+              <div class="rc-stats">
+                ${s.distance_km ? `<div class="rc-stat"><div class="rc-stat-v">${Math.round(s.distance_km)}<span class="unit">km</span></div><div class="rc-stat-l">Distance</div></div>` : ''}
+                ${s.elevation_gain ? `<div class="rc-stat"><div class="rc-stat-v">${s.elevation_gain}<span class="unit">m</span></div><div class="rc-stat-l">D+</div></div>` : ''}
+              </div>
+            </div>
+          </a>`;
+      };
+      if (sorties.length) {
+        routesGrid.innerHTML = sorties.slice(0, 4).map(card).join('');
+      } else {
+        routesGrid.innerHTML = '<div class="ccs-empty" style="grid-column:1/-1;padding:32px;"><div class="ccs-empty-sub">Aucun parcours encore. <a href="profil.html#strava-section" style="color:var(--brass);">Connecter Strava</a> pour importer.</div></div>';
+      }
+    }
+
+    // Hydratation de la liste "Sorties récentes" : rend les vraies sorties
+    // depuis l'API au lieu de garder les cards de démo dans le HTML.
+    const listEl = document.getElementById('home-recent-list');
+    if (listEl) {
+      function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      function rowHtml(s) {
+        const d = s.date ? new Date(s.date) : null;
+        const dayName  = d ? d.toLocaleDateString('fr-FR', { weekday: 'long' }) : '';
+        const dayMonth = d ? d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : (s.date_label || '');
+        const dist     = s.distance_km ? Math.round(s.distance_km) : '—';
+        return `
+          <a href="sortie.html?id=${encodeURIComponent(s.id)}" class="list-ornate-row">
+            <div class="list-ornate-date">${esc(dayMonth)}<span class="list-ornate-date-small">${esc(dayName)}</span></div>
+            <div>
+              <div class="list-ornate-title">${s.title_html || esc(s.title)}</div>
+              <div class="list-ornate-sub">${esc(s.subtitle || s.chapter || '')}</div>
+            </div>
+            <div class="list-ornate-meta">
+              ${s.elevation_gain ? `<b>+${s.elevation_gain} m</b> D+<br>` : ''}
+              <span>${esc(s.location_name || s.location?.name || '')}</span>
+            </div>
+            <div class="list-ornate-dist">${dist}<span class="unit">km</span></div>
+            <div class="list-ornate-arrow">→</div>
+          </a>`;
+      }
+      const head = listEl.querySelector('.list-ornate-head')?.outerHTML || '';
+      const allRows = sorties.slice(0, 4).map(rowHtml).join('');
+      if (allRows) {
+        listEl.innerHTML = head + allRows;
+      } else {
+        // Fallback : aucune sortie en base
+        listEl.innerHTML = head + '<div class="ccs-empty" style="padding:32px;"><div class="ccs-empty-sub">Aucune sortie pour le moment. <a href="profil.html#strava-section" style="color:var(--brass);">Connecter Strava</a> pour importer.</div></div>';
+      }
+    }
   } catch (err) {
     console.warn('[CCS] index dynamique :', err.message);
   }

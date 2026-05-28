@@ -109,7 +109,13 @@
   try {
     const sorties = await window.CCS_DATA.sorties({ limit: 50 });
     if (!sorties?.length) {
-      grid.innerHTML = staticFallback;
+      // Pas de sortie en base : empty state propre + CTA vers Strava
+      grid.innerHTML = `
+        <div class="ccs-empty" style="grid-column:1/-1;padding:48px;">
+          <div class="ccs-empty-title">Aucun parcours pour l'instant</div>
+          <div class="ccs-empty-sub">Connecte ton compte Strava puis importe tes activités et itinéraires pour les voir apparaître ici.</div>
+          <a href="profil.html#strava-section" class="btn btn-brass btn-sm">Connecter Strava</a>
+        </div>`;
       return;
     }
     allParcours = sorties.filter(s => s.statut !== 'future' || s.gpx_ref);
