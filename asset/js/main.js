@@ -12,6 +12,47 @@
     });
   }
 
+  // ── Préchargement IMMÉDIAT des couches FX/CSS/JS ────────────
+  // Avant : ces scripts étaient injectés dans `boot()` (DOMContentLoaded
+  // puis injectChrome), trop tard — l'utilisateur voyait une page sans
+  // animations jusqu'à plusieurs centaines de ms après chargement.
+  // Maintenant : on les met dans <head> dès que main.js commence à
+  // s'exécuter, en parallèle du parse HTML restant.
+  (function preloadFx() {
+    const css = [
+      'asset/css/premium.css',
+      'asset/css/theme.css',
+      'asset/css/journey.css',
+      'asset/css/strava-ux.css',
+      'asset/css/fx.css',
+    ];
+    const js = [
+      'asset/js/premium.js',
+      'asset/js/theme.js',
+      'asset/js/animations.js',
+      'asset/js/scroll-fx.js',
+      'asset/js/micro-fx.js',
+      'asset/js/member-journey.js',
+      'asset/js/breadcrumbs.js',
+      'asset/js/admin-palette.js',
+      'asset/js/strava-ux.js',
+    ];
+    for (const href of css) {
+      if (document.querySelector(`link[href="${href}"]`)) continue;
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = href;
+      document.head.appendChild(l);
+    }
+    for (const src of js) {
+      if (document.querySelector(`script[src="${src}"]`)) continue;
+      const s = document.createElement('script');
+      s.src = src;
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+  })();
+
   const currentPage = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
   const NAV_HTML = `
@@ -163,87 +204,12 @@
       s.dataset.searchPalette = '1';
       document.head.appendChild(s);
     }
-    // Charge la couche premium (progress bar, toasts, view transitions, vitals)
-    if (!window.CCS_PREMIUM && !document.querySelector('script[data-premium]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'asset/css/premium.css';
-      document.head.appendChild(link);
-      const s = document.createElement('script');
-      s.src = 'asset/js/premium.js';
-      s.defer = true;
-      s.dataset.premium = '1';
-      document.head.appendChild(s);
-    }
-    // Charge le thème (clair/sombre/auto) + injecte le switcher
-    if (!window.CCS_THEME && !document.querySelector('script[data-theme-js]')) {
-      const tcss = document.createElement('link');
-      tcss.rel = 'stylesheet';
-      tcss.href = 'asset/css/theme.css';
-      document.head.appendChild(tcss);
-      const ts = document.createElement('script');
-      ts.src = 'asset/js/theme.js';
-      ts.dataset.themeJs = '1';
-      document.head.appendChild(ts);
-    }
-    // Charge les animations (anime.js + animations.js)
-    if (!window.CCS_ANIM && !document.querySelector('script[data-anim]')) {
-      const as = document.createElement('script');
-      as.src = 'asset/js/animations.js';
-      as.defer = true;
-      as.dataset.anim = '1';
-      document.head.appendChild(as);
-    }
-    // Charge maps.js (helpers Leaflet) si Leaflet est en cours d'utilisation
-    if (document.querySelector('[id^="sv-fallback"], #minimap-map, #parcours-map') && !window.CCS_MAPS && !document.querySelector('script[data-maps]')) {
+    // Maps.js : seulement si Leaflet utilisé sur la page
+    if (document.querySelector('[id^="sv-fallback"], #minimap-map, #parcours-map') && !document.querySelector('script[src="asset/js/maps.js"]')) {
       const ms = document.createElement('script');
       ms.src = 'asset/js/maps.js';
       ms.defer = true;
-      ms.dataset.maps = '1';
       document.head.appendChild(ms);
-    }
-    // Charge journey.css + member-journey.js (cloche notifs, favori, inscription)
-    if (!document.querySelector('script[data-journey]')) {
-      const jcss = document.createElement('link');
-      jcss.rel = 'stylesheet';
-      jcss.href = 'asset/css/journey.css';
-      document.head.appendChild(jcss);
-      const js = document.createElement('script');
-      js.src = 'asset/js/member-journey.js';
-      js.defer = true;
-      js.dataset.journey = '1';
-      document.head.appendChild(js);
-      const bs = document.createElement('script');
-      bs.src = 'asset/js/breadcrumbs.js';
-      bs.defer = true;
-      document.head.appendChild(bs);
-      // Admin palette : chargé partout, n'agit que si user.role === 'admin'
-      const aps = document.createElement('script');
-      aps.src = 'asset/js/admin-palette.js';
-      aps.defer = true;
-      document.head.appendChild(aps);
-      // Strava UX : modal connect + banner + sync preview
-      const sxcss = document.createElement('link');
-      sxcss.rel = 'stylesheet';
-      sxcss.href = 'asset/css/strava-ux.css';
-      document.head.appendChild(sxcss);
-      const sxs = document.createElement('script');
-      sxs.src = 'asset/js/strava-ux.js';
-      sxs.defer = true;
-      document.head.appendChild(sxs);
-      // FX : scroll progress, parallax, micro-interactions, magnetic buttons
-      const fxcss = document.createElement('link');
-      fxcss.rel = 'stylesheet';
-      fxcss.href = 'asset/css/fx.css';
-      document.head.appendChild(fxcss);
-      const scrollFx = document.createElement('script');
-      scrollFx.src = 'asset/js/scroll-fx.js';
-      scrollFx.defer = true;
-      document.head.appendChild(scrollFx);
-      const microFx = document.createElement('script');
-      microFx.src = 'asset/js/micro-fx.js';
-      microFx.defer = true;
-      document.head.appendChild(microFx);
     }
     document.querySelectorAll('[data-page]').forEach(a => {
       if (a.dataset.page === currentPage) a.classList.add('active');

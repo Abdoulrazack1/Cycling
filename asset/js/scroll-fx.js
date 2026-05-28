@@ -20,6 +20,11 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const NS = (window.CCS_SCROLL_FX = window.CCS_SCROLL_FX || {});
 
+  // Pose le marqueur "js-fx" immédiatement : la CSS l'utilise pour cacher
+  // les éléments [data-scroll-anim] avant l'animation, MAIS seulement si
+  // JS est prêt (sinon dégradation propre).
+  document.documentElement.classList.add('js-fx');
+
   /* ─── 1. Barre de progression scroll ──────────────────────── */
   function initScrollProgress() {
     if (document.getElementById('ccs-scroll-progress')) return;
@@ -135,18 +140,30 @@
   function initCascadeReveal() {
     if (reducedMotion) return;
     if (!('IntersectionObserver' in window)) {
-      document.querySelectorAll('[data-cascade]').forEach(el => el.classList.add('revealed'));
+      document.querySelectorAll('[data-cascade] > *').forEach(el => el.classList.add('cascade-in'));
       return;
     }
+    function trigger(parent) {
+      if (parent.dataset.cascadeDone === '1') return;
+      parent.dataset.cascadeDone = '1';
+      parent.querySelectorAll(':scope > *').forEach((child, i) => {
+        child.style.setProperty('--cascade-delay', (i * 0.07) + 's');
+        // RAF pour laisser peindre l'état initial avant la transition
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => child.classList.add('cascade-in'));
+        });
+      });
+    }
+    const vh = window.innerHeight;
+    document.querySelectorAll('[data-cascade]').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < vh * 0.85) trigger(el);
+    });
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          const parent = entry.target;
-          parent.querySelectorAll(':scope > *').forEach((child, i) => {
-            child.style.setProperty('--cascade-delay', (i * 0.07) + 's');
-            child.classList.add('cascade-in');
-          });
-          io.unobserve(parent);
+          trigger(entry.target);
+          io.unobserve(entry.target);
         }
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -10% 0px' });
@@ -154,20 +171,46 @@
   }
 
   /* ─── 5. Scroll-linked animations ─────────────────────────── */
-  // [data-scroll-anim="fade-up"] et autres variants
+  // [data-scroll-anim="fade-up"] et autres variants.
+  // Note importante : IO peut prendre 1-2 frames pour signaler les
+  // intersections initiales. Pour éviter un flash sur les éléments
+  // au-dessus du fold, on ajoute immédiatement la classe aux éléments
+  // dont la position initiale est dans la viewport.
   function initScrollAnim() {
-    if (!('IntersectionObserver' in window)) return;
+    if (!('IntersectionObserver' in window)) {
+      // Fallback : tout visible direct
+      document.querySelectorAll('[data-scroll-anim]').forEach(el => el.classList.add('scroll-anim-in'));
+      return;
+    }
+    const targets = document.querySelectorAll('[data-scroll-anim]');
+    const vh = window.innerHeight;
+    // Pass 1 : marque immédiatement ce qui est déjà au-dessus du fold
+    targets.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < vh * 0.85) {
+        // Petit délai pour laisser le navigateur peindre l'état initial
+        // avant d'enclencher la transition (sinon pas d'anim visible)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => el.classList.add('scroll-anim-in'));
+        });
+      }
+    });
+    // Pass 2 : IO classique pour le reste, avec stagger par index pour
+    // un effet plus dynamique quand plusieurs sections sont proches.
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('scroll-anim-in');
+          // Si déjà animé par la pass 1, no-op
+          if (!entry.target.classList.contains('scroll-anim-in')) {
+            entry.target.classList.add('scroll-anim-in');
+          }
           if (!entry.target.dataset.scrollAnimRepeat) io.unobserve(entry.target);
         } else if (entry.target.dataset.scrollAnimRepeat) {
           entry.target.classList.remove('scroll-anim-in');
         }
       });
     }, { threshold: 0.15, rootMargin: '0px 0px -5% 0px' });
-    document.querySelectorAll('[data-scroll-anim]').forEach(el => io.observe(el));
+    targets.forEach(el => io.observe(el));
   }
 
   /* ─── 6. Velocity-aware marquees ───────────────────────────── */
@@ -233,8 +276,54 @@
     sections.forEach(s => io.observe(s));
   }
 
+  /* ─── 9. Auto-apply : ajoute data-scroll-anim aux sections ─── */
+  // Pour que l'effet fade-up se voie partout sans toucher chaque HTML.
+  function autoApplyAnims() {
+    if (reducedMotion) return;
+    const tag = (el, attr, val = '') => {
+      if (!el.hasAttribute(attr)) el.setAttribute(attr, val);
+    };
+    // a) Toutes les sections .section / .section-sm
+    document.querySelectorAll('.section, .section-sm').forEach(el => {
+      if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
+      el.setAttribute('data-scroll-anim', 'fade-up');
+    });
+    // b) Story blocks
+    document.querySelectorAll('.story-two, .story-three').forEach(el => {
+      if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
+      el.setAttribute('data-scroll-anim', 'fade-up');
+    });
+    // c) Story image : parallax doux
+    document.querySelectorAll('.story-img').forEach(el => tag(el, 'data-card-parallax', '1'));
+    // d) Grids de cards : data-cascade pour l'entrée en cascade
+    document.querySelectorAll('.row-cards, [data-cards], .sec-cards, .stats-row, .members-grid, .list-ornate').forEach(el => tag(el, 'data-cascade'));
+    // e) Card images : data-card-parallax
+    document.querySelectorAll('.rc-img, .rc-image').forEach(el => tag(el, 'data-card-parallax', '1'));
+    // f) Hero h1 / titres principaux → fade-up
+    document.querySelectorAll('.hero-title, .page-head-title, .d-l, .d-xl, .d-m').forEach(el => {
+      if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
+      el.setAttribute('data-scroll-anim', 'fade-up');
+    });
+    // g) section heads (sec-head)
+    document.querySelectorAll('.sec-head').forEach(el => {
+      if (el.hasAttribute('data-scroll-anim') || el.hasAttribute('data-reveal')) return;
+      el.setAttribute('data-scroll-anim', 'fade-up');
+    });
+    // h) Images héro : parallax léger pour effet profondeur
+    document.querySelectorAll('.hero-bg img, .page-head-hero, [data-hero-bg]').forEach(el => {
+      tag(el, 'data-parallax', '0.2');
+    });
+    // i) Footers, mentions : zoom-in subtil
+    document.querySelectorAll('.site-footer, footer.site-footer').forEach(el => {
+      tag(el, 'data-scroll-anim', 'fade-up');
+    });
+  }
+
   /* ─── Boot ──────────────────────────────────────────────── */
   function boot() {
+    // L'auto-apply doit tourner AVANT les init pour que les IO observent
+    // les bons éléments (ils sont scannés au init).
+    autoApplyAnims();
     initScrollProgress();
     initParallax();
     initCardImageParallax();
