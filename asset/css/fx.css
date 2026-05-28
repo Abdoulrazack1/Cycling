@@ -144,10 +144,11 @@ html.js-fx [data-scroll-anim].scroll-anim-in {
   z-index: 0;
   mix-blend-mode: lighten;
 }
-[data-spotlight] > *:not(.ccs-spotlight-layer) {
-  position: relative;
-  z-index: 1;
-}
+/* IMPORTANT : pas de override `position: relative` sur les enfants
+   de [data-spotlight]. Ça cassait .hero-bg qui est position: absolute
+   par design (overlay full hero). Le z-index du layer spotlight (0)
+   suffit à le mettre derrière les autres contenus relativement
+   positionnés sans toucher aux absolute. */
 
 /* ─── 9. Split text reveal (caractère par caractère) ──────── */
 .ccs-split-char {
@@ -283,20 +284,11 @@ body[data-cursor] * { cursor: none !important; }
   transform: translateX(8px);
 }
 
-/* Hero : effet "breathe" continu très subtil sur l'image bg */
-.hero-bg img {
-  animation: ccs-breathe 16s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes ccs-breathe {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.06); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-bg img { animation: none; }
-}
+/* Hero : on garde l'animation heroBreathe existante dans style.css
+   (translate + scale). Pas de double-animation pour éviter les conflits
+   de transform avec le parallax sur .hero-bg. */
 
-/* Hero title : très léger glow pulsant */
+/* Hero title : très léger glow pulsant sur l'italique brass */
 .hero-title .it {
   animation: ccs-glow 4s ease-in-out infinite;
 }

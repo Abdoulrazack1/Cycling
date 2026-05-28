@@ -5,47 +5,49 @@
    Force-mode via attribut [data-theme="light"] | [data-theme="dark"]
    posé sur <html> par theme.js.
 
-   Tous les tokens de style.css sont surchargés ici en clair, en
-   conservant la même palette laiton/oxblood pour cohérence.
+   Stratégie : on remappe UNIQUEMENT les tokens de base, et on
+   surcharge spécifiquement les éléments qui ont des couleurs en
+   dur dans style.css. Pas d'inversion brutale.
    ════════════════════════════════════════════════════════════════ */
 
-/* ─── Tokens light mode ────────────────────────────────────────── */
+/* ─── Tokens light mode (palette parchment + ink) ─────────────── */
 :root[data-theme="light"] {
-  /* Fonds — crème parchemin éclairé */
-  --ink:       #F4EFE0;
-  --ink-2:     #ECE5D1;
-  --ink-3:     #E3DBC4;
-  --ink-4:     #D5C9A8;
-  --ink-5:     #C0B488;
+  /* Fonds clairs */
+  --ink:       #F5EFE2;          /* page background : parchemin clair */
+  --ink-2:     #EBE3CF;          /* cards background */
+  --ink-3:     #E0D6BA;          /* surfaces secondaires */
+  --ink-4:     #CFC29F;          /* éléments interactifs */
+  --ink-5:     #B5A87E;          /* hover / accent */
 
-  /* Verts club house clair */
+  /* Verts */
   --green:     #D8E2D6;
   --green-hi:  #B8C9B0;
   --green-lo:  #EDF1E5;
   --green-a:   rgba(46,85,63,.06);
 
-  /* Crème → vire en encre profonde pour le texte */
+  /* Texte : encre profonde */
   --parch:     #1A2620;
-  --parch-2:   #3A4538;
-  --parch-3:   #6A6952;
+  --parch-2:   #2E3A30;
+  --parch-3:   #5A6058;
   --cream:     #1A2620;
-  --cream-2:   #2A3A2E;
-  --cream-3:   #4A5A4A;
-  --cream-4:   #6A6952;
+  --cream-2:   #2E3A30;
+  --cream-3:   #5A6058;
+  --cream-4:   #7A7E70;
 
-  /* Laiton garde sa teinte (cohérence) mais légèrement plus sombre */
-  --brass:     #9E7A38;
-  --brass-hi:  #B08E4A;
-  --brass-lo:  #7A5E2A;
-  --brass-a:   rgba(158,122,56,.16);
-  --brass-b:   rgba(158,122,56,.30);
+  /* Laiton — assombri pour rester visible sur parchemin clair */
+  --brass:     #8A6F3A;
+  --brass-hi:  #9E7A38;
+  --brass-lo:  #6A5326;
+  --brass-a:   rgba(138,111,58,.16);
+  --brass-b:   rgba(138,111,58,.32);
 
   /* Oxblood inchangé */
   --ox:        #6E2A1E;
   --ox-hi:     #8B3726;
   --ox-a:      rgba(110,42,30,.12);
 
-  /* Cream sur fond clair = encre profonde */
+  /* t-cream : utilisé partout pour le texte sur fond sombre.
+     En light, c'est le texte sombre sur fond clair. */
   --t-cream:    #0A1410;
   --t-cream-1:  #1A2620;
   --t-cream-2:  rgba(10,20,16,0.78);
@@ -53,90 +55,317 @@
   --t-cream-4:  rgba(10,20,16,0.32);
 
   /* Lines visibles sur fond clair */
-  --line:      rgba(58,69,56,0.12);
-  --line-2:    rgba(58,69,56,0.22);
-  --line-3:    rgba(58,69,56,0.36);
-  --line-brass: rgba(158,122,56,0.38);
+  --line:      rgba(58,69,56,0.14);
+  --line-2:    rgba(58,69,56,0.24);
+  --line-3:    rgba(58,69,56,0.38);
+  --line-brass: rgba(138,111,58,0.42);
 
-  /* Shadows plus douces sur fond clair */
-  --sh-1: 0 1px 2px rgba(58,69,56,.10);
-  --sh-2: 0 8px 28px rgba(58,69,56,.14);
-  --sh-3: 0 20px 60px rgba(58,69,56,.18);
-  --sh-4: 0 40px 120px rgba(58,69,56,.22);
+  /* Ombres plus douces sur clair */
+  --sh-1: 0 1px 2px rgba(58,69,56,.08);
+  --sh-2: 0 6px 22px rgba(58,69,56,.10);
+  --sh-3: 0 18px 50px rgba(58,69,56,.14);
+  --sh-4: 0 36px 100px rgba(58,69,56,.18);
 }
 
-/* ─── Auto-mode : suit le système si data-theme="auto" ─────────── */
+/* Auto-mode : copie les tokens light quand l'OS est en clair */
 @media (prefers-color-scheme: light) {
   :root[data-theme="auto"] {
-    --ink:       #F4EFE0;
-    --ink-2:     #ECE5D1;
-    --ink-3:     #E3DBC4;
-    --ink-4:     #D5C9A8;
-    --ink-5:     #C0B488;
+    --ink:       #F5EFE2;
+    --ink-2:     #EBE3CF;
+    --ink-3:     #E0D6BA;
+    --ink-4:     #CFC29F;
+    --ink-5:     #B5A87E;
     --green:     #D8E2D6;
     --green-hi:  #B8C9B0;
     --green-lo:  #EDF1E5;
     --green-a:   rgba(46,85,63,.06);
     --parch:     #1A2620;
-    --parch-2:   #3A4538;
-    --parch-3:   #6A6952;
+    --parch-2:   #2E3A30;
+    --parch-3:   #5A6058;
     --cream:     #1A2620;
-    --cream-2:   #2A3A2E;
-    --cream-3:   #4A5A4A;
-    --cream-4:   #6A6952;
-    --brass:     #9E7A38;
-    --brass-hi:  #B08E4A;
-    --brass-lo:  #7A5E2A;
-    --brass-a:   rgba(158,122,56,.16);
-    --brass-b:   rgba(158,122,56,.30);
+    --cream-2:   #2E3A30;
+    --cream-3:   #5A6058;
+    --cream-4:   #7A7E70;
+    --brass:     #8A6F3A;
+    --brass-hi:  #9E7A38;
+    --brass-lo:  #6A5326;
+    --brass-a:   rgba(138,111,58,.16);
+    --brass-b:   rgba(138,111,58,.32);
     --t-cream:    #0A1410;
     --t-cream-1:  #1A2620;
     --t-cream-2:  rgba(10,20,16,0.78);
     --t-cream-3:  rgba(10,20,16,0.56);
     --t-cream-4:  rgba(10,20,16,0.32);
-    --line:      rgba(58,69,56,0.12);
-    --line-2:    rgba(58,69,56,0.22);
-    --line-3:    rgba(58,69,56,0.36);
-    --line-brass: rgba(158,122,56,0.38);
-    --sh-1: 0 1px 2px rgba(58,69,56,.10);
-    --sh-2: 0 8px 28px rgba(58,69,56,.14);
-    --sh-3: 0 20px 60px rgba(58,69,56,.18);
-    --sh-4: 0 40px 120px rgba(58,69,56,.22);
+    --line:      rgba(58,69,56,0.14);
+    --line-2:    rgba(58,69,56,0.24);
+    --line-3:    rgba(58,69,56,0.38);
+    --line-brass: rgba(138,111,58,0.42);
+    --sh-1: 0 1px 2px rgba(58,69,56,.08);
+    --sh-2: 0 6px 22px rgba(58,69,56,.10);
+    --sh-3: 0 18px 50px rgba(58,69,56,.14);
+    --sh-4: 0 36px 100px rgba(58,69,56,.18);
   }
 }
 
-/* ─── Transition douce lors du switch ──────────────────────────── */
+/* ─── Color scheme + transition douce ──────────────────────────── */
 html { color-scheme: dark light; }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"]  { color-scheme: dark; }
 
 html.theme-transition,
 html.theme-transition * {
-  transition: background-color .4s ease, color .4s ease,
-              border-color .4s ease, box-shadow .4s ease !important;
+  transition: background-color .35s ease, color .35s ease,
+              border-color .35s ease, box-shadow .35s ease !important;
 }
 
-/* ─── Inversions ciblées pour les éléments qui assument un fond sombre ── */
+/* ════════════════════════════════════════════════════════════════
+   SURCHARGES CIBLÉES pour les éléments qui ont des couleurs en dur
+   dans style.css (rgba(10,20,16,...), #0A1410, #EDE6D3, etc.)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Body de base */
+:root[data-theme="light"] body,
+:root[data-theme="auto"] body {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+/* Hero overlay sombre → doit devenir plus clair en light */
 :root[data-theme="light"] .hero-bg::after,
 :root[data-theme="auto"] .hero-bg::after {
-  background: linear-gradient(180deg, rgba(244,239,224,0.4) 0%, rgba(244,239,224,0.8) 100%);
+  background:
+    radial-gradient(ellipse at 20% 30%, transparent 0%, rgba(245,239,226,.50) 40%, rgba(245,239,226,.92) 100%),
+    linear-gradient(180deg, rgba(245,239,226,.40) 0%, rgba(245,239,226,.35) 35%, rgba(245,239,226,.95) 100%) !important;
 }
 
-/* Cartes Leaflet : on garde la teinte sombre des tuiles standard
-   en clair pour le contraste avec le tracé jaune.
-   Pas d'inversion brutale. */
+/* Nav : background sombre opaque → background clair.
+   IMPORTANT : !important nécessaire pour battre polish.css qui pose
+   un background sombre en !important. */
+:root[data-theme="light"] #main-nav,
+:root[data-theme="light"] .main-nav,
+:root[data-theme="auto"] #main-nav,
+:root[data-theme="auto"] .main-nav {
+  background: rgba(245, 239, 226, 0.85) !important;
+  backdrop-filter: blur(12px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.2) !important;
+  border-bottom: 1px solid rgba(138, 111, 58, 0.12) !important;
+  color: var(--cream);
+}
+:root[data-theme="light"] #main-nav.scrolled,
+:root[data-theme="auto"] #main-nav.scrolled {
+  background: rgba(245, 239, 226, 0.96) !important;
+  border-bottom-color: var(--line-2) !important;
+}
+:root[data-theme="light"] #main-nav.condensed,
+:root[data-theme="auto"] #main-nav.condensed {
+  background: rgba(245, 239, 226, 0.96) !important;
+  box-shadow: 0 1px 0 rgba(138, 111, 58, .14),
+              0 12px 32px rgba(58, 69, 56, .15);
+}
+/* Nav links + logo en encre profonde sur fond clair */
+:root[data-theme="light"] #main-nav a,
+:root[data-theme="auto"] #main-nav a,
+:root[data-theme="light"] #main-nav .nl,
+:root[data-theme="auto"] #main-nav .nl,
+:root[data-theme="light"] .nav-logo-name,
+:root[data-theme="auto"] .nav-logo-name,
+:root[data-theme="light"] .nav-logo-sub,
+:root[data-theme="auto"] .nav-logo-sub {
+  color: var(--cream);
+}
+:root[data-theme="light"] #main-nav .nl.active,
+:root[data-theme="auto"] #main-nav .nl.active,
+:root[data-theme="light"] #main-nav a:hover,
+:root[data-theme="auto"] #main-nav a:hover {
+  color: var(--brass);
+}
+/* Monogram S : couleur brass sur fond clair */
+:root[data-theme="light"] .nav-monogram,
+:root[data-theme="auto"] .nav-monogram {
+  border-color: var(--brass);
+  color: var(--brass);
+  background: rgba(138, 111, 58, 0.08);
+}
+
+/* Mobile nav menu */
+:root[data-theme="light"] .mobile-nav,
+:root[data-theme="auto"] .mobile-nav {
+  background: rgba(245, 239, 226, 0.98);
+  color: var(--cream);
+}
+
+/* Sections avec background hardcodé */
+:root[data-theme="light"] .section,
+:root[data-theme="light"] .section-sm,
+:root[data-theme="auto"] .section,
+:root[data-theme="auto"] .section-sm {
+  background: transparent;
+}
+
+/* Cards .rc / .stat-card / .member-card */
+:root[data-theme="light"] .rc,
+:root[data-theme="light"] .stat-card,
+:root[data-theme="light"] .member-card,
+:root[data-theme="auto"] .rc,
+:root[data-theme="auto"] .stat-card,
+:root[data-theme="auto"] .member-card {
+  background: var(--ink-2);
+  border-color: var(--line);
+}
+:root[data-theme="light"] .rc:hover,
+:root[data-theme="auto"] .rc:hover {
+  border-color: var(--brass);
+  box-shadow: 0 18px 40px rgba(58, 69, 56, .18),
+              0 0 0 1px rgba(138, 111, 58, .22),
+              0 0 30px rgba(138, 111, 58, .14);
+}
+
+/* Story image overlay */
+:root[data-theme="light"] .story-img,
+:root[data-theme="auto"] .story-img {
+  background: var(--ink-3);
+  border-color: var(--line-2);
+}
+
+/* List ornate */
+:root[data-theme="light"] .list-ornate-row,
+:root[data-theme="auto"] .list-ornate-row {
+  background: var(--ink-2);
+  border-color: var(--line);
+}
+:root[data-theme="light"] .list-ornate-row:hover,
+:root[data-theme="auto"] .list-ornate-row:hover {
+  background: var(--ink-3);
+  color: var(--cream);
+}
+
+/* Footer */
+:root[data-theme="light"] .site-footer,
+:root[data-theme="auto"] .site-footer {
+  background: var(--ink-2);
+  color: var(--cream);
+  border-top: 1px solid var(--line-2);
+}
+
+/* Boutons */
+:root[data-theme="light"] .btn-brass,
+:root[data-theme="auto"] .btn-brass {
+  background: var(--brass);
+  color: #FDFBF4;          /* texte clair sur fond brass */
+  border-color: var(--brass);
+}
+:root[data-theme="light"] .btn-brass:hover,
+:root[data-theme="auto"] .btn-brass:hover {
+  background: var(--brass-hi);
+  border-color: var(--brass-hi);
+}
+:root[data-theme="light"] .btn-ghost,
+:root[data-theme="auto"] .btn-ghost {
+  background: transparent;
+  color: var(--cream);
+  border-color: var(--line-3);
+}
+:root[data-theme="light"] .btn-ghost:hover,
+:root[data-theme="auto"] .btn-ghost:hover {
+  background: var(--brass-a);
+  border-color: var(--brass);
+  color: var(--brass);
+}
+:root[data-theme="light"] .btn-outline-brass,
+:root[data-theme="auto"] .btn-outline-brass {
+  background: transparent;
+  color: var(--brass);
+  border-color: var(--brass);
+}
+
+/* Skeletons : nuance plus claire */
+:root[data-theme="light"] .skeleton,
+:root[data-theme="auto"] .skeleton {
+  background: linear-gradient(90deg,
+    var(--ink-3) 0%, var(--ink-4) 50%, var(--ink-3) 100%);
+  background-size: 200% 100%;
+}
+
+/* Toasts */
+:root[data-theme="light"] .ccs-toast,
+:root[data-theme="auto"] .ccs-toast {
+  background: #FDFBF4;
+  color: var(--cream);
+  border-color: var(--line-2);
+  box-shadow: 0 12px 32px rgba(58, 69, 56, .18);
+}
+
+/* Filter chips */
+:root[data-theme="light"] .filter-chip,
+:root[data-theme="auto"] .filter-chip {
+  background: var(--ink-2);
+  border-color: var(--line);
+  color: var(--cream-2);
+}
+:root[data-theme="light"] .filter-chip.active,
+:root[data-theme="auto"] .filter-chip.active {
+  background: var(--brass);
+  color: #FDFBF4;
+  border-color: var(--brass);
+}
+
+/* Inputs */
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] select,
+:root[data-theme="auto"] input,
+:root[data-theme="auto"] textarea,
+:root[data-theme="auto"] select {
+  background: #FDFBF4;
+  color: var(--cream);
+  border-color: var(--line-2);
+}
 
 /* Scrollbar */
 :root[data-theme="light"] ::-webkit-scrollbar-track,
 :root[data-theme="auto"] ::-webkit-scrollbar-track { background: var(--ink-2); }
 :root[data-theme="light"] ::-webkit-scrollbar-thumb,
-:root[data-theme="auto"] ::-webkit-scrollbar-thumb { background: var(--ink-5); border-color: var(--ink-2); }
+:root[data-theme="auto"] ::-webkit-scrollbar-thumb { background: var(--ink-4); border-color: var(--ink-2); }
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover,
+:root[data-theme="auto"] ::-webkit-scrollbar-thumb:hover { background: var(--brass); }
 
-/* Toast : assure que le contraste reste lisible en clair */
-:root[data-theme="light"] .ccs-toast {
-  background: #FDFBF4;
-  color: #1A2620;
-  border-color: rgba(158,122,56,0.32);
+/* Selection */
+:root[data-theme="light"] ::selection,
+:root[data-theme="auto"] ::selection { background: var(--brass); color: #FDFBF4; }
+
+/* Modal backdrops */
+:root[data-theme="light"] .ccs-shortcuts-back,
+:root[data-theme="light"] .ccs-strava-modal-back,
+:root[data-theme="light"] .ccs-cmd-back,
+:root[data-theme="auto"] .ccs-shortcuts-back,
+:root[data-theme="auto"] .ccs-strava-modal-back,
+:root[data-theme="auto"] .ccs-cmd-back {
+  background: rgba(58, 69, 56, 0.55);
+}
+
+/* Hero image filter — pour ne pas la rendre trop sombre en light */
+:root[data-theme="light"] .hero-bg img,
+:root[data-theme="auto"] .hero-bg img {
+  filter: saturate(0.95) contrast(1.02) brightness(1.0);
+}
+
+/* Marquee : background sombre dans dark, parchemin dans light */
+:root[data-theme="light"] .marquee,
+:root[data-theme="auto"] .marquee {
+  background: var(--ink-2);
+  border-top: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line-2);
+  color: var(--cream);
+}
+
+/* Manifesto : adapte le bg sombre du dark */
+:root[data-theme="light"] .manif,
+:root[data-theme="auto"] .manif {
+  background: var(--ink-3);
+}
+:root[data-theme="light"] .manif .manif-bg::after,
+:root[data-theme="auto"] .manif .manif-bg::after {
+  background: linear-gradient(180deg, rgba(245,239,226,.85), rgba(245,239,226,.95));
 }
 
 /* ─── Theme switcher (3-way toggle) ──────────────────────────── */
@@ -175,7 +404,7 @@ html.theme-transition * {
   height: 14px;
 }
 
-/* En mobile : version compacte (un seul bouton qui cycle) */
+/* En mobile : version compacte */
 @media (max-width: 720px) {
   .theme-toggle { padding: 2px; height: 28px; }
   .theme-toggle-btn { width: 22px; height: 22px; }
