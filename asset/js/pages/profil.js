@@ -283,6 +283,7 @@
         currentEquip = currentEquip.filter(x => x.id !== id);
         renderEquipGrid(currentEquip);
         window.toast?.('Équipement supprimé', 'success');
+        document.dispatchEvent(new CustomEvent('ccs:equipment-saved'));
       } catch (err) {
         window.toast?.('Erreur : ' + err.message, 'error');
       }
@@ -314,6 +315,7 @@
       renderEquipGrid(currentEquip);
       closeModal();
       window.toast?.(editingId ? 'Équipement modifié' : 'Équipement ajouté', 'success');
+      document.dispatchEvent(new CustomEvent('ccs:equipment-saved'));
     } catch (err) {
       modalErr.textContent = err.message;
       modalErr.hidden = false;
@@ -673,4 +675,78 @@
       btn.disabled = false; btn.textContent = 'Supprimer définitivement';
     }
   });
+
+  /* ═════════════════════════════════════════════════════════════════
+     FORM PROFIL — édition des champs membres
+     ═════════════════════════════════════════════════════════════════ */
+  (async function initProfilForm() {
+    const form = document.getElementById('profil-form');
+    if (!form) return;
+    const fields = {
+      licence_ffc: document.getElementById('pf-licence'),
+      annee_adhesion: document.getElementById('pf-adhesion'),
+      ftp_w: document.getElementById('pf-ftp'),
+      km_saison: document.getElementById('pf-km'),
+      elevation_saison: document.getElementById('pf-elev'),
+      bio: document.getElementById('pf-bio'),
+      bio_public: document.getElementById('pf-bio-public'),
+    };
+    const submitBtn = document.getElementById('pf-submit');
+    const msg = document.getElementById('pf-msg');
+    const bioCount = document.getElementById('pf-bio-count');
+
+    // Charge les valeurs courantes depuis /auth/me
+    try {
+      const me = await api('/auth/me');
+      if (fields.licence_ffc)    fields.licence_ffc.value    = me.licence_ffc || '';
+      if (fields.annee_adhesion) fields.annee_adhesion.value = me.annee_adhesion || '';
+      if (fields.ftp_w)          fields.ftp_w.value          = me.ftp_w || '';
+      if (fields.km_saison)      fields.km_saison.value      = me.km_saison || '';
+      if (fields.elevation_saison) fields.elevation_saison.value = me.elevation_saison || '';
+      if (fields.bio)            fields.bio.value            = me.bio || '';
+      if (fields.bio_public)     fields.bio_public.checked   = !!me.bio_public;
+      if (bioCount && fields.bio) bioCount.textContent = (me.bio || '').length;
+    } catch (err) {
+      console.warn('[CCS] form profil load :', err.message);
+    }
+
+    // Compteur de caractères bio
+    fields.bio?.addEventListener('input', () => {
+      if (bioCount) bioCount.textContent = fields.bio.value.length;
+    });
+
+    // Submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement…';
+      msg.textContent = '';
+      msg.className = 'profil-form-msg';
+      try {
+        const userId = window.CCS_AUTH?.getUser?.()?.id;
+        if (!userId) throw new Error('Pas connecté');
+        const payload = {
+          licence_ffc: fields.licence_ffc?.value.trim() || null,
+          annee_adhesion: parseInt(fields.annee_adhesion?.value, 10) || null,
+          ftp_w: parseInt(fields.ftp_w?.value, 10) || null,
+          km_saison: parseInt(fields.km_saison?.value, 10) || 0,
+          elevation_saison: parseInt(fields.elevation_saison?.value, 10) || 0,
+          bio: fields.bio?.value.trim() || null,
+          bio_public: !!fields.bio_public?.checked,
+        };
+        await api('/membres/' + userId, { method: 'PUT', body: payload });
+        msg.textContent = '✓ Profil enregistré';
+        msg.className = 'profil-form-msg ok';
+        window.toast?.('Profil enregistré', 'success');
+        // Trigger rafraîchissement de la checklist onboarding
+        document.dispatchEvent(new CustomEvent('ccs:profile-saved'));
+      } catch (err) {
+        msg.textContent = '✗ ' + err.message;
+        msg.className = 'profil-form-msg err';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    });
+  })();
 })();

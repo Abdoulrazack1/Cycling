@@ -302,12 +302,16 @@
       } catch {}
     }
     function computeChecks(u) {
+      // u.equipment vient d'un LEFT JOIN + JSON_ARRAYAGG : peut contenir
+      // un seul objet avec id=null quand l'utilisateur n'a pas d'équipement.
+      const hasEquipment = Array.isArray(u.equipment)
+        && u.equipment.some(e => e && e.id != null);
       return [
-        { id: 'profil',    label: 'Compléter ton profil (date de naissance, photo)',
-          done: !!(u.date_naissance && (u.avatar_url || u.bio)),
+        { id: 'profil',    label: 'Compléter ton profil (bio, licence, année d\'adhésion)',
+          done: !!(u.bio || u.licence_ffc || u.annee_adhesion),
           action: '#profil-form-section' },
         { id: 'equipement', label: 'Renseigner ton vélo et ta FTP',
-          done: !!(u.velo_modele || u.ftp_watts),
+          done: !!(hasEquipment || u.ftp_w),
           action: '#equipement-section' },
         { id: 'strava',     label: 'Connecter ton compte Strava',
           done: !!u.strava_linked,
@@ -340,7 +344,18 @@
           </ul>
         </div>`;
     }
-    return { init };
+    // Refresh quand l'utilisateur enregistre son profil (custom event).
+    // Les dispatchers utilisent document.dispatchEvent(...), donc on écoute
+    // sur document (et window pour tolérer les deux conventions).
+    function bindRefreshHooks() {
+      const handler = () => { init().catch(() => {}); };
+      ['ccs:profile-saved', 'ccs:equipment-saved', 'ccs:strava-linked']
+        .forEach(ev => {
+          document.addEventListener(ev, handler);
+          window.addEventListener(ev, handler);
+        });
+    }
+    return { init, bindRefreshHooks };
   })();
   NS.onboarding = Onboarding;
 
@@ -398,6 +413,7 @@
         Fav.init().catch(() => {});
         Inscription.init().catch(() => {});
         Onboarding.init().catch(() => {});
+        Onboarding.bindRefreshHooks?.();
         RecentTracker.init();
       });
     } else {
