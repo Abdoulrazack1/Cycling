@@ -1,6 +1,38 @@
-# Club de Cyclisme de Salouel — Application web
+# 🚴 Cycling Club Platform
 
-> ## 🔑 Identifiants
+> **La plateforme web complète pour ton club cycliste** — sorties, parcours OSM, Strava OAuth, GPX, profils altimétriques, espace membre et back-office admin. Full-stack Node.js / Express / MySQL / Vanilla JS.
+
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Strava](https://img.shields.io/badge/Strava-OAuth-FC4C02?logo=strava&logoColor=white)](https://developers.strava.com/)
+[![Leaflet](https://img.shields.io/badge/Leaflet-199900?logo=leaflet&logoColor=white)](https://leafletjs.com/)
+[![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
+
+<!-- 📽️ GIF/Vidéo à ajouter ici : 30s montrant
+     1) connexion Strava OAuth
+     2) page sortie avec Street View + tracé synchronisé
+     3) dashboard admin avec dashboard live
+     4) Cmd+K command palette en action -->
+
+<!-- 🖼️ Captures d'écran à ajouter : home, page sortie, admin, profil membre -->
+
+---
+
+## 💡 Ce que ça apporte à ton club
+
+| Pour qui | Ce qu'ils gagnent |
+|---|---|
+| **Le bureau du club** | Back-office complet : CRUD sorties/events, broadcast email, mode maintenance, audit log, bulk actions, dashboard live |
+| **Les membres** | Profil enrichi (FTP, équipement), Strava auto-sync, palmarès, segments KOM, favoris, RGPD complet |
+| **Le public** | Catalogue de sorties alimenté en continu depuis OpenStreetMap, explorateur Street View + profil altimétrique, événements avec inscription |
+| **L'admin tech** | Migrations versionnées, backups MySQL planifiés, 63 tests, rate-limit + helmet + CSP stricte, PWA installable |
+
+**Pas un MVP.** Site déployé en prod pour le **C.C. Salouel** (Hauts-de-France), alimenté en continu via OSM Overpass + Open-Meteo, 14 tables relationnelles, 19 pages frontend.
+
+---
+
+> ## 🔑 Identifiants (dev local)
 >
 > Les identifiants par défaut (admin, membre, MySQL) sont stockés dans `CREDENTIALS.md` à la racine du projet.
 > **Ce fichier est gitignoré** et ne sera jamais publié sur GitHub.
