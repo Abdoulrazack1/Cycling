@@ -9,13 +9,18 @@
 [![Leaflet](https://img.shields.io/badge/Leaflet-199900?logo=leaflet&logoColor=white)](https://leafletjs.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 
-<!-- 📽️ GIF/Vidéo à ajouter ici : 30s montrant
-     1) connexion Strava OAuth
-     2) page sortie avec Street View + tracé synchronisé
-     3) dashboard admin avec dashboard live
-     4) Cmd+K command palette en action -->
+## 📸 Captures (localhost — backend live)
 
-<!-- 🖼️ Captures d'écran à ajouter : home, page sortie, admin, profil membre -->
+[![Home — C.C. Salouel](screenshots/home.png)](screenshots/home.png)
+
+<table>
+<tr>
+<td width="50%"><a href="screenshots/sorties.png"><img src="screenshots/sorties.png" alt="Page Sorties"></a><br><sub>📅 Page <b>Sorties</b> — archive complète + stats club</sub></td>
+<td width="50%"><a href="screenshots/parcours.png"><img src="screenshots/parcours.png" alt="Page Parcours"></a><br><sub>🗺️ Page <b>Parcours</b> — catalogue tracés + filtres pavé/gravel/monts</sub></td>
+</tr>
+</table>
+
+> ℹ️ Captures locales — l'app est full-stack (Node + MySQL) donc pas déployable sur GH Pages. Pour la version live tu lances le backend toi-même via les instructions ci-dessous.
 
 ---
 
