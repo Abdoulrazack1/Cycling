@@ -91,7 +91,7 @@ Reprises de l'analyse initiale — pertinentes, à prioriser selon les besoins d
 | **Moyenne** | Nettoyage GPX/photos orphelins | Maintenance | ✅ Fait |
 | **Moyenne** | Webhook Strava (`subscription_id`) | Sécurité | ✅ Fait (guard opt-in via env) |
 | **Moyenne** | Anti-FOUC + refresh Service Worker | UX | ✅ Fait (script inline 24 pages + reload SW) |
-| **Moyenne** | Notifications Web Push | Fonctionnel | ⏳ À faire (gros chantier, nécessite HTTPS + VAPID) |
+| **Moyenne** | Notifications Web Push | Fonctionnel | ✅ Fait (VAPID + table + endpoints + handlers SW + bouton profil) |
 | **Basse** | Couche services + erreurs homogènes | Qualité code | ⏳ À faire |
 | **Basse** | Features backlog (covoiturage, etc.) | Innovation | 💡 Idées |
 

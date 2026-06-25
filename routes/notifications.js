@@ -18,6 +18,7 @@ const { body, validationResult } = require('express-validator');
 const { query } = require('../config/database');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { errResponse } = require('../lib/errors');
+const webpush = require('../services/web-push');
 
 const router = express.Router();
 
@@ -28,6 +29,8 @@ async function notify(userId, type, title, bodyText = null, url = null) {
     'INSERT INTO notifications (user_id, type, title, body, url) VALUES (?, ?, ?, ?, ?)',
     [userId, type, String(title).slice(0, 200), bodyText, url]
   );
+  // Push navigateur best-effort — n'interrompt jamais le flux applicatif.
+  webpush.sendToUser(userId, { type, title: String(title).slice(0, 200), body: bodyText, url }).catch(() => {});
   return r.insertId;
 }
 
@@ -41,6 +44,10 @@ async function notifyMany(userIds, type, title, bodyText = null, url = null) {
     `INSERT INTO notifications (user_id, type, title, body, url) VALUES ${placeholders}`,
     flat
   );
+  // Push navigateur best-effort vers chaque destinataire.
+  for (const id of userIds) {
+    webpush.sendToUser(id, { type, title: String(title).slice(0, 200), body: bodyText, url }).catch(() => {});
+  }
   return userIds.length;
 }
 
@@ -137,6 +144,34 @@ router.post('/',
     }
   }
 );
+
+// ─── Web Push (notifications navigateur) ─────────────────────────
+// Clé publique VAPID — nécessaire au frontend pour s'abonner (publique par nature).
+router.get('/push/key', (req, res) => {
+  res.json({ key: webpush.publicKey(), enabled: webpush.isEnabled() });
+});
+
+// Enregistre l'abonnement push du navigateur courant pour l'utilisateur connecté.
+router.post('/push/subscribe', requireAuth, async (req, res) => {
+  try {
+    const sub = req.body?.subscription;
+    if (!sub?.endpoint) return res.status(400).json({ error: 'subscription manquante' });
+    await webpush.saveSubscription(req.user.id, sub, req.headers['user-agent']);
+    res.json({ ok: true });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur abonnement push');
+  }
+});
+
+// Désabonne le navigateur courant (sur retrait de permission ou toggle off).
+router.post('/push/unsubscribe', requireAuth, async (req, res) => {
+  try {
+    await webpush.removeSubscription(req.body?.endpoint);
+    res.json({ ok: true });
+  } catch (err) {
+    errResponse(req, res, err, 500, 'Erreur désabonnement push');
+  }
+});
 
 module.exports = router;
 module.exports.notify = notify;
