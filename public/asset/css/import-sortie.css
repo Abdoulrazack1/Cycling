@@ -1,0 +1,143 @@
+    .import-step {
+      padding: 24px 28px;
+      background: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .import-step-head {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+    .import-step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brass);
+      color: var(--ink);
+      font-family: var(--f-sans);
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 50%;
+    }
+    .import-step-title {
+      font-family: var(--f-disp);
+      font-size: 22px;
+      margin: 0 0 4px;
+      color: var(--cream);
+    }
+    .import-step-desc {
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--parch-2);
+      margin: 0;
+    }
+    .gpx-summary {
+      margin-top: 12px;
+      padding: 14px 16px;
+      background: rgba(176,142,74,0.06);
+      border-left: 3px solid var(--brass);
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--cream);
+      border-radius: 2px;
+    }
+    .pdf-drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 32px;
+      border: 2px dashed var(--line-2);
+      border-radius: 4px;
+      background: var(--ink-3);
+      cursor: pointer;
+      color: var(--parch-2);
+      text-align: center;
+      transition: all .2s ease;
+    }
+    .pdf-drop-zone:hover, .pdf-drop-zone.drag-over {
+      border-color: var(--brass);
+      color: var(--brass-hi);
+      background: rgba(176,142,74,0.04);
+    }
+    .pdf-status {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: var(--ink-3);
+      border-left: 3px solid var(--brass);
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--cream);
+    }
+    .pdf-status.error { border-left-color: #E07A6E; color: #E07A6E; }
+    .pdf-status.success { border-left-color: #6CB87A; }
+    .pdf-directions {
+      margin-top: 14px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 12px 16px;
+      background: var(--ink-3);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px;
+      color: var(--cream);
+    }
+    .pdf-directions ul { margin: 0; padding-left: 20px; }
+    .pdf-directions li { margin: 3px 0; }
+    .pdf-directions li .km { color: var(--brass); font-weight: 600; min-width: 50px; display: inline-block; }
+    .import-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-family: var(--f-sans);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--parch-2);
+    }
+    .field input, .field select {
+      padding: 10px 14px;
+      background: var(--ink-3);
+      border: 1px solid var(--line);
+      color: var(--cream);
+      font-family: var(--f-sans);
+      font-size: 13px;
+      border-radius: 2px;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--brass);
+    }
+    .import-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .import-msg {
+      font-family: var(--f-sans);
+      font-size: 12px;
+      color: var(--parch-3);
+    }
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
+    }

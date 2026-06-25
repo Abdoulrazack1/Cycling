@@ -9,38 +9,23 @@
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="asset/css/style.css">
   <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="stylesheet" href="asset/css/offline.css">
   <link rel="icon" href="asset/img/favicon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#B08E4A">
 </head>
-<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;background:#0A1410;color:#EDE6D3;font-family:'EB Garamond',serif;">
-  <div style="max-width:520px;">
-    <div style="font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#B08E4A;margin-bottom:16px;">— Hors-ligne —</div>
-    <h1 style="font-family:'Playfair Display',serif;font-size:clamp(2.2rem,6vw,3.6rem);font-weight:500;margin:0 0 18px;">
-      Pas de <span style="font-style:italic;color:#CAA35B">connexion</span>.
+<body class="offline-body">
+  <div class="offline-wrap">
+    <div class="offline-kicker">— Hors-ligne —</div>
+    <h1 class="offline-title">
+      Pas de <span class="it">connexion</span>.
     </h1>
-    <p style="color:#b9b09a;font-size:18px;line-height:1.6;margin-bottom:32px;">
+    <p class="offline-text">
       Le club roule, mais ton réseau s'est arrêté au pied du col. Vérifie ta connexion, puis recharge.
     </p>
-    <button onclick="location.reload()" style="display:inline-block;padding:14px 32px;background:#B08E4A;color:#0A1410;border:none;font-family:'Archivo',sans-serif;font-size:13px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;border-radius:2px;">
-      Réessayer
-    </button>
-    <div id="connection-status" style="margin-top:24px;font-size:13px;color:#8a8275;"></div>
+    <button id="retry-btn" class="offline-btn">Réessayer</button>
+    <div id="connection-status" class="offline-status"></div>
   </div>
 
-  <script>
-    function updateStatus() {
-      const s = document.getElementById('connection-status');
-      if (navigator.onLine) {
-        s.textContent = '✓ Connexion détectée — rechargement…';
-        s.style.color = '#6CB87A';
-        setTimeout(() => location.reload(), 800);
-      } else {
-        s.textContent = '× Toujours hors-ligne';
-      }
-    }
-    updateStatus();
-    window.addEventListener('online', updateStatus);
-    window.addEventListener('offline', updateStatus);
-  </script>
+  <script src="asset/js/offline.js" defer></script>
 </body>
 </html>

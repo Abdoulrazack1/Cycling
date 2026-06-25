@@ -9,7 +9,7 @@
  * anciens caches.
  */
 
-const CACHE_VERSION = 'ccs-v26';
+const CACHE_VERSION = 'ccs-v27';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 
@@ -21,6 +21,8 @@ const PRECACHE = [
   '/asset/css/style.css',
   '/asset/css/polish.css',
   '/asset/css/premium.css',
+  '/asset/css/offline.css',
+  '/asset/js/offline.js',
   '/asset/js/config.js',
   '/asset/js/utils.js',
   '/asset/js/data-static.js',
