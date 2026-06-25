@@ -35,6 +35,7 @@ Thumbs.db
 dist/
 build/
 .cache/
+dist-desktop/
 
 # ── Tests / coverage ───────────────────────────────────────────
 coverage/
