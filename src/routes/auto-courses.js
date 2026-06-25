@@ -191,7 +191,7 @@ router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
   const id = String(req.params.id).replace(/[^a-z0-9_-]/gi, '-');
 
   // Vérifier si le GPX existe sur disque
-  const gpxPath = path.join(__dirname, '..', 'asset', 'gpx', id + '.gpx');
+  const gpxPath = path.join(__dirname, '..', '..', 'public', 'asset', 'gpx', id + '.gpx');
   const hasGpx = fs.existsSync(gpxPath);
 
   let sortie = null;

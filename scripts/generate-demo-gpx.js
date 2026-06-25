@@ -173,7 +173,7 @@ async function processRoute(route) {
   console.log(`[${route.slug}] ✓ ${distKm} km, D+ ${dPlus} m`);
 
   const gpx = pointsToGpx(route.name, pts, elevs);
-  const outPath = path.join(__dirname, '..', 'asset', 'gpx', `${route.slug}.gpx`);
+  const outPath = path.join(__dirname, '..', 'public', 'asset', 'gpx', `${route.slug}.gpx`);
   fs.writeFileSync(outPath, gpx, 'utf8');
   console.log(`[${route.slug}] écrit dans ${outPath}`);
 

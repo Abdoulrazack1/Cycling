@@ -23,14 +23,14 @@ require('dotenv').config();
 const fs   = require('fs');
 const path = require('path');
 
-const generator  = require('../services/course-generator');
-const scraper    = require('../services/course-scraper');
-const gpxBuilder = require('../services/gpx-builder');
-const routing    = require('../services/routing');
-const { fetchElevations, computeDplus } = require('../services/elevation');
+const generator  = require('../src/services/course-generator');
+const scraper    = require('../src/services/course-scraper');
+const gpxBuilder = require('../src/services/gpx-builder');
+const routing    = require('../src/services/routing');
+const { fetchElevations, computeDplus } = require('../src/services/elevation');
 
 // ── Config ─────────────────────────────────────────────────────
-const GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', 'public', 'asset', 'gpx');
 const TIMEOUT = 20_000;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
@@ -489,7 +489,7 @@ async function main() {
   let db = null;
   if (SAVE_DB) {
     try {
-      db = require('../config/database');
+      db = require('../src/config/database');
       await db.query('SELECT 1');
       ok('MySQL connecté');
     } catch (e) {

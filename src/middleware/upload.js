@@ -11,7 +11,7 @@ const fs     = require('fs');
 
 // Dossier unique pour TOUS les GPX (uploads admin + import-gpx + bundle).
 // Servi statiquement par Express via app.use(express.static(...)).
-const GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', '..', 'public', 'asset', 'gpx');
 if (!fs.existsSync(GPX_DIR)) fs.mkdirSync(GPX_DIR, { recursive: true });
 
 // L'ancien dossier ./uploads/ reste utilisable pour d'autres types

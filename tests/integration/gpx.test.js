@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const GPX_DIR = path.join(__dirname, '..', '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', '..', 'public', 'asset', 'gpx');
 
 function countTrkpts(xml) {
   return (xml.match(/<trkpt\b/g) || []).length;

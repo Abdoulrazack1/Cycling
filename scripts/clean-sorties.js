@@ -25,7 +25,7 @@ const YES       = args.includes('--yes');
 const KEEP_GPX  = args.includes('--keep-gpx');
 const KEEP_DB   = args.includes('--keep-db');
 
-const GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', 'public', 'asset', 'gpx');
 
 async function ask(question) {
   if (YES) return true;
@@ -53,7 +53,7 @@ async function main() {
 
   if (!KEEP_DB) {
     try {
-      const db = require('../config/database');
+      const db = require('../src/config/database');
       const [s] = await db.query('SELECT COUNT(*) AS n FROM sorties');
       const [p] = await db.query('SELECT COUNT(*) AS n FROM pois');
       const [t] = await db.query('SELECT COUNT(*) AS n FROM sortie_tags').catch(() => [{n:0}]);
@@ -98,7 +98,7 @@ async function main() {
   // ── 3) Suppression BDD ──────────────────────────────────────
   if (!KEEP_DB) {
     console.log('\n  🗑️  Vidage de la base ...');
-    const db = require('../config/database');
+    const db = require('../src/config/database');
     // Ordre : enfants → parents (pour respecter les FK)
     const tables = [
       'pois', 'sortie_tags', 'sortie_stats_extra', 'sortie_segments', 'sorties'

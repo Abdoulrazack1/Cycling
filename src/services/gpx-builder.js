@@ -46,7 +46,7 @@ ${trkpts}
  */
 function save(id, content) {
   const safeId = String(id).replace(/[^a-z0-9_-]/gi, '-');
-  const dir = path.join(__dirname, '..', 'asset', 'gpx');
+  const dir = path.join(__dirname, '..', '..', 'public', 'asset', 'gpx');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const filePath = path.join(dir, safeId + '.gpx');
   fs.writeFileSync(filePath, content, 'utf8');

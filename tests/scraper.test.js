@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs     = require('node:fs');
 const path   = require('node:path');
 
-const { _internals } = require('../services/course-scraper');
+const { _internals } = require('../src/services/course-scraper');
 const { parseMilesRepublic, _name, _date, _lieu, _dist, _resetFallbacks, _fallbackHits } = _internals;
 
 const FIXTURE = fs.readFileSync(

@@ -423,7 +423,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     }
     // Photos : tout le dossier de la sortie devient orphelin une fois la ligne supprimée.
     try {
-      const photosDir = path.join(__dirname, '..', 'asset', 'img', 'sorties', String(row.id));
+      const photosDir = path.join(__dirname, '..', '..', 'public', 'asset', 'img', 'sorties', String(row.id));
       if (fs.existsSync(photosDir)) fs.rmSync(photosDir, { recursive: true, force: true });
     } catch (cleanErr) {
       logger.warn({ err: cleanErr.message, id: row.id }, '[DELETE /sorties/:id] nettoyage photos échoué');
@@ -438,7 +438,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
 
 // ── Photos de sortie ────────────────────────────────────────────
 // Stockage sur disque dans asset/img/sorties/{sortie_id}/{timestamp}-{originalname}
-const SORTIES_PHOTOS_DIR = path.join(__dirname, '..', 'asset', 'img', 'sorties');
+const SORTIES_PHOTOS_DIR = path.join(__dirname, '..', '..', 'public', 'asset', 'img', 'sorties');
 if (!fs.existsSync(SORTIES_PHOTOS_DIR)) fs.mkdirSync(SORTIES_PHOTOS_DIR, { recursive: true });
 
 const photoUpload = multer({

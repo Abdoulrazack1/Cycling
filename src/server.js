@@ -307,10 +307,10 @@ const STATIC_OPTS = {
     // CSS/JS/etc utilisent le maxAge: '7d' par défaut.
   }
 };
-app.use(express.static(path.join(__dirname), STATIC_OPTS));
+app.use(express.static(path.join(__dirname, '..', 'public'), STATIC_OPTS));
 
 // ── GPX uploadés via l'admin ───────────────────────────────────
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), {
   etag: true,
   lastModified: true,
   maxAge: '7d',
@@ -391,7 +391,7 @@ app.use('/api/sorties/:id', sortieInscriptionsRouter);
 app.get('/api/health', async (req, res) => {
   const out = {
     status: 'ok',
-    version: require('./package.json').version,
+    version: require('../package.json').version,
     env: process.env.NODE_ENV || 'development',
     uptime_s: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
@@ -423,7 +423,7 @@ app.use('/api', (req, res) => {
 app.use((req, res, next) => {
   if (req.method !== 'GET') return next();
   if (req.accepts('html')) {
-    return res.status(404).sendFile(path.join(__dirname, '404.html'));
+    return res.status(404).sendFile(path.join(__dirname, '..', 'public', '404.html'));
   }
   next();
 });
@@ -473,7 +473,7 @@ app.listen(PORT, () => {
     const grace = process.env.SCRAPE_GRACE_DAYS || '90';
     const runCleanup = () => {
       const { fork } = require('child_process');
-      const proc = fork(require('path').join(__dirname, 'scripts', 'expire-past-sorties.js'), [], {
+      const proc = fork(require('path').join(__dirname, '..', 'scripts', 'expire-past-sorties.js'), [], {
         stdio: 'inherit',
         env: { ...process.env, SCRAPE_GRACE_DAYS: grace },
       });
@@ -494,7 +494,7 @@ app.listen(PORT, () => {
   // (setInterval limite à ~24.8 jours / 2^31 ms, donc on reste à 24 h.)
   const runAuditPurge = () => {
     const { fork } = require('child_process');
-    const proc = fork(require('path').join(__dirname, 'scripts', 'purge-audit-log.js'), [], {
+    const proc = fork(require('path').join(__dirname, '..', 'scripts', 'purge-audit-log.js'), [], {
       stdio: 'inherit',
       env: process.env,
     });
