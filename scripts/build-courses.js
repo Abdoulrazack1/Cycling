@@ -627,8 +627,8 @@ const FORCE = ARGS.includes('--force');
 const ONE = ARGS.find(a => a.startsWith('--course='))?.split('=')[1] ||
            (ARGS.indexOf('--course') >= 0 ? ARGS[ARGS.indexOf('--course')+1] : null);
 
-const gpxDir  = path.join(__dirname, '..', 'asset', 'gpx');
-const dataDir = path.join(__dirname, '..', 'asset', 'data');
+const gpxDir  = path.join(__dirname, '..', 'public', 'asset', 'gpx');
+const dataDir = path.join(__dirname, '..', 'public', 'asset', 'data');
 if (!fs.existsSync(gpxDir))  fs.mkdirSync(gpxDir,  { recursive: true });
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 

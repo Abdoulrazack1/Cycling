@@ -2,7 +2,7 @@
 // Usage : node seed.js
 require('dotenv').config();
 const bcrypt   = require('bcryptjs');
-const { query, withTransaction } = require('./config/database');
+const { query, withTransaction } = require('./src/config/database');
 
 // ═══════════════════════════════════════════════════════════════
 // DONNÉES INITIALES (extraites de data.js frontend)

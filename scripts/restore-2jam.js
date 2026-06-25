@@ -5,10 +5,10 @@ require('dotenv').config();
 
 const fs   = require('fs');
 const path = require('path');
-const { query } = require('../config/database');
-const { parseGpx } = require('../services/gpx-parser');
+const { query } = require('../src/config/database');
+const { parseGpx } = require('../src/services/gpx-parser');
 
-const GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', 'public', 'asset', 'gpx');
 
 const SORTIES = [
   {

@@ -28,7 +28,7 @@ const path = require('path');
 const DRY = process.argv.includes('--dry');
 const GRACE_DAYS = parseInt(process.env.SCRAPE_GRACE_DAYS || '7', 10);
 const PERMANENT_DATE = '2099-12-31';
-const GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', 'public', 'asset', 'gpx');
 
 async function main() {
   const cutoff = new Date(Date.now() - GRACE_DAYS * 86_400_000)
@@ -36,7 +36,7 @@ async function main() {
 
   console.log(`\n──  Nettoyage courses passées (date < ${cutoff}, grâce ${GRACE_DAYS}j) ${DRY ? '[DRY-RUN]' : ''}`);
 
-  const db = require('../config/database');
+  const db = require('../src/config/database');
 
   let toDelete;
   try {

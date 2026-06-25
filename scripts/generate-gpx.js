@@ -325,7 +325,7 @@ async function generate(presetKey) {
 
   // 5) Sauver le GPX
   const gpx = buildGpx(preset.name, preset.desc, allPoints);
-  const outPath = path.join(__dirname, '..', 'asset', 'gpx', `${presetKey}.gpx`);
+  const outPath = path.join(__dirname, '..', 'public', 'asset', 'gpx', `${presetKey}.gpx`);
   fs.writeFileSync(outPath, gpx, 'utf8');
   console.log(`\n✅ Sauvé : ${outPath}\n`);
 }

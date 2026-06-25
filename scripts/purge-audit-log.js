@@ -21,7 +21,7 @@ const DRY = process.argv.includes('--dry');
 const DAYS = Math.max(parseInt(process.env.AUDIT_RETENTION_DAYS || '365', 10), 30);
 
 async function main() {
-  const { query } = require('../config/database');
+  const { query } = require('../src/config/database');
 
   try {
     if (DRY) {

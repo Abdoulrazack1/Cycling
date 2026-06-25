@@ -18,12 +18,12 @@ const path = require('path');
 const crypto = require('crypto');
 const { pdf } = require('pdf-to-img');
 const { createWorker } = require('tesseract.js');
-const { query } = require('../config/database');
-const { parseGpx, haversineMeters } = require('../services/gpx-parser');
-const { parseStravaCueSheet, projectDirectionsOnGpx } = require('../services/strava-pdf-parser');
+const { query } = require('../src/config/database');
+const { parseGpx, haversineMeters } = require('../src/services/gpx-parser');
+const { parseStravaCueSheet, projectDirectionsOnGpx } = require('../src/services/strava-pdf-parser');
 
 const PDF_DIR = path.join(__dirname, '..', 'uploads', 'pdf');
-const GPX_DIR = path.join(__dirname, '..', 'asset', 'gpx');
+const GPX_DIR = path.join(__dirname, '..', 'public', 'asset', 'gpx');
 
 const MAPPING = [
   { pdf: 'clm-2jam.pdf',     sortieId: 'clm-2jam-2026-05-17',  gpx: 'clm-2jam.gpx' },

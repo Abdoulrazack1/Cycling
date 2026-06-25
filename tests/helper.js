@@ -47,7 +47,7 @@ async function fetchWithRetry(url, opts = {}, maxRetries = 2) {
 
 async function startServer() {
   const PORT = await freePort();
-  const proc = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
+  const proc = spawn(process.execPath, [path.join(__dirname, '..', 'src', 'server.js')], {
     cwd: path.join(__dirname, '..'),
     // info-level logs pour debug — passe à 'silent' une fois stabilisé
     env: { ...process.env, PORT: String(PORT), LOG_LEVEL: process.env.TEST_LOG_LEVEL || 'silent', NODE_ENV: 'test' },

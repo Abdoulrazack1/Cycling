@@ -37,7 +37,7 @@ async function ensureServer() {
   // Si un serveur tourne déjà (Laragon, npm start…), on le réutilise.
   if (await ping()) return true;
 
-  serverProc = fork(path.join(APP_DIR, 'server.js'), [], {
+  serverProc = fork(path.join(APP_DIR, 'src', 'server.js'), [], {
     cwd: APP_DIR,
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(PORT) },
   });
@@ -58,7 +58,7 @@ function createWindow() {
     minHeight: 600,
     backgroundColor: '#0A1410',
     title: 'Club de Cyclisme de Salouel',
-    icon: path.join(APP_DIR, 'asset', 'img', 'icon-512.png'),
+    icon: path.join(APP_DIR, 'public', 'asset', 'img', 'icon-512.png'),
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
