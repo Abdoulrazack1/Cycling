@@ -7,13 +7,27 @@
 | **Backend** | ✅ Prêt | Node 20+ / Express 4 / MySQL 8 / 87 tests OK |
 | **Frontend** | ✅ Prêt | HTML/CSS/JS vanilla, responsive 375→1440+ |
 | **PWA** | ✅ Installable | manifest.webmanifest + sw.js v24 + icons 192/512/SVG |
-| **Sécurité** | ⚠ 2 actions | JWT secret à régénérer + Strava credentials |
+| **Sécurité** | ⚠ 3 actions | Reporter JWT (rotés le 25/06) en prod + changer DB_PASSWORD + Strava credentials |
 | **Domaine/hosting** | ❌ À faire | Pas encore déployé |
 | **Mobile native** | ⚠ Wrapper | Capacitor configuré, à build |
 
 ---
 
 ## A. Avant publication (1 h)
+
+> **🔒 Passe sécurité du 25/06/2026 (cf. `ROADMAP.md`).** Le `.env` avait été commité
+> dans l'historique d'un repo public. Il a été : retiré du suivi git, **purgé de tout
+> l'historique** (`git-filter-repo`), ajouté au `.gitignore`, et les secrets JWT **rotés**
+> localement. Un secret exposé sur un repo public reste compromis (forks/cache) → la
+> rotation ci-dessous n'est **pas optionnelle**, y compris le mot de passe MySQL.
+
+### 0. Roter le mot de passe MySQL exposé
+
+```sql
+ALTER USER 'ccs_user'@'localhost' IDENTIFIED BY '<nouveau_mdp_fort>';
+FLUSH PRIVILEGES;
+```
+Puis mettre à jour `DB_PASSWORD` dans le `.env` (local **et** prod).
 
 ### 1. Régénérer les JWT_SECRET de production
 
@@ -164,7 +178,7 @@ Pour publier :
 
 ## Récap : ce qui te reste à faire
 
-1. ☐ Régénérer JWT_SECRET + JWT_REFRESH_SECRET (5 min)
+1. ☐ Roter DB_PASSWORD (MySQL) + reporter les JWT rotés en prod (5 min)
 2. ☐ Acheter un domaine (~10€/an chez OVH/Gandi/Namecheap)
 3. ☐ Choisir hosting (VPS OVH 5€/mois recommandé)
 4. ☐ Cloner + setup (1-2 h en suivant section B.1)
