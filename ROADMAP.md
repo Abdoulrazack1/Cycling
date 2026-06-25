@@ -87,11 +87,11 @@ Reprises de l'analyse initiale — pertinentes, à prioriser selon les besoins d
 | **Haute** | Fuite de secrets `.env` | Sécurité | ✅ Fait (reste rotation DB/prod) |
 | **Haute** | Config SMTP réelle | Fonctionnel | ⏳ À faire |
 | **Haute** | Déploiement prod (domaine/SSL/PM2/Nginx) | Ops | ⏳ À faire |
-| **Haute** | RGPD (mentions + confidentialité) | Légal | ⏳ À faire |
+| **Haute** | RGPD (mentions légales + RGPD) | Légal | ✅ Déjà couvert (`mentions-legales.html`) — vérifier infos club |
 | **Moyenne** | Nettoyage GPX/photos orphelins | Maintenance | ✅ Fait |
-| **Moyenne** | Webhook Strava (subscription_id + limiter) | Sécurité | ⏳ À faire |
-| **Moyenne** | Notifications Web Push | Fonctionnel | ⏳ À faire |
-| **Moyenne** | Anti-FOUC + refresh Service Worker | UX | ⏳ À faire |
+| **Moyenne** | Webhook Strava (`subscription_id`) | Sécurité | ✅ Fait (guard opt-in via env) |
+| **Moyenne** | Anti-FOUC + refresh Service Worker | UX | ✅ Fait (script inline 24 pages + reload SW) |
+| **Moyenne** | Notifications Web Push | Fonctionnel | ⏳ À faire (gros chantier, nécessite HTTPS + VAPID) |
 | **Basse** | Couche services + erreurs homogènes | Qualité code | ⏳ À faire |
 | **Basse** | Features backlog (covoiturage, etc.) | Innovation | 💡 Idées |
 
