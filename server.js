@@ -72,6 +72,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'",
                   "'wasm-unsafe-eval'",                // Tesseract.js OCR WebAssembly
+                  "'sha256-7Q9uY9XDG4KbTGdh/0PmdR9zrXXQu3ZVct5GroezzcA='", // script anti-FOUC inline (thème, <head>)
                   'https://cdnjs.cloudflare.com',
                   'https://unpkg.com',
                   'https://cdn.jsdelivr.net'],
