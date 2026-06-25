@@ -585,8 +585,16 @@ router.post('/webhook', async (req, res) => {
   // Réponse en < 2s exigée par Strava — on traite en async
   res.status(200).json({ ok: true });
   try {
-    const { object_type, aspect_type, object_id, owner_id } = req.body || {};
+    const { object_type, aspect_type, object_id, owner_id, subscription_id } = req.body || {};
     if (!object_type || !object_id || !owner_id) return;
+
+    // Anti-injection : si l'ID d'abonnement webhook est configuré, on rejette
+    // les events dont le subscription_id ne correspond pas (payload forgé).
+    const expectedSub = process.env.STRAVA_WEBHOOK_SUBSCRIPTION_ID;
+    if (expectedSub && String(subscription_id) !== String(expectedSub)) {
+      req.log?.warn({ subscription_id }, '[strava webhook] subscription_id inattendu — event ignoré');
+      return;
+    }
 
     // On ne traite que les activités (pas les athletes)
     if (object_type !== 'activity') return;

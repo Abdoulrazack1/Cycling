@@ -8,7 +8,19 @@
   // Activé uniquement en HTTPS ou localhost (exigence navigateur).
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     window.addEventListener('load', () => {
+      // Mémorise s'il y avait déjà un SW actif : on ne recharge QUE lors d'une
+      // vraie mise à jour, pas à la première installation.
+      const hadController = !!navigator.serviceWorker.controller;
       navigator.serviceWorker.register('/sw.js').catch(() => { /* silencieux : pas critique */ });
+      // Quand une nouvelle version du SW prend le contrôle (sw.js fait skipWaiting
+      // + clients.claim), on recharge une seule fois pour servir la version à jour
+      // — évite que l'utilisateur reste bloqué sur une ancienne version.
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing || !hadController) return;
+        refreshing = true;
+        window.location.reload();
+      });
     });
   }
 
