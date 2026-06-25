@@ -9,7 +9,7 @@
  * anciens caches.
  */
 
-const CACHE_VERSION = 'ccs-v25';
+const CACHE_VERSION = 'ccs-v26';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 
@@ -121,4 +121,35 @@ self.addEventListener('fetch', (event) => {
 // Permet à l'app d'envoyer un postMessage pour forcer une mise à jour
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// ─── Web Push : réception d'une notification serveur ─────────────
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch { data = { title: 'C.C. Salouel', body: event.data ? event.data.text() : '' }; }
+
+  const title = data.title || 'Club de Cyclisme de Salouel';
+  const options = {
+    body:  data.body || '',
+    icon:  '/asset/img/icon.svg',
+    badge: '/asset/img/icon.svg',
+    tag:   data.type || 'ccs-notif',
+    data:  { url: data.url || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ─── Clic sur la notification : focus l'onglet existant ou en ouvre un ─
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.includes(target) && 'focus' in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+    })
+  );
 });

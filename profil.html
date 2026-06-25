@@ -383,6 +383,18 @@ STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback</pre>
         </div>
 
         <div class="profile-security-card">
+          <div class="ps-card-title">Notifications push</div>
+          <div class="ps-card-desc">
+            Recevez sur cet appareil une notification quand une sortie qui vous concerne
+            est mise à jour ou qu'une activité Strava est synchronisée — même site fermé.
+            Vous pouvez désactiver à tout moment.
+          </div>
+          <button class="btn btn-ghost btn-sm" type="button" data-push-toggle style="margin-top:18px;">
+            Activer les notifications push
+          </button>
+        </div>
+
+        <div class="profile-security-card">
           <div class="ps-card-title">Session</div>
           <div class="ps-card-desc">
             Vous êtes connecté en tant que <b id="ps-user-label">—</b>.
@@ -484,6 +496,7 @@ STRAVA_REDIRECT_URI=http://localhost:3000/api/strava/callback</pre>
   <script src="asset/js/data.js"></script>
   <script src="asset/js/auth.js"></script>
   <script src="asset/js/main.js"></script>
+  <script src="asset/js/push.js" defer></script>
   <script src="asset/js/pages/profil.js" defer></script>
 </body>
 </html>
