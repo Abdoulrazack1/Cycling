@@ -403,6 +403,32 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     await query('DELETE FROM sorties WHERE id = ?', [req.params.id]);
     // Audit log : trace structurée dans audit_log (cf. AUDIT item #30).
     audit(req, 'delete', 'sortie', row.id, { title: row.title, gpx: row.gpx_filename || null });
+
+    // Nettoyage des fichiers devenus orphelins après la suppression.
+    // GPX : supprimé uniquement s'il n'est plus référencé par AUCUNE autre sortie
+    // (un même tracé peut être partagé). Cf. analyse "fichiers GPX orphelins".
+    if (row.gpx_filename) {
+      try {
+        const [stillUsed] = await query(
+          'SELECT 1 FROM sorties WHERE gpx_filename = ? LIMIT 1',
+          [row.gpx_filename]
+        );
+        if (!stillUsed) {
+          const gpxPath = path.join(ASSET_GPX_DIR, row.gpx_filename);
+          if (fs.existsSync(gpxPath)) fs.unlinkSync(gpxPath);
+        }
+      } catch (cleanErr) {
+        logger.warn({ err: cleanErr.message, gpx: row.gpx_filename }, '[DELETE /sorties/:id] nettoyage GPX échoué');
+      }
+    }
+    // Photos : tout le dossier de la sortie devient orphelin une fois la ligne supprimée.
+    try {
+      const photosDir = path.join(__dirname, '..', 'asset', 'img', 'sorties', String(row.id));
+      if (fs.existsSync(photosDir)) fs.rmSync(photosDir, { recursive: true, force: true });
+    } catch (cleanErr) {
+      logger.warn({ err: cleanErr.message, id: row.id }, '[DELETE /sorties/:id] nettoyage photos échoué');
+    }
+
     res.json({ message: 'Sortie supprimée', id: row.id, title: row.title });
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[DELETE /sorties/:id]');
