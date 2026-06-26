@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, reorg-structure ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ccs_salouel
+          MYSQL_USER: ccs_user
+          MYSQL_PASSWORD: ccs_test_pw
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: ccs_user
+      DB_PASSWORD: ccs_test_pw
+      DB_NAME: ccs_salouel
+      # Secrets factices conformes aux contraintes (>=32 car., différents).
+      JWT_SECRET: ci_jwt_secret_at_least_thirty_two_chars_long_xx
+      JWT_REFRESH_SECRET: ci_refresh_secret_DIFFERENT_thirty_two_chars_yy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Charger le schéma + migrations
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot ccs_salouel < database/schema.sql
+          npm run migrate
+
+      - name: Seed (non bloquant)
+        run: npm run seed || true
+
+      - name: Tests (unit + intégration)
+        run: npm test

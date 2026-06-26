@@ -1,8 +1,8 @@
-// seed.js — Migration complète des données statiques vers MySQL
-// Usage : node seed.js
+// database/seed.js — Migration complète des données statiques vers MySQL
+// Usage : npm run seed   (ou : node database/seed.js)
 require('dotenv').config();
 const bcrypt   = require('bcryptjs');
-const { query, withTransaction } = require('./src/config/database');
+const { query, withTransaction } = require('../src/config/database');
 
 // ═══════════════════════════════════════════════════════════════
 // DONNÉES INITIALES (extraites de data.js frontend)
