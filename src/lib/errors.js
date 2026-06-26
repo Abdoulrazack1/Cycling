@@ -24,6 +24,15 @@ function isProd() {
   return process.env.NODE_ENV === 'production';
 }
 
+// Codes d'erreur signalant une base de données injoignable (MySQL down,
+// trop de connexions, host introuvable…). On les traduit en 503 plutôt
+// qu'en 500 : c'est transitoire, et ça aide le monitoring à distinguer
+// "bug applicatif" de "infra indisponible".
+const DB_DOWN_CODES = new Set([
+  'ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR',
+  'ETIMEDOUT', 'ENOTFOUND', 'EHOSTUNREACH', 'ECONNRESET', 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR',
+]);
+
 /**
  * Renvoie une réponse d'erreur HTTP propre.
  *
@@ -34,6 +43,11 @@ function isProd() {
  * @param {string} userMsg Message générique sûr à montrer à l'utilisateur
  */
 function errResponse(req, res, err, status = 500, userMsg = 'Erreur serveur') {
+  // Base injoignable → 503 (transitoire) plutôt qu'un 500 trompeur.
+  if (err && DB_DOWN_CODES.has(err.code)) {
+    status = 503;
+    userMsg = 'Service temporairement indisponible (base de données injoignable). Réessayez dans un instant.';
+  }
   const correlationId = shortId();
   // Logger TOUJOURS les détails (avec id pour cross-ref)
   if (req?.log) {
