@@ -2,7 +2,7 @@
 // Vérifie que pageClause résiste aux injections SQL via les query params.
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { pageClause } = require('../config/database');
+const { pageClause } = require('../src/config/database');
 
 describe('pageClause (anti-injection)', () => {
 
