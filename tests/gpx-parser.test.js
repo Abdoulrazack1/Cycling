@@ -2,7 +2,7 @@
 // Lancé via `npm test` (utilise `node --test`, intégré, zéro dep).
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const { parseGpx } = require('../services/gpx-parser');
+const { parseGpx } = require('../src/services/gpx-parser');
 
 const GPX_MIN = `<?xml version="1.0"?>
 <gpx><trk><trkseg>
