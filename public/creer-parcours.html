@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- anti-FOUC : applique le theme enregistre avant le 1er paint -->
+  <script>(function(){try{var t=localStorage.getItem('ccs.theme');if(['light','dark','auto'].indexOf(t)<0)t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <title>Créateur de parcours · C.C. Salouel</title>
+  <meta name="description" content="Construis un parcours en cliquant sur la carte : routage automatique, points d'intérêt et signaleurs.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin>
+  <link rel="stylesheet" href="asset/css/style.css">
+  <link rel="stylesheet" href="asset/css/polish.css">
+  <link rel="stylesheet" href="asset/css/creer-parcours.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#B08E4A">
+  <link rel="icon" href="asset/img/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <a href="#main" class="skip-link">Aller au contenu</a>
+  <main id="main">
+
+  <section class="page-head">
+    <div class="wrap">
+      <nav class="breadcrumb">
+        <a href="index.html">Accueil</a>
+        <span class="sep">/</span>
+        <a href="admin.html">Admin</a>
+        <span class="sep">/</span>
+        <span>Créateur de parcours</span>
+      </nav>
+      <div class="page-head-chapter"><em>Outil admin</em></div>
+      <h1 class="d-l page-head-title">Créateur de <span class="it">parcours</span></h1>
+      <p class="page-head-sub">Clique sur la carte pour poser tes points. Le serveur calcule l'itinéraire routier, le dénivelé et place les points d'intérêt.</p>
+    </div>
+  </section>
+
+  <!-- Garde-fou : message si pas admin -->
+  <section class="wrap" id="cp-auth-gate" hidden>
+    <div class="cp-gate">
+      <p>Cette page est réservée aux administrateurs du club.</p>
+      <a href="login.html" class="btn btn-brass btn-sm">Se connecter</a>
+    </div>
+  </section>
+
+  <section class="wrap cp-layout" id="cp-app" hidden>
+    <!-- Carte -->
+    <div class="cp-map-wrap">
+      <div id="cp-map" class="cp-map"></div>
+      <div class="cp-map-hint" id="cp-hint">🖱️ Clique sur la carte pour ajouter un point</div>
+    </div>
+
+    <!-- Panneau de contrôle -->
+    <aside class="cp-panel">
+      <div class="cp-field">
+        <label for="cp-name">Nom du parcours</label>
+        <input id="cp-name" type="text" maxlength="120" placeholder="Ex : Boucle de l'Avesnois">
+      </div>
+      <div class="cp-field-row">
+        <div class="cp-field">
+          <label for="cp-region">Région</label>
+          <input id="cp-region" type="text" maxlength="80" placeholder="Hauts-de-France">
+        </div>
+        <div class="cp-field cp-field-sm">
+          <label for="cp-laps">Tours</label>
+          <input id="cp-laps" type="number" min="1" max="20" value="1">
+        </div>
+      </div>
+
+      <div class="cp-wp-head">
+        <span>Points (<span id="cp-count">0</span>)</span>
+        <button type="button" id="cp-clear" class="btn btn-ghost btn-xs">Effacer tout</button>
+      </div>
+      <ol class="cp-wp-list" id="cp-wp-list">
+        <li class="cp-wp-empty">Aucun point — clique sur la carte.</li>
+      </ol>
+
+      <button type="button" id="cp-generate" class="btn btn-brass" disabled>
+        Générer le parcours
+      </button>
+      <label class="cp-offline">
+        <input type="checkbox" id="cp-offline"> Mode hors-ligne (sans routage réseau)
+      </label>
+
+      <div id="cp-result" class="cp-result" hidden></div>
+    </aside>
+  </section>
+
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
+  <script src="asset/js/config.js"></script>
+  <script src="asset/js/utils.js"></script>
+  <script src="asset/js/auth.js"></script>
+  <script src="asset/js/main.js"></script>
+  <script src="asset/js/pages/creer-parcours.js" defer></script>
+</body>
+</html>
