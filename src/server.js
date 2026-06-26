@@ -438,7 +438,7 @@ app.use((err, req, res, next) => {
 });
 
 // ── Démarrage ─────────────────────────────────────────────────
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info({
     port: PORT,
     env: process.env.NODE_ENV || 'development',
@@ -503,5 +503,25 @@ app.listen(PORT, () => {
   setTimeout(runAuditPurge, 60_000);
   setInterval(runAuditPurge, 24 * 60 * 60 * 1000); // 24 h
 });
+
+// ── Arrêt gracieux (SIGTERM/SIGINT) ──────────────────────────
+// Crucial pour PM2/Docker : on draine les requêtes HTTP en cours puis on
+// ferme proprement le pool MySQL avant de quitter (évite connexions zombies).
+const { pool } = require('./config/database');
+let _shuttingDown = false;
+function gracefulShutdown(signal) {
+  if (_shuttingDown) return;
+  _shuttingDown = true;
+  logger.info({ signal }, 'Arrêt demandé — fermeture du serveur HTTP…');
+  server.close(async () => {
+    try { await pool.end(); logger.info('Pool MySQL fermé proprement.'); }
+    catch (e) { logger.warn({ err: e.message }, 'Fermeture du pool échouée'); }
+    process.exit(0);
+  });
+  // Filet de sécurité : si le drainage traîne, on force après 10 s.
+  setTimeout(() => { logger.warn('Arrêt forcé après 10s'); process.exit(1); }, 10_000).unref();
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
 
 module.exports = app;
