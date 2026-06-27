@@ -33,36 +33,46 @@ function haversine(a, b) {
  * @returns {Promise<Array<{lat,lng}>>} Tracé densifié
  * @throws {Error} si OSRM injoignable / pas de route trouvée
  */
+// Renvoie uniquement le tracé densifié (rétro-compatible).
 async function route(waypoints, opts = {}) {
+  const { track } = await routeFull(waypoints, opts);
+  return track;
+}
+
+/**
+ * Comme route() mais renvoie AUSSI les directions tour-par-tour
+ * (manœuvres OSRM traduites en français : « Tourner à droite », etc.).
+ * @returns {Promise<{track: Array<{lat,lng}>, directions: Array<{instruction,lat,lng,road}>}>}
+ */
+async function routeFull(waypoints, opts = {}) {
   if (!Array.isArray(waypoints) || waypoints.length < 2) {
     throw new Error('Au moins 2 waypoints requis');
   }
   const profile = opts.profile || 'cycling';
 
-  // OSRM accepte au max ~25 waypoints par requête.
-  // Si plus, découper en chunks et concaténer.
+  // OSRM accepte au max ~25 waypoints par requête → chunking au-delà.
   const MAX_WP = 25;
   if (waypoints.length <= MAX_WP) {
     return _routeSingle(waypoints, profile);
   }
-
-  // Chunking : on garde un point de chevauchement entre chaque chunk
   const chunks = [];
   for (let i = 0; i < waypoints.length - 1; i += MAX_WP - 1) {
     chunks.push(waypoints.slice(i, Math.min(i + MAX_WP, waypoints.length)));
   }
-  let result = [];
+  let track = [], directions = [];
   for (const chunk of chunks) {
     const seg = await _routeSingle(chunk, profile);
-    if (result.length > 0) result = result.concat(seg.slice(1)); // éviter doublon point pivot
-    else result = seg;
+    if (track.length > 0) track = track.concat(seg.track.slice(1)); // éviter doublon pivot
+    else track = seg.track;
+    directions = directions.concat(seg.directions);
   }
-  return result;
+  return { track, directions };
 }
 
 async function _routeSingle(waypoints, profile) {
   const coords = waypoints.map(p => `${p.lng},${p.lat}`).join(';');
-  const url = `${OSRM_BASE}/route/v1/${profile}/${coords}?overview=full&geometries=geojson`;
+  // steps=true → manœuvres tour-par-tour (turn/continue/roundabout…).
+  const url = `${OSRM_BASE}/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=true`;
 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), OSRM_TIMEOUT);
@@ -73,10 +83,52 @@ async function _routeSingle(waypoints, profile) {
     if (data.code !== 'Ok' || !data.routes?.[0]) {
       throw new Error(`OSRM no route: ${data.code || 'unknown'}`);
     }
-    return data.routes[0].geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    const r = data.routes[0];
+    const track = r.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    return { track, directions: _extractDirections(r) };
   } finally {
     clearTimeout(timer);
   }
+}
+
+// ── Directions tour-par-tour (manœuvres OSRM → français) ────────
+const _MOD_FR = {
+  left: 'à gauche', right: 'à droite',
+  'slight left': 'légèrement à gauche', 'slight right': 'légèrement à droite',
+  'sharp left': 'franchement à gauche', 'sharp right': 'franchement à droite',
+  straight: 'tout droit', uturn: 'demi-tour',
+};
+function _maneuverToFr(m, road) {
+  const mod = _MOD_FR[m.modifier] || '';
+  const on = road ? ` sur ${road}` : '';
+  switch (m.type) {
+    case 'turn':            return `Tourner ${mod}`.trim() + on;
+    case 'new name':        return `Continuer${on}`;
+    case 'merge':           return `S'insérer ${mod}`.trim() + on;
+    case 'on ramp':         return `Prendre la bretelle ${mod}`.trim();
+    case 'off ramp':        return `Sortir ${mod}`.trim();
+    case 'fork':            return `Au croisement, ${mod || 'continuer'}`.trim() + on;
+    case 'end of road':     return `Au bout de la route, ${mod}`.trim() + on;
+    case 'continue':        return (m.modifier && m.modifier !== 'straight') ? `Continuer ${mod}`.trim() + on : null;
+    case 'roundabout':
+    case 'rotary':          return `Au rond-point, ${m.exit || '?'}ᵉ sortie`;
+    case 'roundabout turn': return `Au rond-point, ${mod}`.trim();
+    default:                return null; // depart/arrive → gérés par les POIs depart/arrivee
+  }
+}
+function _extractDirections(routeObj) {
+  const out = [];
+  for (const leg of (routeObj.legs || [])) {
+    for (const step of (leg.steps || [])) {
+      const m = step.maneuver || {};
+      const instr = _maneuverToFr(m, step.name);
+      if (!instr) continue;
+      const loc = m.location || [];
+      if (!Number.isFinite(loc[1]) || !Number.isFinite(loc[0])) continue;
+      out.push({ instruction: instr, lat: loc[1], lng: loc[0], road: step.name || '' });
+    }
+  }
+  return out;
 }
 
 /**
@@ -105,4 +157,4 @@ function densify(waypoints, stepMeters = 50) {
   return out;
 }
 
-module.exports = { route, densify, haversine };
+module.exports = { route, routeFull, densify, haversine };

@@ -54,7 +54,7 @@ async function _persistSortie(generated, original) {
   // Persister les POIs (on supprime les anciens et on remet)
   if (generated.pois?.length) {
     await dbQuery('DELETE FROM pois WHERE sortie_id = ?', [generated.id]);
-    const validTypes = new Set(['signaleur','ravito','danger','secteur','depart','arrivee']);
+    const validTypes = new Set(['signaleur','ravito','danger','secteur','depart','arrivee','direction']);
     for (const p of generated.pois) {
       const type = validTypes.has(p.type) ? p.type : 'signaleur';
       const poiId = p.id || `${generated.id}-poi-${Math.random().toString(36).slice(2, 8)}`;
