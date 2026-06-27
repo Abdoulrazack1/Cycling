@@ -354,104 +354,31 @@
       } catch { /* fall through */ }
     }
 
-    // ── Cas 2 : Google Street View iframe (sans clé API) ──────────
-    // L'iframe Google Maps avec output=svembed peut être bloqué par
-    // CSP / X-Frame-Options selon le contexte. On ajoute un overlay
-    // "ouvrir dans Maps" et une détection de chargement pour basculer
-    // en satellite si l'iframe ne charge pas.
-    const iframe = document.createElement('iframe');
-    iframe.id = 'gsv-iframe';
-    iframe.allowFullscreen = true;
-    iframe.allow = 'fullscreen';
-    iframe.referrerPolicy = 'no-referrer-when-downgrade';
-    iframe.loading = 'eager';
-    iframe.title = 'Google Street View';
-
-    // Overlay "Ouvrir dans Maps"
-    const overlay = document.createElement('div');
-    overlay.id = 'gsv-overlay';
-    overlay.style.cssText = `
-      position:absolute;bottom:10px;right:10px;z-index:10;
-      background:rgba(18,18,18,.82);color:#C7BC9E;
-      font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.08em;
-      padding:5px 10px;border-radius:3px;cursor:pointer;
-      border:1px solid rgba(176,142,74,.35);backdrop-filter:blur(4px);
-      transition:background .2s;
-    `;
-    overlay.textContent = '↗ Ouvrir dans Google Maps';
-    overlay.addEventListener('click', () => {
-      if (state._gsvLastLat && state._gsvLastLng) {
-        window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${state._gsvLastLat},${state._gsvLastLng}`, '_blank');
-      }
-    });
-
-    const badge = document.createElement('div');
-    badge.style.cssText = `
-      position:absolute;top:8px;left:8px;z-index:10;
-      background:rgba(18,18,18,.75);color:#C7BC9E;
-      font-family:'Archivo',sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-      padding:3px 8px;border-radius:2px;pointer-events:none;
-    `;
-    badge.textContent = 'Street View · Google Maps';
-
-    viewerEl.style.position = 'relative';
-    viewerEl.appendChild(iframe);
-    viewerEl.appendChild(overlay);
-    viewerEl.appendChild(badge);
+    // ── Cas 2 : pas de token Mapillary → repli Street View ────────
+    // ⚠️ L'embed "sans clé" de Google (maps.google.com/...output=svembed) a été
+    // désactivé par Google : il renvoie 301 + X-Frame-Options: SAMEORIGIN, donc
+    // le navigateur REFUSE de l'afficher en iframe. On n'insère plus d'iframe
+    // vide : on affiche le panneau de repli et on ouvre la vraie Street View
+    // immersive dans un nouvel onglet (Maps URLs API, fiable et sans clé).
     state.svMode = 'gsv';
-    state.gsvReady = true;
+    state.gsvReady = false;
 
-    // Brancher le bouton "Ouvrir dans Maps" du sv-empty
-    const openMapsBtn = document.getElementById('sv-open-maps');
-    if (openMapsBtn) {
-      openMapsBtn.addEventListener('click', () => {
-        const lat = state._gsvLastLat || state.sortie?.location?.lat;
-        const lng = state._gsvLastLng || state.sortie?.location?.lng;
-        if (lat && lng) window.open(`https://maps.google.com/maps?q=&layer=c&cbll=${lat},${lng}`, '_blank');
-      });
-    }
+    const svEmpty = document.getElementById('sv-empty');
+    if (svEmpty) svEmpty.hidden = false;
 
-    // ── Chargement immédiat au démarrage ─────────────────────────
-    const _doInitialLoad = async () => {
-      const frac = state.cursorFrac || 0;
-      let lat, lng;
-      if (state.routePoints && state.routePoints.length) {
-        const idx = Math.round(frac * (state.routePoints.length - 1));
-        const pt  = state.routePoints[Math.min(idx, state.routePoints.length - 1)];
-        lat = pt.lat; lng = pt.lng;
-      } else if (state.sortie) {
-        lat = state.sortie.location?.lat || state.sortie.lat || 50.43;
-        lng = state.sortie.location?.lng || state.sortie.lng || 3.2;
-      } else { return; }
-
-      const heading = _estimateHeading(lat, lng);
-      const pano = await _fetchPanoId(lat, lng);
-      if (pano) {
-        iframe.src = _gsvUrlFromPanoId(pano.panoId, heading, lat, lng);
-        state.mlyLastKey = `${Math.round(lat*5000)/5000},${Math.round(lng*5000)/5000}`;
-        state._gsvLastLat = lat;
-        state._gsvLastLng = lng;
-
-        // Si l'iframe ne charge rien dans les 5 secondes (CSP bloqué),
-        // on ne fait rien de spécial — le bouton "Ouvrir dans Maps" reste dispo.
-        // Pour détecter un blocage réel (X-Frame-Options), on pourrait
-        // utiliser iframe.addEventListener('load', ...), mais le navigateur
-        // déclenche quand même l'événement load même sur une page bloquée.
+    state._openRealStreetView = () => {
+      const lat = state._gsvLastLat || state.sortie?.location?.lat || state.sortie?.lat;
+      const lng = state._gsvLastLng || state.sortie?.location?.lng || state.sortie?.lng;
+      if (lat && lng) {
+        window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank', 'noopener');
       }
     };
+    const openMapsBtn = document.getElementById('sv-open-maps');
+    if (openMapsBtn) openMapsBtn.addEventListener('click', state._openRealStreetView);
 
-    if (state.routePoints && state.routePoints.length) {
-      _doInitialLoad();
-    } else if (state._noGpxLoc || !state.sortie?.gpx_ref) {
-      _doInitialLoad();
-    } else {
-      const _waitGpx = (attempt) => {
-        if (state.routePoints && state.routePoints.length) { _doInitialLoad(); return; }
-        if (attempt > 30) { _doInitialLoad(); return; }
-        setTimeout(() => _waitGpx(attempt + 1), 100);
-      };
-      _waitGpx(0);
-    }
+    // Position de départ (mise à jour ensuite par updateStreetView au scrub).
+    const loc0 = state.sortie?.location;
+    if (loc0) { state._gsvLastLat = loc0.lat; state._gsvLastLng = loc0.lng; }
   }
 
   async function findNearestImage(lat, lng) {
@@ -491,36 +418,12 @@
       return;
     }
 
-    // ── Mode Google Street View ───────────────────────────────────
-    if (state.svMode === 'gsv' && state.gsvReady) {
-      state.mlyLoadTimer = setTimeout(async () => {
-        const rLat = Math.round(lat * 5000) / 5000;
-        const rLng = Math.round(lng * 5000) / 5000;
-        const key = `${rLat},${rLng}`;
-        if (key === state.mlyLastKey) return;
-        state.mlyLastKey = key;
-        state._gsvLastLat = rLat;
-        state._gsvLastLng = rLng;
-
-        const iframe = document.getElementById('gsv-iframe');
-        const empty  = document.getElementById('sv-empty');
-        if (!iframe) return;
-
-        // 1) Récupérer le panorama le plus proche
-        const heading = _estimateHeading(rLat, rLng);
-        const pano = await _fetchPanoId(rLat, rLng);
-
-        if (!pano) {
-          // Aucune couverture Street View à cet endroit
-          if (empty) empty.hidden = false;
-          iframe.src = 'about:blank';
-          return;
-        }
-        if (empty) empty.hidden = true;
-
-        // 2) Charger le panorama depuis ses coordonnées
-        iframe.src = _gsvUrlFromPanoId(pano.panoId, heading, rLat, rLng);
-      }, 300);
+    // ── Mode Google Street View (embed keyless bloqué par Google) ──
+    // On ne charge plus d'iframe : on mémorise juste la position courante du
+    // curseur pour que le bouton "Ouvrir la Street View" pointe au bon endroit.
+    if (state.svMode === 'gsv') {
+      state._gsvLastLat = Math.round(lat * 5000) / 5000;
+      state._gsvLastLng = Math.round(lng * 5000) / 5000;
     }
   }
 
@@ -790,12 +693,14 @@
     }
 
     if (btnGsv) btnGsv.addEventListener('click', () => {
-      if (state.svMode === 'gsv') return;
       setActiveBtn(btnGsv);
       switchView('gsv', null);
-      // Recharger la position courante dans l'iframe Street View
+      // Embed keyless mort → on affiche le panneau de repli (avec son bouton
+      // "Ouvrir la Street View") et on mémorise la position courante.
       const pos = currentLatLng();
-      if (pos) updateStreetView(pos.lat, pos.lng);
+      if (pos) { state._gsvLastLat = pos.lat; state._gsvLastLng = pos.lng; }
+      const svEmpty = document.getElementById('sv-empty');
+      if (svEmpty) svEmpty.hidden = false;
     });
 
     if (btnSat) btnSat.addEventListener('click', () => {
@@ -1524,6 +1429,9 @@
       initMapillary();
     }
     initViewModeButtons();
+    // Street View immersive en-page indisponible sans clé (Google a bloqué
+    // l'embed keyless) → on démarre sur la vue satellite haute-définition.
+    document.getElementById('sv-btn-sat')?.click();
     renderPoiList();
     renderScrubTicks();
     initScrub();
