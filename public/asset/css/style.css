@@ -2275,11 +2275,17 @@ ul { list-style: none; }
   display: flex; flex-direction: column;
 }
 .minimap-wrap.expanded {
-  right: 20px;
-  top: 20px;
-  bottom: 92px;
-  width: clamp(340px, 42vw, 540px);
+  /* Overlay plein écran FIABLE. Bug corrigé : l'overlay (z-index 1000, inset
+     5vh) passait SOUS la nav fixe (z-index 1000, ~64px de haut) → le bouton de
+     fermeture était inaccessible. Fix : positionné SOUS la nav + z-index au-dessus. */
+  position: fixed;
+  top: 76px;
+  left: 5vw;
+  right: 5vw;
+  bottom: 5vh;
+  width: auto;
   height: auto;
+  z-index: 2000;
 }
 .minimap-head {
   padding: 10px 14px;

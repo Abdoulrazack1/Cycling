@@ -995,9 +995,16 @@
     const wrap = document.querySelector('.minimap-wrap');
     const btn = document.getElementById('minimap-expand');
     if (!wrap || !btn) return;
-    btn.addEventListener('click', () => {
-      wrap.classList.toggle('expanded');
+    const setState = (expanded) => {
+      wrap.classList.toggle('expanded', expanded);
+      btn.setAttribute('aria-label', expanded ? 'Réduire la carte' : 'Agrandir la carte');
+      btn.setAttribute('title', expanded ? 'Réduire (Échap)' : 'Agrandir');
       if (state.mapMini) setTimeout(() => state.mapMini.invalidateSize(), 300);
+    };
+    btn.addEventListener('click', () => setState(!wrap.classList.contains('expanded')));
+    // Fermeture au clavier (le bug "impossible de refermer" en mode étendu).
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && wrap.classList.contains('expanded')) setState(false);
     });
   }
 
