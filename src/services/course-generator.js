@@ -74,16 +74,18 @@ async function generate(input, opts = {}) {
     log.push(`laps × ${input.laps} → ${workingWaypoints.length} waypoints`);
   }
 
-  // 2) Router via OSRM
-  let trackPoints;
+  // 2) Router via OSRM (+ directions tour-par-tour)
+  let trackPoints, osrmDirections = [];
   if (opts.skipRouting) {
     trackPoints = routing.densify(workingWaypoints, 50);
     log.push(`OSRM skip → densification manuelle (${trackPoints.length} pts)`);
   } else {
     try {
       const justLatLng = workingWaypoints.map(w => ({ lat: w.lat, lng: w.lng }));
-      trackPoints = await routing.route(justLatLng, { profile: 'cycling' });
-      log.push(`OSRM cycling → ${trackPoints.length} pts`);
+      const routed = await routing.routeFull(justLatLng, { profile: 'cycling' });
+      trackPoints = routed.track;
+      osrmDirections = routed.directions || [];
+      log.push(`OSRM cycling → ${trackPoints.length} pts, ${osrmDirections.length} directions`);
     } catch (e) {
       errors.push(`OSRM: ${e.message}`);
       trackPoints = routing.densify(workingWaypoints, 50);
@@ -126,6 +128,13 @@ async function generate(input, opts = {}) {
   // 6) Extraire les POIs depuis les waypoints typés
   const pois = _extractPois(input.waypoints, trackPoints, id);
   log.push(`POIs extraits: ${pois.length}`);
+
+  // 6b) Directions tour-par-tour OSRM → POIs 'direction' (carnet de route, type Strava)
+  if (osrmDirections.length) {
+    const dirPois = _buildDirectionPois(osrmDirections, trackPoints, id);
+    pois.push(...dirPois);
+    log.push(`Directions → ${dirPois.length} POIs 'direction'`);
+  }
 
   // 7) Construire et sauver le GPX
   const gpxContent = gpxBuilder.build({
@@ -225,6 +234,33 @@ function _extractPois(originalWaypoints, trackPoints, idPrefix) {
     });
   }
   return pois;
+}
+
+/**
+ * Transforme les directions tour-par-tour OSRM en POIs de type 'direction'
+ * (carnet de route). Chaque manœuvre est snappée au point routé le plus
+ * proche pour récupérer son km cumulé.
+ */
+function _buildDirectionPois(directions, trackPoints, idPrefix) {
+  const prefix = idPrefix.split('-').slice(0, 2).join('-').substring(0, 10);
+  let c = 1;
+  return directions.map(d => {
+    let bestI = 0, bestD = Infinity;
+    for (let i = 0; i < trackPoints.length; i++) {
+      const dd = (trackPoints[i].lat - d.lat) ** 2 + (trackPoints[i].lng - d.lng) ** 2;
+      if (dd < bestD) { bestD = dd; bestI = i; }
+    }
+    return {
+      id: `${prefix}-dir-${c++}`,
+      type: 'direction',
+      label: d.instruction,
+      desc: d.road || '',
+      km: Math.round((trackPoints[bestI].kmAccum || 0) * 10) / 10,
+      lat: d.lat,
+      lng: d.lng,
+      contact: null,
+    };
+  });
 }
 
 module.exports = { generate, slugify };
