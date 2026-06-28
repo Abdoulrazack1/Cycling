@@ -80,6 +80,10 @@
       bellEl.addEventListener('click', toggle);
       await refresh();
       pollTimer = setInterval(refresh, 60_000); // 1 minute
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        else if (!document.hidden && !pollTimer) { pollTimer = setInterval(refresh, 60_000); }
+      });
     }
 
     async function refresh() {

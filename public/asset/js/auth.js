@@ -409,12 +409,15 @@
             drop.hidden = !willOpen;
             toggle.setAttribute('aria-expanded', String(willOpen));
           });
-          document.addEventListener('click', () => {
-            if (drop && !drop.hidden) {
-              drop.hidden = true;
-              toggle?.setAttribute('aria-expanded', 'false');
-            }
-          });
+          if (!document._ccsNavClickBound) {
+            document.addEventListener('click', () => {
+              if (drop && !drop.hidden) {
+                drop.hidden = true;
+                toggle?.setAttribute('aria-expanded', 'false');
+              }
+            });
+            document._ccsNavClickBound = true;
+          }
           document.getElementById('nav-auth-logout')?.addEventListener('click', () => CCS_AUTH.logout());
         } else {
           ctaContainer.outerHTML = `

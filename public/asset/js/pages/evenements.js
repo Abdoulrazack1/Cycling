@@ -212,17 +212,16 @@
       openInscriptionModal(1, []);
     }
   });
-})();
 
-/* ── Modal d'inscription événement ───────────────────── */
-const evModal     = document.getElementById('ev-modal');
-const evForm      = document.getElementById('ev-form');
-const evTitle     = document.getElementById('ev-modal-title');
-const evSub       = document.getElementById('ev-modal-sub');
-const evError     = document.getElementById('ev-form-error');
-const evSuccess   = document.getElementById('ev-form-success');
-const evSubmit    = document.getElementById('ev-submit');
-let currentEventId = null;
+  /* ── Modal d'inscription événement ───────────────────── */
+  const evModal     = document.getElementById('ev-modal');
+  const evForm      = document.getElementById('ev-form');
+  const evTitle     = document.getElementById('ev-modal-title');
+  const evSub       = document.getElementById('ev-modal-sub');
+  const evError     = document.getElementById('ev-form-error');
+  const evSuccess   = document.getElementById('ev-form-success');
+  const evSubmit    = document.getElementById('ev-submit');
+  let currentEventId = null;
 
 function openInscriptionModal(eventId, allEvents = []) {
   currentEventId = eventId;
@@ -290,3 +289,4 @@ evForm.addEventListener('submit', async (e) => {
     evSubmit.textContent = "Confirmer l'inscription"; evSubmit.disabled = false;
   }
 });
+})();

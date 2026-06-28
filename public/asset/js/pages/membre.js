@@ -29,7 +29,7 @@
   }
 
   const ROLE_LABELS = { admin: 'Bureau', moderateur: 'Modérateur', membre: 'Sociétaire' };
-  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
   const initials = (m.prenom?.[0] || '?').toUpperCase();
   const fullname = `${m.prenom || ''} ${m.nom || ''}`.trim();
   const role = m.role || 'membre';

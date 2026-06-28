@@ -81,7 +81,10 @@
   }
 
   const nameEl = document.getElementById('profile-name');
-  if (nameEl) nameEl.innerHTML = `${profile.prenom} <span class="it">${profile.nom}</span>`;
+  if (nameEl) {
+    const esc = window.esc || window.CCS_UTILS?.escapeHtml || (s => s);
+    nameEl.innerHTML = `${esc(profile.prenom)} <span class="it">${esc(profile.nom)}</span>`;
+  }
 
   const bioEl = document.getElementById('profile-bio');
   if (bioEl) bioEl.textContent = profile.bio || '';
@@ -138,32 +141,28 @@
 
   // Stats étendues (rang club, agrégats saison) → panneau "Ma saison & le club"
   try {
-    const token = window.CCS_AUTH?.getToken();
-    const r = await fetch(`${window.CCS_CFG.API}/auth/my-stats`, { headers: { Authorization: 'Bearer ' + token } });
-    if (r.ok) {
-      const s = await r.json();
-      const section = document.getElementById('my-stats-section');
-      if (section) section.hidden = false;
-      const yEl = document.getElementById('stats-year');
-      if (yEl) yEl.textContent = s.year;
-      const rankEl = document.getElementById('stat-rank');
-      if (rankEl) rankEl.innerHTML = `${s.rank.position}<span class="unit">/ ${s.rank.total}</span>`;
-      const rankSub = document.getElementById('stat-rank-sub');
-      if (rankSub && s.rank.percentile != null) rankSub.textContent = `Top ${100 - s.rank.percentile}% des sociétaires`;
-      const avgEl = document.getElementById('stat-club-avg');
-      if (avgEl) avgEl.innerHTML = `${s.rank.club_avg_km.toLocaleString('fr-FR')}<span class="unit">km</span>`;
-      const avgSub = document.getElementById('stat-club-avg-sub');
-      if (avgSub) {
-        const diff = (s.me.km_saison || 0) - s.rank.club_avg_km;
-        avgSub.textContent = diff >= 0 ? `+${diff.toLocaleString('fr-FR')} km au-dessus` : `${diff.toLocaleString('fr-FR')} km en dessous`;
-      }
-      const sorEl = document.getElementById('stat-sorties-done');
-      if (sorEl) sorEl.textContent = s.club_year.sorties_done;
-      const sorSub = document.getElementById('stat-sorties-sub');
-      if (sorSub) sorSub.textContent = `${s.club_year.total_km.toLocaleString('fr-FR')} km · D+ ${s.club_year.total_dplus.toLocaleString('fr-FR')} m`;
-      const upEl = document.getElementById('stat-upcoming');
-      if (upEl) upEl.textContent = s.club_year.upcoming_events;
+    const s = await api('/auth/my-stats');
+    const section = document.getElementById('my-stats-section');
+    if (section) section.hidden = false;
+    const yEl = document.getElementById('stats-year');
+    if (yEl) yEl.textContent = s.year;
+    const rankEl = document.getElementById('stat-rank');
+    if (rankEl) rankEl.innerHTML = `${s.rank.position}<span class="unit">/ ${s.rank.total}</span>`;
+    const rankSub = document.getElementById('stat-rank-sub');
+    if (rankSub && s.rank.percentile != null) rankSub.textContent = `Top ${100 - s.rank.percentile}% des sociétaires`;
+    const avgEl = document.getElementById('stat-club-avg');
+    if (avgEl) avgEl.innerHTML = `${s.rank.club_avg_km.toLocaleString('fr-FR')}<span class="unit">km</span>`;
+    const avgSub = document.getElementById('stat-club-avg-sub');
+    if (avgSub) {
+      const diff = (s.me.km_saison || 0) - s.rank.club_avg_km;
+      avgSub.textContent = diff >= 0 ? `+${diff.toLocaleString('fr-FR')} km au-dessus` : `${diff.toLocaleString('fr-FR')} km en dessous`;
     }
+    const sorEl = document.getElementById('stat-sorties-done');
+    if (sorEl) sorEl.textContent = s.club_year.sorties_done;
+    const sorSub = document.getElementById('stat-sorties-sub');
+    if (sorSub) sorSub.textContent = `${s.club_year.total_km.toLocaleString('fr-FR')} km · D+ ${s.club_year.total_dplus.toLocaleString('fr-FR')} m`;
+    const upEl = document.getElementById('stat-upcoming');
+    if (upEl) upEl.textContent = s.club_year.upcoming_events;
   } catch (err) {
     console.warn('[my-stats]', err);
   }
@@ -367,7 +366,7 @@
       await window.CCS_AUTH.changePassword(cur, nw);
       sucEl.textContent = 'Mot de passe modifié — vous allez être redirigé vers la connexion…';
       sucEl.hidden = false;
-      setTimeout(() => window.location.href = 'login.html', 2000);
+      setTimeout(() => window.location.href = window.CCS_CONFIG?.loginUrl || 'login.html', 2000);
     } catch (err) {
       errEl.textContent = err.message || 'Erreur lors de la modification'; errEl.hidden = false;
       btn.textContent = 'Modifier le mot de passe'; btn.disabled = false;
@@ -499,13 +498,8 @@
   // ═════════════════════════════════════════════════════════════════
   async function loadDashboard() {
     try {
-      const token = window.CCS_AUTH?.getToken();
-      if (!token) return;
-      const r = await fetch(window.CCS_CFG.API + '/membres/me/dashboard', {
-        headers: { Authorization: 'Bearer ' + token },
-      });
-      if (!r.ok) return;
-      const d = await r.json();
+      if (!window.CCS_AUTH?.getToken()) return;
+      const d = await api('/membres/me/dashboard');
       const section = document.getElementById('my-stats-section');
       if (!section) return;
       section.hidden = false;
@@ -554,7 +548,8 @@
     btn.textContent = 'Préparation…';
     try {
       const token = window.CCS_AUTH?.getToken();
-      const r = await fetch(window.CCS_CFG.API + '/auth/export-data', {
+      const exportApi = window.CCS_CFG?.API || window.CCS_CONFIG?.apiBase || '/api';
+      const r = await fetch(exportApi + '/auth/export-data', {
         headers: { Authorization: 'Bearer ' + token },
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);

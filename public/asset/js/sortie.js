@@ -190,9 +190,10 @@
   }
 
   function popupHtml(poi) {
-    const type = POI_LABELS[poi.type] || poi.type;
+    const esc = window.esc || window.CCS_UTILS?.escapeHtml || (s => s);
+    const type = esc(POI_LABELS[poi.type] || poi.type);
     const contact = poi.contact
-      ? `<div class="poi-popup-contact"><b>${poi.contact.name || ''}</b>${poi.contact.phone ? ' · <a href="tel:' + poi.contact.phone.replace(/\s/g,'') + '">' + poi.contact.phone + '</a>' : ''}</div>`
+      ? `<div class="poi-popup-contact"><b>${esc(poi.contact.name || '')}</b>${poi.contact.phone ? ' · <a href="tel:' + esc(poi.contact.phone.replace(/\s/g,'')) + '">' + esc(poi.contact.phone) + '</a>' : ''}</div>`
       : '';
     return `
       <div class="poi-popup-head">
@@ -200,8 +201,8 @@
         <span class="poi-popup-km">${numKm(poi.km).toFixed(1)}<span style="font-family:'Archivo',sans-serif;font-size:.5em;font-style:normal;margin-left:2px;letter-spacing:.1em;"> km</span></span>
       </div>
       <div class="poi-popup-body">
-        <div class="poi-popup-title">${poi.label || '—'}</div>
-        ${poi.desc ? `<div class="poi-popup-desc">${poi.desc}</div>` : ''}
+        <div class="poi-popup-title">${esc(poi.label || '—')}</div>
+        ${poi.desc ? `<div class="poi-popup-desc">${esc(poi.desc)}</div>` : ''}
         ${contact}
       </div>`;
   }
@@ -931,7 +932,8 @@
     const totalKm = state.routePoints.length ? state.routePoints[state.routePoints.length - 1].distAccum / 1000 : (state.sortie?.distance_km || 1);
     ticks.innerHTML = state.pois.map(p => {
       const frac = Math.min(1, Math.max(0, (p.km || 0) / totalKm));
-      return `<div class="scrub-tick" style="left:${(frac * 100).toFixed(2)}%; background:${POI_COLORS[p.type] || '#B08E4A'};" title="${p.label}"></div>`;
+      const esc = window.esc || window.CCS_UTILS?.escapeHtml || (s => s);
+      return `<div class="scrub-tick" style="left:${(frac * 100).toFixed(2)}%; background:${POI_COLORS[p.type] || '#B08E4A'};" title="${esc(p.label)}"></div>`;
     }).join('');
   }
 
@@ -1379,7 +1381,7 @@
     if (!state.sortie) {
       console.warn('Sortie introuvable:', SORTIE_ID);
       const body = document.querySelector('.sortie-head-title');
-      if (body) body.textContent = 'Sortie introuvable';
+      if (body) { body.textContent = 'Sortie introuvable'; body.classList.remove('loading'); }
       return;
     }
     state.pois = await window.CCS_DATA.pois(SORTIE_ID);
@@ -1465,6 +1467,11 @@
         if (state.mapFallback) state.mapFallback.invalidateSize();
       }, 200);
     });
+    removeLoading();
+  }
+
+  function removeLoading() {
+    document.querySelector('.sortie-head-title')?.classList.remove('loading');
   }
 
   function waitForDataAndBoot() {

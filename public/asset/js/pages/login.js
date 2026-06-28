@@ -43,9 +43,9 @@
       tick(0);
     });
     await waitFor(() => !!window.CCS_AUTH);
-    await CCS_AUTH.ready();
+    await window.CCS_AUTH.ready();
 
-    if (CCS_AUTH.isLoggedIn()) {
+    if (window.CCS_AUTH.isLoggedIn()) {
       window.location.href = getRedirect();
       return;
     }

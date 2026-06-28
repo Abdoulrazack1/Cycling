@@ -1,6 +1,7 @@
 (() => {
   'use strict';
-  const API = window.CCS_CONFIG.apiBase;
+  const API = window.CCS_CONFIG?.apiBase;
+  if (!API) { console.error('[admin] CCS_CONFIG.apiBase missing'); return; }
 
   // ── Helpers ─────────────────────────────────────────────────
   function apiFetch(path, opts = {}) {

@@ -100,6 +100,7 @@
       host.setAttribute('aria-live', 'polite');
       host.setAttribute('aria-label', 'Notifications');
       document.body.appendChild(host);
+      document.body.setAttribute('data-ccs-toast', 'ready');
       return host;
     }
     const ICONS = {

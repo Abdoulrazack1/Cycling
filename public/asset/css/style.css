@@ -1034,7 +1034,7 @@ ul { list-style: none; }
   padding: 28px 0;
   border-bottom: 1px solid var(--line);
   align-items: center;
-  transition: all .4s var(--lux);
+  transition: background .4s var(--lux), padding-left .4s var(--lux);
   text-decoration: none;
   color: inherit;
 }
@@ -1712,7 +1712,7 @@ ul { list-style: none; }
   box-shadow: var(--sh-3);
   transform: translateY(120%);
   opacity: 0;
-  transition: all .4s var(--lux);
+  transition: transform .4s var(--lux), opacity .4s var(--lux);
   display: flex; align-items: center; gap: 10px;
   max-width: 400px;
   backdrop-filter: blur(14px);
@@ -1720,7 +1720,7 @@ ul { list-style: none; }
 .toast.show { transform: translateY(0); opacity: 1; }
 .toast.success { border-left: 3px solid var(--brass); }
 .toast.info    { border-left: 3px solid var(--cream-3); }
-.toast.warning { border-left: 3px solid var(--brass); }
+.toast.warning { border-left: 3px solid var(--brass-hi); }
 .toast.error   { border-left: 3px solid var(--ox); }
 
 /* ─── REVEAL ─────────────────────────────────────────────────── */

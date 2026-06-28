@@ -3,7 +3,8 @@
    → rend le tracé routé (GPX) + les POIs colorés + les stats. */
 (() => {
   'use strict';
-  const API = window.CCS_CONFIG.apiBase;
+  const API = window.CCS_CONFIG?.apiBase;
+  if (!API) { console.error('[creer-parcours] CCS_CONFIG.apiBase missing'); return; }
 
   function apiFetch(path, opts = {}) {
     const token = window.CCS_AUTH.getToken();

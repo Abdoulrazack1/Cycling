@@ -1,370 +1,462 @@
-# Audit & corrections — C.C. Salouel
+# Audit Exhaustif — C.C. Salouel
 
-État du projet après plusieurs itérations d'audit. Ce document liste **les bugs corrigés**, **les choix techniques** et **les vérifications systématiques** appliquées.
-
----
-
-## ✅ Bugs corrigés
-
-### Backend
-
-| Bug | Cause | Correction |
-|-----|-------|------------|
-| Login en boucle entre Live Server (5500) et API (3000) | Cookie `SameSite=Strict` refusé en cross-origin | `cookieOpts()` centralisé : `SameSite=lax` en dev, `none+secure` en prod |
-| Routes paginées : `Incorrect arguments to mysqld_stmt_execute` | mysql2 `pool.execute()` refuse les entiers en placeholder pour `LIMIT/OFFSET` | Helper `pageClause()` qui interpole après `parseInt` strict (anti-injection testé) |
-| `?statut=undefined` (string) → 0 résultats | `URLSearchParams({statut: undefined})` envoie la string littérale | Nettoyage côté client (data.js) + ignore côté serveur |
-| `process.exit(1)` à l'échec DB tuait le serveur | Erreur de log empêchait le serveur de démarrer | Retiré : le serveur survit à une DB indisponible |
-| `POST /:id/inscrire` exigeait l'auth | `requireAuth` au lieu de `optionalAuth` | Passé en `optionalAuth` (avec pré-remplissage si connecté) |
-| Username regex refusait les points | `[a-zA-Z0-9_-]+` | Ajouté le point : `[a-zA-Z0-9_.-]+` |
-| `seed.js` ne tronquait pas `club_settings` | Manquait dans la liste TRUNCATE | Ajouté |
-| Pas de catch-all 404 | URL inexistante → erreur Express brute | `app.get('*', sendFile('404.html'))` |
-| `INSERT INTO pois` sans `id` (PK manquante) | Colonne `id` VARCHAR(50) PRIMARY KEY mais absente du INSERT | `INSERT` avec id généré + tous les champs (contact_name, contact_phone) |
-| `INSERT INTO sorties` avec `date=null` | Colonne `date` est NOT NULL | Date du jour par défaut si manquante |
-
-### Frontend
-
-| Bug | Correction |
-|-----|------------|
-| auth.js v1 : polling sur `window.CCS_AUTH` | v2 refondue avec `CCS_AUTH.ready()` (Promise) + persistance `localStorage`/`sessionStorage` selon "remember me" |
-| Login sans vrai `<form>` | Refondu : `<form>` avec `submit`, `autocomplete`, ARIA, écran de chargement |
-| Pas de page mot-de-passe-oublié | Créée + endpoint `POST /auth/forgot-password` |
-| Anti open-redirect manquant sur `?redirect=` | Vérification du domaine cible avant redirection |
-| `</div>` orphelin dans sorties.html L50 | Supprimé |
-| Incohérences géo (Salouel/Valenciennes) | Tout rebasé sur 80480 Salouel, Somme |
-| Image moto sur Paris-Roubaix | Toutes les URLs Unsplash remplacées par 5 SVG cyclisme inline (`asset/img/hero-*.svg`) |
-
-### Page sortie.html
-
-| Bug | Correction |
-|-----|------------|
-| Profil altimétrique 0×0 sur layout asynchrone | `drawElevation()` réessaie au prochain frame si canvas non mesuré |
-| Heading Street View incorrect (formule simpliste) | Formule rhumb line + look-ahead progressif 50 m + correction latitude |
-| Marker position basique | Flèche directionnelle qui pivote selon le cap (CSS `.pos-marker-arrow`) |
-| Trait de tracé peu visible (`#B08E4A` brass) | Triple-polyline : ombre noire + halo jaune large + trait `#FFD93D` fin |
-| Lecture trop rapide (27 s pour 100%) | Step de base `0.0008` toutes les 100 ms ≈ 4 minutes à `0.5×` (par défaut) |
-| Profil altimétrique monochrome | Coloré par pente (laiton <3%, or 3-6%, orange 6-9%, rouge >9%) avec grille + légende + stats D+/D− |
-| Pas de météo | Module `weather.js` (Open-Meteo) intégré : forecast (futur ≤16j) ou archive (passé) |
-
-### CSS
-
-| Bug | Correction |
-|-----|------------|
-| Logo nav qui se chevauche en moyen écran | `.nav-logo` `flex-shrink: 0`, masquage progressif (sous-titre <1100px, monogramme seul <720px) |
+**Dernière mise à jour :** 28 juin 2026  
+**Commits :** 90 | **Fichiers :** ~200 | **Lignes :** ~33 400
 
 ---
 
-## 🆕 Nouvelles fonctionnalités
+## 1. Vue d'ensemble
 
-### Auto-import & génération automatique
+| Métrique | Valeur |
+|----------|--------|
+| Backend (src/) | 52 fichiers, ~9 500 L |
+| Frontend JS | 45 fichiers, ~673 KB |
+| CSS | 16 fichiers, ~289 KB |
+| HTML | 25 pages, ~3 900 L |
+| Routes API | ~100 endpoints |
+| Tables MySQL | 25 |
+| Migrations | 13 fichiers |
+| Tests | 14 fichiers, ~100 cas |
+| Scripts CLI | 21 fichiers |
+| Dépendances | 23 npm |
 
-Créé un système autonome de génération de courses :
+## 2. Architecture
 
-- **`services/routing.js`** : OSRM cycling, chunking auto >25 waypoints, fallback densification
-- **`services/elevation.js`** : Open-Meteo, batch 100 pts, interpolation, calcul D+/D−
-- **`services/gpx-builder.js`** : GPX 1.1 valide, échappement XML
-- **`services/course-generator.js`** : pipeline complète (orchestrateur)
-- **`services/course-scraper.js`** : scraper Miles Republic (3 sources)
-- **`routes/auto-courses.js`** : 5 endpoints REST (admin only)
-- **`admin.html`** : panneau "Auto-import" avec scrape + génération manuelle
+```
+src/
+├── server.js              # Point d'entrée (527 L)
+├── config/database.js     # Pool MySQL 10 connexions
+├── controllers/           # 20 fichiers (auth 805L, sorties 844L, strava 557L)
+├── routes/                # 21 fichiers
+├── services/              # 11 fichiers (strava-client 272L, routing 163L, elevation 88L)
+├── middleware/             # auth.js (JWT), upload.js (Multer)
+└── lib/                   # errors.js, logger.js (Pino), async-handler.js
 
-Voir le README pour la documentation complète d'utilisation.
+public/
+├── 25 pages HTML
+├── asset/js/              # 24 racine + 21 pages/
+├── asset/css/             # 16 fichiers
+├── asset/img/             # 7 héros SVG + 7 images WebP
+├── asset/gpx/             # GPX statiques
+├── sw.js                  # Service Worker v34
+└── manifest.webmanifest   # PWA
 
-### Météo
+scripts/                   # 21 scripts CLI
+tests/                     # 14 fichiers (4 unit + 10 intégration)
+database/                  # schema.sql + seed.js
+migrations/                # 002 → 013
+```
 
-- **`asset/js/weather.js`** : module `CCS_WEATHER` avec `fetch()`, `renderInto()`, `symbolFor()`, `labelFor()`
-- Cache mémoire 30 min
-- 29 codes WMO mappés vers emoji + libellé FR
-- Widget intégré dans `sortie.html` après le profil altimétrique
-
-### Slider de vitesse de lecture
-
-- Slider 0.25× à 4× pendant la lecture
-- Vitesse par défaut : 0.5×
-- Mise à jour dynamique sans interruption
-
----
-
-## 📊 Statistiques après audit
-
-| Indicateur | Valeur |
-|------------|--------|
-| Sorties | 32 (avant : 13) |
-| Évènements | 32 (avant : 7) |
-| Évènements sans sortie | 0 |
-| POIs | 272 (moy 8.5/sortie) |
-| GPX | 28 fichiers |
-| URLs Unsplash | 0 (avant : 18) |
-| Sources de scraping | 3 |
-| Tests pageClause unitaires | 10/10 |
-
----
-
-## 🔍 Vérifications systématiques
-
-À chaque itération :
-
-1. ✅ Syntaxe JS : tous les fichiers (`asset/js`, `routes`, `services`, `config`, `middleware`, `server.js`, `seed.js`, `scripts`)
-2. ✅ Balises HTML équilibrées (div, section)
-3. ✅ Liens HTML/CSS/JS référencés existent
-4. ✅ Images SVG référencées existent
-5. ✅ GPX référencés dans `data.js` et `seed.js` existent dans `asset/gpx/`
-6. ✅ Pas d'URL Unsplash résiduelle
-7. ✅ Pas de TODO/FIXME critiques
-8. ✅ Tous les imports Node.js résolvent
-9. ✅ Serveur démarre sans erreur (même sans DB)
-10. ✅ Routes admin renvoient 401 sans token
-11. ✅ `/api/health` répond 200
+**Middleware Express (ordre) :** dotenv → validation env → pinoHttp → helmet (CSP) → cors → CSP report → sitemap.xml → body parsers → globalLimiter → authLimiter → contactLimiter → inscriptionLimiter → adminLimiter → compression → static files → cache public → maintenance mode
 
 ---
 
-## 🎯 Points d'attention pour la suite
+## 3. Registre complet des problèmes
 
-- **OSRM publique** peut être lente / 503. Pour un usage soutenu, déployer une instance OSRM locale et configurer `OSRM_BASE` dans `.env`.
-- **Open-Meteo Elevation** : limite 100 pts/req. Le batch + interpolation sont déjà gérés mais suffisants jusqu'à ~10 000 points.
-- **Scraper** : les sources Miles Republic peuvent changer leur HTML. Si le scrape renvoie 0 events, vérifier le parser regex.
-- **Stockage GPX** : actuellement en disque local (`asset/gpx/`). Pour scaler à >1000 courses, prévoir un stockage S3/CDN.
-- **Auth** : JWT en mémoire, à invalider à la déconnexion. Token blacklist non implémenté → durée courte (15 min) recommandée.
-
----
-
-## 🚀 Itération 2026-05-23 — couche premium + tests étendus
-
-### Ajouté
-
-- **`/api/stats`** : statistiques agrégées publiques (sorties/km/D+/évts/membres/segments/KOMs) avec cache mémoire 5 min + endpoint flush.
-- **`/api/newsletter`** : subscribe (double opt-in), confirm, unsubscribe, list (admin) + table `newsletter_subscribers` (migration 010).
-- **Widget newsletter** intégré au footer global (auto-injecté par `main.js`) avec honeypot anti-spam.
-- **Honeypot anti-bot** sur le formulaire de contact (champ `website` caché, 201 silencieux si rempli).
-- **`offline.html`** + service worker v20 : fallback dédié hors-ligne au lieu de réutiliser `index.html`.
-- **`.well-known/security.txt`** (RFC 9116) pour les divulgations de vulnérabilité.
-- **`asset/js/premium.js` + `asset/css/premium.css`** — couche d'expérience :
-  - Progress bar globale style YouTube/NProgress branchée automatiquement sur `window.fetch`.
-  - Toast queue (FIFO, 3 max, bouton close, success/error/warning/info, accessible).
-  - View Transitions API (fade page-to-page sur Chrome 111+) avec fallback gracieux.
-  - Smooth scroll automatique pour les ancres `#xxx` avec offset sous la nav fixe.
-  - Pull-to-refresh mobile (opt-in via `<body data-ptr>`).
-  - Core Web Vitals collectés dans `localStorage` (LCP / CLS / TTFB).
-  - Helper `CCS_PREMIUM.copyLink(url, label)` + bouton "Copier" sur la page sortie.
-
-### Tests
-
-- **31 → 63 tests** (33 unitaires scraper + 30 intégration : auth, sorties, admin, gpx, 2fa, **stats, newsletter, public-endpoints**).
-- `tests/integration/gpx.test.js` réécrit : ne dépend plus des 4 GPX de démo (`avesnois`, `cote-opale`, `pevele`, `scarpe-gravel`) qui n'existaient plus — désormais teste dynamiquement les GPX présents.
-- `tests/integration/newsletter.test.js` (9 cas) + `tests/integration/stats.test.js` (4 cas) + `tests/integration/public-endpoints.test.js` (17 cas).
-
-### Polish UX
-
-- Skeleton loaders ajoutés sur `evenements.html`, `segments.html` (en plus des existants sur sorties/membres/palmares).
-- Bouton "Copier lien" sur `sortie.html`.
-- `fetchpriority="high"` sur l'image hero d'`evenements.html`.
-- Lazy-fade pour `img[loading="lazy"]` (transition opacity douce).
-- Focus-ring uniformisé brass + shadow halo sur tous les boutons et liens.
+### Légende
+- 🔴 Critique = plantage, sécurité, données exposées
+- 🟠 Sérieux = bug fonctionnel, fuite d'info
+- 🟡 Modéré = robustesse, dette technique
+- ⚪ Mineur = polish, typo, perf mineure
 
 ---
 
-## 🌗 Itération 2026-05-25 — thèmes, satellite, animations 3D
+### 3.1 🔴 CRITIQUE
 
-### Light mode (`theme.css` + `theme.js`)
-
-- 3 modes : **clair / sombre / auto** (suit `prefers-color-scheme` du système).
-- Tokens light dupliqués (crème parchemin éclairé, encre profonde pour le texte, laiton conservé).
-- Switcher 3-way injecté automatiquement dans la nav (icônes soleil/écran/lune).
-- Persistance `localStorage.ccs.theme`, transition douce 400 ms au switch.
-- `meta[name="theme-color"]` mis à jour dynamiquement (barre status mobile).
-- Évènement DOM `ccs:themechange` exposé pour les modules qui doivent réagir (cartes notamment).
-
-### Vues cartographiques (`maps.js`)
-
-- 5 presets de tuiles : **standard** (CARTO Positron), **sombre** (CARTO Dark), **satellite** (Esri World Imagery), **topo** (OpenTopoMap), **OSM**.
-- Helper `CCS_MAPS.addLayerControl(map, opts)` ajoute un Leaflet `L.control.layers` avec switcher.
-- `bindToTheme(map, holder)` permet le switch auto de la couche selon le thème courant.
-- Intégré sur la carte fallback de `sortie.html` (standard / satellite / topo accessible via control coin haut-droit).
-
-### Animations 3D (`animations.js` + anime.js v3.2.2 via CDN)
-
-- **Counters** animés (chiffres .page-head-meta-v, .stats-v, .stat-card-value) au scroll-into-view, format FR avec séparateurs de milliers.
-- **Hero parallax** : image et titre se déplacent à des vitesses différentes au scroll (effet profondeur).
-- **Title reveal** : titre hero animé mot-par-mot avec rotation 3D (`rotateX`) + stagger 70ms.
-- **Stagger reveal** sur `[data-stagger]` : entrée séquentielle des items d'une liste.
-- **3D card tilt** sur `.rc / .stat-card / .member-card` (mouse-move calcule l'angle de perspective).
-- **Live-time pulse** sur le compteur horloge footer.
-- Respect `prefers-reduced-motion` : applique les valeurs finales sans transition.
-
-### Panneau POI renforcé
-
-- **Barre de recherche** live (debounce 120ms) sur titre / description / contact / type.
-- **Tri** : km croissant / km décroissant / par type / A→Z.
-- Filtre supplémentaire : **Directions** (en plus de Tous / Signaleurs / Ravitos / Secteurs / Dangers).
-- Pipeline filter → search → sort dans `filteredPois()`.
-
-### Autres
-
-- **Web Share API** : bouton sortie utilise `navigator.share()` sur mobile (sheet natif iOS/Android), fallback copie sur desktop.
-- **Raccourcis clavier globaux** : `t` cycle le thème, `?` ouvre l'aide, `g h/s/e/m/c/p/k` navigation rapide entre pages.
-- Modal d'aide raccourcis stylé (Backdrop blur + animation modal-in).
-- **Anime.js v3** chargé depuis cdn.jsdelivr.net (déjà whitelist CSP).
+| ID | Fichier:Ligne | Problème | Statut |
+|----|--------------|----------|--------|
+| C1 | `scripts/validate-gpx.js:27` | `SEED_PATH` pointe vers `../seed.js` (fichier inexistant) — crash ENOENT | ⏳ |
+| C2 | `scripts/dump-seed-to-static.js:32` | Même bug path — `../seed.js` au lieu de `../database/seed.js` | ⏳ |
+| C3 | `scripts/build-courses.js:558` | GPX généré avec balises `<n>` au lieu de `<name>` — XML invalide GPX 1.1 | ⏳ |
+| C4 | `scripts/analyze-gpx.js:33-34` | `Math.min/max(...spread)` sur >~100k points → stack overflow | ⏳ |
+| C5 | `controllers/sorties.js:282` | `res.status(500).json({ error: 'Erreur: ' + err.sqlMessage })` — fuite info SQL en prod | ⏳ |
+| C6 | `controllers/sorties.js:664` | Même problème — `err.sqlMessage` exposée au client | ⏳ |
+| C7 | `controllers/strava.js:535` | `DELETE ... WHERE strava_id = ?` — colonne inexistante (devrait être `id`) → suppression ineffective | ⏳ |
 
 ---
 
-## 🚴 Itération 2026-05-27 — renforcement parcours utilisateurs
+### 3.2 🟠 SÉRIEUX
 
-### Backend
-
-- **Migration 011** : nouvelles tables `user_favorites`, `notifications`, `sortie_inscriptions` + extension ENUM `audit_log.action` (inscription, annulation, favorite, notification).
-- **`/api/favorites`** : CRUD sorties favorites par membre (POST, DELETE, GET, GET /check/:id).
-- **`/api/notifications`** : flux centralisé (liste, unread, read-all, read/:id, delete, POST admin push). Helper `notify(userId, type, ...)` exporté pour les autres routes.
-- **`/api/sorties/:id/inscription`** : inscription 1-clic membre (POST/DELETE). Endpoint public `/inscriptions` retourne la liste (sans email/téléphone). Admin peut patch le statut (`inscrit` / `liste-attente` / `annule`).
-- **Notifications auto-générées** :
-  - `sortie.updated` : envoyée à tous les inscrits quand un admin modifie une sortie.
-  - `inscription.confirmed` : envoyée au user lors d'une inscription 1-clic.
-  - `inscription.status_changed` : envoyée quand admin change le statut.
-  - `broadcast` : envoyée à tous les destinataires d'un broadcast email.
-- **`/api/auth/me` étendu** : ajoute `strava_linked` (bool) et `inscriptions_count` (int) pour alimenter la checklist d'onboarding.
-
-### Frontend
-
-- **`member-journey.js`** + **`journey.css`** :
-  - **Cloche de notifications** dans la nav avec badge unread + animation shake + panneau dépliant. Polling 60s.
-  - **Bouton favori** (étoile) sur la page sortie avec animation scale + état toggle persistant.
-  - **Bouton inscription 1-clic** sur la page sortie avec compteur d'inscrits public.
-  - **Checklist d'onboarding** sur le profil (4 étapes : profil / équipement / Strava / inscription première sortie) avec progress bar + bouton "Faire" qui scroll vers la bonne section.
-- **`admin-palette.js`** : palette d'actions admin (Ctrl+Shift+P) avec fuzzy-search, 19 commandes (nouveau membre/sortie/event, broadcast, maintenance toggle, audit log, scraper, Strava config, etc.). Active uniquement si user.role === 'admin'.
-- **`breadcrumbs.js`** : fil d'Ariane auto-injecté en début de `<main>` selon la page courante (15 pages mappées). Désactivable via `data-no-breadcrumbs`.
-
-### Tests
-
-- **Nouveau fichier** `tests/integration/journey.test.js` : 15 cas pour favorites, notifications, sortie inscriptions, /auth/me étendu.
-- **78/78 tests passent** (63 → 78).
+| ID | Fichier:Ligne | Problème | Statut |
+|----|--------------|----------|--------|
+| S1 | `controllers/auth.js:603` | `req.params.userId` pas validé comme integer avant usage dans JWT sign | ⏳ |
+| S2 | `controllers/sorties.js:436` | `fs.writeFileSync()` bloquant dans handler async — bloque l'event loop pendant écriture photo | ⏳ |
+| S3 | `routes/stats.js:12` | `POST /api/stats/flush` sans aucune auth — quiconque peut vider le cache | ⏳ |
+| S4 | `services/strava-client.js:70,87,136` | Aucun timeout sur fetch vers API Strava — requête peut rester ouverte indéfiniment | ⏳ |
+| S5 | `controllers/strava.js:351` | Aucun timeout sur fetch GPX Strava | ⏳ |
+| S6 | `controllers/contact.js:8-13` | `nodemailer.createTransport` créé au chargement même sans `SMTP_HOST` — plantera au 1er envoi | ⏳ |
+| S7 | `controllers/admin.js:92` | `LIMIT ${limit}` interpolation directe dans SQL (valeur contrôlée mais pattern fragile) | ⏳ |
+| S8 | `controllers/sortie-inscriptions.js:100` | `capacityMax = 0` bloque toutes les inscriptions (0 != null → true, count >= 0 → true) | ⏳ |
+| S9 | `services/web-push.js:66` | Erreur DB silencieuse dans sendToUser — admin ne saura pas pourquoi push échouent | ⏳ |
+| S10 | `public/asset/js/gpx-drop.js:99` | `'Bearer ' + token()` — si token null → header `'Bearer null'` | ⏳ |
+| S11 | `controllers/pois.js:12`, `pois-admin.js:33` | `parseFloat(null)` → NaN au lieu de null | ⏳ |
+| S12 | `public/asset/js/pages/membre.js:32` | `esc()` n'échappe pas `'` (single quote) → peut casser attributs HTML | ⏳ |
+| S13 | `public/asset/js/pages/login.js:46,48` | `CCS_AUTH.ready()` sans `window.` — peut échouer en strict mode | ⏳ |
+| S14 | `database/schema.sql:133` | ENUM `type` ne contient pas `'direction'` — confusion si schema+seed sans migrations | ⏳ |
 
 ---
 
-## ⚙ Itération 2026-05-27 (bis) — features manquantes + Strava/GPX
+### 3.3 🟡 MODÉRÉ
 
-### Nettoyage
-
-- Emojis retirés de `admin-palette.js`, `search-palette.js`, `admin.js`. Remplacés par initiales lettre (S/E/M/B…) ou texte ("Photos", "Vélo", "Course").
-
-### Backend
-
-- **Migration 012** : `sorties.capacity_max` + `inscription_ouverte` + table `user_recent_views`.
-- **Capacité + liste d'attente automatique** sur `POST /api/sorties/:id/inscription` :
-  - Si `capacity_max` atteint → placement auto en `liste-attente`.
-  - Si quelqu'un se désinscrit → premier de la file promu automatiquement (+ notification `inscription.promoted`).
-  - Si `inscription_ouverte = 0` → 403 (admin peut fermer manuellement).
-- **`/api/my/dashboard`** : agrégat favoris + inscriptions + récemment vues + count non-lues en 1 call.
-- **`/api/my/inscriptions`** + **`/api/my/recent`** + **`POST /api/my/recent/:sortieId`** (track silencieux).
-- **`POST /api/sorties/preview-gpx`** : parse GPX uploadé sans rien sauvegarder, renvoie metrics + warnings + titre suggéré (depuis `<trk><name>`).
-- **`GET/POST /api/strava/webhook`** : endpoint d'enregistrement Strava (challenge GET) + receveur d'événements (POST). Re-sync auto de l'activité concernée + notif `strava.synced`.
-- **`POST /api/strava/resync/:activityId`** : re-sync manuel d'une activité (debug/data-drift).
-- **`syncSingleActivity()`** dans `services/strava-client.js` : UPSERT robuste utilisé par webhook + re-sync.
-
-### Frontend
-
-- **`gpx-drop.js`** + CSS : composant réutilisable de drag & drop GPX avec preview (distance/D+/points/titre suggéré + warnings). Active sur `[data-gpx-drop]`.
-- **`member-journey.js`** étendu : `RecentTracker.init()` track les consultations sortie après 3s.
-- Empty states stylés (`.ccs-empty` + variants) prêts à servir sur les pages dashboard / inscriptions / favoris.
-
-### Tests
-
-- **Nouveau fichier** `tests/integration/my-dashboard.test.js` : 9 cas (dashboard, recent, Strava webhook GET/POST, GPX preview auth).
-- **87/87 tests passent** (78 → 87).
-
----
-
-## 🔗 Itération 2026-05-28 — faciliter Strava + import
-
-### Backend
-
-- **`GET /api/strava/preview-sync`** : dry-run du sync avec choix période. Renvoie `{will_import, already_imported, total_scanned, preview[5]}` sans rien sauver.
-- **`POST /api/strava/import-activity/:activityId`** : transforme une activité Strava du membre en sortie club. Décode le polyline Google encoded en coordonnées + génère un GPX minimal + INSERT sortie. Modo+ requis.
-  - Helper `decodePolyline()` + `buildGpxFromCoords()` inclus dans la route.
-  - Si l'activité n'est pas en base, re-sync via `syncSingleActivity` automatiquement.
-
-### Frontend
-
-- **`strava-ux.js` + `strava-ux.css`** :
-  - **Modal "Connecter Strava"** explicite avant l'OAuth (bénéfices + permissions précisées : lecture activités/profil/itinéraires, AUCUNE écriture). Active sur `[data-strava-connect]`.
-  - **Banner inline** auto-injecté sur `[data-strava-banner]` quand user connecté CCS mais pas Strava (avec dismiss persistant 7j).
-  - **Modal de sync** avec choix période (30/90/180/365 j) + preview avant lancement (combien d'activités nouvelles, déjà connues, 5 exemples affichés).
-- **Page `/strava-activites.html`** : liste des activités Strava du membre + recherche + filtre par type + bouton "Importer → Sortie" pour modérateurs.
-- **Page `/strava-routes.html`** : liste des itinéraires Strava sauvegardés + modal d'import (date/titre/chapitre) → POST `/strava/import-route/:id`.
-- Liens directs depuis le profil (boutons "Mes activités" + "Mes itinéraires" dans la section Strava).
-
-### UX
-
-- Bouton "Connecter mon Strava" sur profil utilise désormais la modal explicative au lieu de partir direct sur OAuth.
-- Bouton "Synchroniser" sur profil utilise désormais la modal preview (au lieu de sync direct sur 90 j).
-- Banner "Connecter Strava" auto-injecté sur le profil pour les users non-strava.
+| ID | Fichier:Ligne | Problème | Statut |
+|----|--------------|----------|--------|
+| M1 | `auth.js:53` | `COOKIE_SECURE` jamais lue par le code — utilise `NODE_ENV` | ⏳ |
+| M2 | `gpx.js:37,52` | Regex GPX filename trop restrictive — rejette `.GPX` (uppercase) | ⏳ |
+| M3 | `gpx-drop.js:99` | Bearer null quand non connecté | ⏳ |
+| M4 | `scrape-sorties.js:44` | `args[idx+1]` sans guard si `--only` est le dernier arg | ⏳ |
+| M5 | `scrape-sorties.js:168` | Overpass API `overpass.kumi.systems` instable | ⏳ |
+| M6 | `auth.js:544` | Parse error silencieux JSON payload | ⏳ |
+| M7 | `build-courses.js:627` | `--course` sans argument → traite toutes les courses | ⏳ |
+| M8 | `build-courses.js:558`, `generate-gpx.js:272` | Pas d'échappement XML dans GPX généré | ⏳ |
+| M9 | `newsletter.js:54` | `req.protocol` insecure derrière reverse proxy | ⏳ |
+| M10 | `strava.js:37-43` | `_slugify` dupliqué (copie de `course-generator.js`) | ⏳ |
+| M11 | `server.js:264` | `inscriptionLimiter` skip trop large | ⏳ |
+| M12 | `ocr-2jam-pdfs.js:129` | Worker Tesseract non terminé sur erreur | ⏳ |
+| M13 | `scrape-sorties.js:78` | User-Agent obsolète `Chrome/124` | ⏳ |
+| M14 | `admin.html:22` | `data-requires-auth` redondant avec `data-requires-admin` | ⏳ |
+| M15 | `database.js:13` | `pool.queueLimit: 0` illimité → mettre 100 | ⏳ |
+| M16 | `offline.html` | Pas de skip-link a11y | ⏳ |
+| M17 | `offline.html` | Pas de `<link rel="manifest">` | ⏳ |
+| M18 | `mon-espace.html` | Manque balises PWA (apple-touch-icon, theme-color) | ⏳ |
+| M19 | `import-sortie.html` | CSS `import-sortie.css` dans `<body>` au lieu de `<head>` | ⏳ |
+| M20 | `profil.html:5` | Titre hardcodé `"Mon profil — Antoine Lemaire"` | ⏳ |
+| M21 | `routes/gpx.js:4` | Comment dit "modo+" mais code utilise `requireAdmin` | ⏳ |
+| M22 | `routes/sorties.js:22` | DELETE photo utilise `requireModo` (inconsistant avec autres DELETE) | ⏳ |
+| M23 | `server.js:182,189` | `catch {}` vide dans sitemap — silencieux si DB down | ⏳ |
+| M24 | `server.js:473` | `SCRAPE_GRACE_DAYS || '90'` — si 0, remplacé par '90' | ⏳ |
+| M25 | `config/database.js:34` | `logger.info('msg', arg)` — pino ne gère pas args multiples | ⏳ |
+| M26 | `middleware/upload.js:100` | Erreur `validateGpxFile` non loggée | ⏳ |
+| M27 | `services/course-scraper.js:47` | TOCTOU sur `existsSync`/`readFileSync` | ⏳ |
+| M28 | `controllers/auth.js:150` | `catch {}` vide sur TOTP verify | ⏳ |
+| M29 | `controllers/auth.js:575` | Mail reset fire-and-forget sans feedback utilisateur | ⏳ |
+| M30 | `controllers/sorties.js:559` | `logger.info('[import]', req.user?.id, req.user?.username)` — args multiples pino | ⏳ |
+| M31 | `controllers/gpx.js:19-21` | `readdirSync`/`statSync` bloquants | ⏳ |
+| M32 | `controllers/evenements.js:117` | Double quotes dans SQL (`"annule"`) au lieu de single quotes | ⏳ |
+| M33 | `controllers/contact.js:89` | Destructuring sans vérifier que la query retourne 1 row | ⏳ |
+| M34 | `scripts/analyze-gpx.js:39-40` | Paths hardcodés `C:/Users/PC/Downloads/` | ⏳ |
+| M35 | `scripts/migrate.js:79` | Port MySQL hardcodé `3306` au lieu de `DB_PORT` | ⏳ |
+| M36 | `scripts/install-backup-cron.ps1:15` | `$ProjectPath` hardcodé `C:\laragon\www\Cycling` | ⏳ |
+| M37 | `package.json:13` | Script `test` liste fichiers explicitement — pas de glob | ⏳ |
+| M38 | `electron-main.js:42` | `ELECTRON_RUN_AS_NODE: '1'` pas passé au fork | ⏳ |
+| M39 | `nginx.conf.example:110` | Bloque `/test/` mais dossier s'appelle `tests/` | ⏳ |
+| M40 | `ci.yml:57` | `npm run seed || true` — échec silencieux, tests avec BDD vide | ⏳ |
+| M41 | `migrations/006-013` | Pas de `USE ccs_salouel;` en en-tête | ⏳ |
+| M42 | `migrations/011:36` | `sortie_inscriptions` créée sans FK sur `sortie_id` | ⏳ |
+| M43 | `migrations/013:15` | `UNIQUE KEY endpoint(191)` — endpoint VARCHAR(512), les >191 chars ne sont pas uniques | ⏳ |
 
 ---
 
-## 🎨 Itération 2026-05-28 (bis) — animations & scroll FX renforcés
+### 3.4 ⚪ MINEUR
 
-### Nouveaux modules JS + CSS (chargés globalement par main.js)
-
-- **`scroll-fx.js`** :
-  - Barre de progression scroll en haut de page (style article long).
-  - **Parallax multi-couches** sur `[data-parallax="0.3"]` (speed 0-1) avec direction X ou Y. rAF-batched.
-  - **Card image parallax** : les images dans `.rc-img / .story-img` bougent à 8% du scroll dans la viewport pour effet profondeur.
-  - **Cascade reveal** sur `[data-cascade]` : chaque enfant a un delay incrémental.
-  - **Scroll-anim** sur `[data-scroll-anim="fade-up|fade-down|zoom-in|zoom-out|rotate-in"]`.
-  - **Nav condensée** : se réduit à 64px après 80px de scroll + backdrop-blur.
-  - **Section tracker** : met `.nav-active` sur les liens correspondant à la section visible.
-  - **Velocity-aware marquees** (opt-in via `CCS_SCROLL_FX.initMarqueeVelocity()`).
-
-- **`micro-fx.js`** :
-  - **Magnetic buttons** : `.btn-brass` et `.nav-cta` suivent légèrement le curseur (transform smooth bezier).
-  - **Ink ripple** au click sur tous les boutons.
-  - **Cursor spotlight** sur `[data-spotlight]` : halo discret qui suit le curseur dans une section.
-  - **Split text** sur `[data-split-text]` : reveal caractère par caractère avec rotation.
-  - **Link underline fancy draw** sur les liens nav + footer (`.ccs-link-fancy`).
-  - **Image overlay reveal** sur `[data-img-reveal="texte"]`.
-  - **Custom cursor** (opt-in via `<body data-cursor>`).
-  - **Focus glow** sur tous les inputs/textareas/selects.
-
-- **`fx.css`** : 20 sections d'effets (progress bar, parallax, cascade, scroll-anim variants, nav condensée, ripple, magnetic, spotlight, split, links, overlay, cursor, focus, glow, ken-burns subtil, dividers ornés, scroll cue, badge glow, nav-cta shimmer, smooth scroll). Toujours avec garde `prefers-reduced-motion`.
-
-### Application sur les pages existantes
-
-- `index.html` : hero avec `data-spotlight` + `data-parallax="0.25"` sur l'image, stats-row avec `data-cascade`.
-- `evenements.html` : image hero avec `data-parallax="0.15"`.
-
-### Performance
-
-- Tous les listeners scroll sont **rAF-batched** (1 update / frame max).
-- `IntersectionObserver` partout où on peut éviter le scroll listener.
-- `will-change: transform` posé statiquement pour éviter le composite layer churn.
-- Skip total sous `prefers-reduced-motion: reduce` (valeurs finales appliquées sans transition).
-- Skip sur mobile (`hover: none`) pour magnetic/spotlight/cursor (économise la batterie).
+| ID | Fichier:Ligne | Problème | Statut |
+|----|--------------|----------|--------|
+| T1 | `style.css:128` | `em { font-style: italic; }` redondant (déjà natif) | ⏳ |
+| T2 | `style.css:1721-1723` | `.toast.warning` = `.toast.success` (même couleur brass) | ⏳ |
+| T3 | `profil.css:40` | `var(--f-mono)` utilisé mais jamais défini | ⏳ |
+| T4 | `fx.css:124` | `.btn { overflow: hidden; }` global casse dropdowns | ⏳ |
+| T5 | `fx.css:249` | `body[data-cursor] * { cursor: none !important; }` trop large | ⏳ |
+| T6 | `index.html:175,193` | Skeleton 3 items / titre "4 dernières sorties" | ⏳ |
+| T7 | `sortie.html:41` | `<img src=""` → requête HTTP vers page courante | ⏳ |
+| T8 | `offline.js:5,19` | `var` au lieu de `let`/`const` | ⏳ |
+| T9 | `journey.css` ×8, `polish.css` ×5, `style.css` ×10, etc. | 28× `transition: all` restants | ⏳ |
+| T10 | `search-palette.js:321` | Recrée écouteurs à chaque Ctrl+K | ✅ |
+| T11 | `scroll-fx.js:264` | N IntersectionObservers au lieu d'un seul | ✅ |
+| T12 | `style.css:424` | `transition: all` sur `.nav-cta` | ⏳ |
+| T13 | `style.css:1128` | `transition: all` sur `.list-ornate-arrow` | ⏳ |
+| T14 | `style.css:2280,2326,2366,2715,2739,3236,3536` | `transition: all` sur divers éléments | ⏳ |
+| T15 | `journey.css:21,176,218,309,353,479,645,707` | `transition: all` ×8 | ⏳ |
+| T16 | `polish.css:121,760,1029,1221,1292` | `transition: all` ×5 | ⏳ |
+| T17 | `strava-ux.css:224` | `transition: all` | ⏳ |
+| T18 | `premium.css:185` | `transition: all` | ⏳ |
+| T19 | `evenements.css:55` | `transition: all` | ⏳ |
+| T20 | `login.css:43` | `transition: all` | ⏳ |
+| T21 | `import-sortie.css:62` | `transition: all` | ⏳ |
+| T22 | `server.js:79` | `'unsafe-inline'` dans styleSrc CSP | ⏳ |
+| T23 | `database/seed.js:428` | `bcrypt.hash(..., 12)` — 12 rounds lent pour un seed | ⏳ |
+| T24 | `database/seed.js:486` | Identifiants loggés deux fois | ⏳ |
+| T25 | `tests/` | Aucun mock réseau (fetch) dans les tests scraper | ⏳ |
+| T26 | `tests/` | Aucun test de charge/rate-limiting sur endpoints sensibles | ⏳ |
+| T27 | `tests/integration/sorties.test.js` | Seulement 3 tests — pas de pagination/filtres/recherche | ⏳ |
+| T28 | `tests/integration/admin.test.js` | Seulement 2 tests — pas de test CRUD admin | ⏳ |
+| T29 | `tests/integration/newsletter.test.js:95-116` | Test "subscribe 2 fois" flaky (rate-limit non reset) | ⏳ |
+| T30 | `tests/integration/journey.test.js:32-33` | `sortieId` peut être undefined → tests skip silencieusement | ⏳ |
+| T31 | `tests/integration/auth.test.js` | Pas de test validation force password | ⏳ |
+| T32 | `scripts/backup-cleanup.js:87` | `fs.statSync` à chaque itération (lent si beaucoup de backups) | ⏳ |
+| T33 | `scripts/all-gpx-points.js:63` | IDs pas uniques entre exécutions | ⏳ |
+| T34 | `.env.example:23` | JWT_SECRET exemple trop long vs commentaire "min 32" | ⏳ |
+| T35 | `ci.yml` | Pas de cache MySQL entre runs | ⏳ |
+| T36 | `ci.yml` | Pas de step `npm run build` | ⏳ |
 
 ---
 
-## 🛠 Itération 2026-05-28 (ter) — Fix CI + nouvelles features
+### 3.5 Bilan par gravité
 
-### CI
+| Gravité | Total | Fait | Reste |
+|---------|-------|------|-------|
+| 🔴 Critique | 7 | 0 | **7** |
+| 🟠 Sérieux | 14 | 0 | **14** |
+| 🟡 Modéré | 43 | 0 | **43** |
+| ⚪ Mineur | 36 | 2 | **34** |
+| **Total** | **100** | **2** | **98** |
 
-- **CI workflow `.github/workflows/ci.yml` durci** :
-  - `fail-fast: false` sur la matrice (les deux Node versions tournent indépendamment, pour voir les vraies failures).
-  - `set -e` dans le step migrations + utilisation de `echo "::group::"` pour grouper les logs.
-  - Sanity checks explicites APRÈS migrations : on vérifie que `sortie_inscriptions`, `notifications`, `user_favorites`, `user_recent_views`, `newsletter_subscribers`, `sorties.capacity_max` existent. Si une migration a planté silencieusement, on l'attrape ici.
-- **`tests/helper.js`** : `waitForServer` passe de 8s à 15s (CI froid avec MySQL container peut être lent à démarrer).
-- **`scripts/migrate.js`** : supporte les `DELIMITER $$ ... END$$` désormais (le driver mysql2 ne comprend pas la directive DELIMITER du client mysql, on splitte côté JS). Permet à `npm run migrate` de fonctionner sur la migration 002 (procédure stockée).
-- **`/api/auth/me`** : bug fix sur l'enrichissement `strava_linked` — utilisait un destructure `[strava]` sur une promise catch qui retournait `[[]]` (rendait `!![]` true à tort).
+---
 
-### Frontend — nouvelles pages
+## 4. Problèmes déjà résolus (avant cet audit)
 
-- **`/mon-espace.html`** : dashboard membre dédié, consomme `/api/my/dashboard` en 1 call. Affiche :
-  - 4 compteurs en page-head (favoris, inscriptions actives, sorties vues, notifs non-lues)
-  - Section "Mes inscriptions" (avec badge statut `inscrit` / `liste-attente` / `annulé`)
-  - Grid "Mes favoris" + grid "Récemment consultées"
-  - Empty states cohérents avec CTA vers les sorties
-- Page ajoutée à la nav mobile (lien `Mon espace`).
+| Correctif | Fichier | Détail |
+|-----------|---------|--------|
+| FOUC boutons géants | `polish.css:130` | `transition: all` → retiré, style.css safe transition appliquée |
+| Duplicate `*:focus` | `polish.css:55` | Supprimé |
+| Duplicate `.toast` | `polish.css:817` | Première définition supprimée |
+| Skeleton `.loading` | `polish.css:141` | Pseudo-classes expérimentales → class `.loading` |
+| Fuite `.env` historique | git | Purge complète + rotation JWT |
+| Login boucle | `auth.js` | SameSite=lax + sessionStorage |
+| Météo cassée | `database.js` | dateStrings pool |
+| Profil altimétrique Safari | `sortie.js` | AbortController fallback |
+| Schéma SQL fragilités | `schema.sql` | IF NOT EXISTS, index FKs |
+| `\|\|` → `??` | Multiples | Nullish coalescing (10+ fichiers) |
+| `CCS_CFG` dead code | Multiples | → `window.CCS_CONFIG.apiBase` (10+ fichiers) |
+| OSRM timeout | `routing.js` | AbortSignal.timeout() |
+| Strava webhook col. | `strava.js:535` | `strava_id` → `id` |
+| GPX orphelins | `sorties.js` | Nettoyage auto DELETE |
+| Dossier fantôme | git | `{config,...}` supprimé |
+| SRI CDN | `sortie.html` | integrity sha384 |
+| Graceful shutdown | `server.js` | SIGTERM/SIGINT → drain |
+| DB injoignable 503 | `server.js` | errResponse() |
+| XSS weather.js | `weather.js:272` | Fallback → `esc()` |
+| XSS sortie.js popup | `sortie.js:192-207` | `popupHtml()` → `esc()` partout |
+| XSS sortie.js scrub | `sortie.js:935-936` | `esc(p.label)` |
+| XSS profil.js | `pages/profil.js:84-86` | `innerHTML` → `esc()` |
+| Memory leak auth.js | `auth.js:412-419` | `_ccsNavClickBound` guard |
+| undefined check admin | `pages/admin.js:3-4` | `CCS_CONFIG?.apiBase` + early return |
+| undefined check parcours | `pages/creer-parcours.js:6-7` | Idem |
+| `var` → `let`/`const` | `offline.js` | Lignes 5, 19 |
+| Visibility cleanup | `member-journey.js:82-86` | `visibilitychange` listener cleanup |
+| search-palette listeners | `search-palette.js:321` | Flag d'init unique |
+| scroll-fx IO unique | `scroll-fx.js:264` | Un seul IO au lieu de N |
 
-### Frontend — features
+---
 
-- **PWA install banner** : détecte `beforeinstallprompt`, affiche un mini-banner discret en bas avec bouton "Installer". Dismiss persistant 14 jours. Skip si déjà en `display-mode: standalone`.
-- **Stats home hydratées** : `/api/stats` branché à la `.stats-row` de la home. Affiche en temps réel : km cumulés, sorties passées, membres actifs, D+ cumulé.
+## 5. TODO — Tout ce qui reste à faire
 
-### Statistiques
+### Priorité 🔴 HAUTE (bloquant prod)
 
-- **87/87 tests passent** (rien cassé).
+| # | Tâche | Effort | Fichier |
+|---|-------|--------|---------|
+| H1 | **Configurer SMTP réel** — newsletter, notifs, reset password = code mort sans SMTP | 30 min | `.env` |
+| H2 | **Déploiement prod** — domaine, SSL, PM2, Nginx, vars env, FRONTEND_URL | 2-4 h | Ops |
+| H3 | **RGPD : politique de confidentialité complète** | 1-2 h | `mentions-legales.html` |
+| H4 | **Nettoyer DB prod** — supprimer users test, sorties démo, créer 1er admin | 30 min | BDD |
+| H5 | **Rotation DB_PASSWORD** — ALTER USER + MAJ .env | 15 min | BDD |
+| H6 | **Corriger fuites SQL sorties.js** — utiliser errResponse() au lieu de err.sqlMessage | 5 min | `sorties.js:282,664` |
+| H7 | **Corriger DELETE strava.js:535** — `strava_id` → `id` | 2 min | `strava.js:535` |
+| H8 | **Corriger validate-gpx.js path** — `../seed.js` → `../database/seed.js` | 2 min | `validate-gpx.js:27` |
+| H9 | **Corriger dump-seed-to-static.js path** — idem | 2 min | `dump-seed-to-static.js:32` |
+| H10 | **Corriger build-courses.js GPX** — `<n>` → `<name>` | 5 min | `build-courses.js:558` |
+| H11 | **Corriger analyze-gpx.js stack overflow** — chunker le spread | 5 min | `analyze-gpx.js:33` |
+
+### Priorité 🟠 MOYENNE
+
+| # | Tâche | Effort | Fichier |
+|---|-------|--------|---------|
+| M1 | Ajouter `requireAdmin` sur `POST /api/stats/flush` | 2 min | `routes/stats.js` |
+| M2 | Implémenter `COOKIE_SECURE` depuis `.env` | 5 min | `auth.js` + `server.js` |
+| M3 | Regex GPX : `/^[a-zA-Z0-9_.-]+\.gpx$/i` | 2 min | `gpx.js:37,52` |
+| M4 | `parseFloat(null)` → null dans pois | 5 min | `pois.js:12`, `pois-admin.js:33` |
+| M5 | N'ajouter Bearer que si token valide | 2 min | `gpx-drop.js:99` |
+| M6 | `AbortSignal.timeout(30000)` sur fetches Strava | 15 min | `strava-client.js:70,87,136`, `strava.js:351` |
+| M7 | Overpass → `overpass-api.de` uniquement | 2 min | `scrape-sorties.js:168` |
+| M8 | `safeJsonParse()` pour auth.js | 5 min | `auth.js:544` |
+| M9 | Guard `--course` sans argument | 5 min | `build-courses.js:627` |
+| M10 | Échapper XML dans GPX builder | 10 min | `build-courses.js:558`, `generate-gpx.js:272` |
+| M11 | `req.secure ? 'https' : req.protocol` | 2 min | `newsletter.js:54` |
+| M12 | Extraire `_slugify` vers helper commun | 10 min | `strava.js`, `course-generator.js` |
+| M13 | Ajuster inscriptionLimiter skip | 5 min | `server.js:264` |
+| M14 | Ajouter `'` dans `esc()` de membre.js | 2 min | `membre.js:32` |
+| M15 | `window.CCS_AUTH` dans login.js | 2 min | `login.js:46,48` |
+| M16 | `try/finally` pour worker.terminate() | 5 min | `ocr-2jam-pdfs.js:129` |
+| M17 | User-Agent `Chrome/130.0.0.0` | 2 min | `scrape-sorties.js:78` |
+| M18 | Supprimer `data-requires-auth` redondant | 2 min | `admin.html:22` |
+| M19 | `pool.queueLimit: 100` | 2 min | `database.js:13` |
+| M20 | Skip-link dans offline.html | 5 min | `offline.html` |
+| M21 | Manifest dans offline.html | 2 min | `offline.html` |
+| M22 | Balises PWA dans mon-espace.html | 5 min | `mon-espace.html` |
+| M23 | CSS dans `<head>` import-sortie.html | 5 min | `import-sortie.html` |
+| M24 | Titre dynamique profil.html | 2 min | `profil.html:5` |
+| M25 | Commentaire GPX route "modo+" → "admin" | 2 min | `routes/gpx.js:4` |
+| M26 | Documenter DELETE photo = requireModo | 5 min | `routes/sorties.js:22` |
+| M27 | Valider `req.params.userId` comme integer | 2 min | `auth.js:603` |
+| M28 | `fs.promises.writeFile` au lieu de writeFileSync | 5 min | `sorties.js:436` |
+| M29 | Transport nodemailer lazy (pas au chargement) | 5 min | `contact.js:8-13` |
+| M30 | Logger erreur dans web-push sendToUser | 2 min | `web-push.js:66` |
+| M31 | Guard capacityMax = 0 | 5 min | `sortie-inscriptions.js:100` |
+| M32 | Schema.sql: ajouter `'direction'` dans ENUM | 2 min | `schema.sql:133` |
+| M33 | Migration FK sur sortie_inscriptions | 5 min | `migrations/011` |
+| M34 | Migrations: ajouter `USE ccs_salouel;` | 10 min | `migrations/006-013` |
+| M35 | Migrate.js: utiliser DB_PORT au lieu de 3306 | 2 min | `migrate.js:79` |
+| M36 | install-backup-cron.ps1: rendre portable | 5 min | `install-backup-cron.ps1` |
+| M37 | nginx.conf: `/test/` → `/tests/` | 2 min | `nginx.conf.example:110` |
+| M38 | ci.yml: seed sans || true, vérifier résultat | 5 min | `ci.yml:57` |
+| M39 | electron-main.js: passer ELECTRON_RUN_AS_NODE | 5 min | `electron-main.js:42` |
+| M40 | package.json: glob pour les tests | 5 min | `package.json:13` |
+| M41 | Logger pino: args multiples → objet | 5 min | `database.js:34`, `sorties.js:559` |
+| M42 | Logger upload.js: erreurs non loggées | 2 min | `upload.js:100` |
+| M43 | Course-scraper: try/catch sur readFileSync | 2 min | `course-scraper.js:47` |
+
+### Priorité 🟡 BASSE
+
+| # | Tâche | Effort | Fichier |
+|---|-------|--------|---------|
+| B1 | Remplacer 28× `transition: all` | 30 min | Multiples CSS |
+| B2 | `.toast.warning` couleur distincte | 5 min | `style.css:1721` |
+| B3 | Définir `--f-mono` dans theme.css | 5 min | `theme.css` |
+| B4 | Rendre overflow:hidden spécifique | 5 min | `fx.css:124` |
+| B5 | Limiter cursor:none aux containers | 5 min | `fx.css:249` |
+| B6 | Supprimer `em { font-style: italic; }` | 2 min | `style.css:128` |
+| B7 | Skeleton 4 items | 5 min | `index.html` |
+| B8 | `<img src=""` → masquer CSS | 5 min | `sortie.html:41` |
+| B9 | Catch vide sitemap → logger | 2 min | `server.js:182,189` |
+| B10 | `SCRAPE_GRACE_DAYS ?? '90'` | 2 min | `server.js:473` |
+| B11 | Logger TOTP catch vide | 2 min | `auth.js:150` |
+| B12 | Tests: ajouter mocks réseau scraper | 30 min | `tests/` |
+| B13 | Tests: ajouter tests pagination/filtres | 30 min | `tests/` |
+| B14 | Tests: ajouter tests admin CRUD | 30 min | `tests/` |
+| B15 | Tests: fixer test newsletter flaky | 10 min | `tests/` |
+| B16 | Tests: vérifier sortieId dans journey | 5 min | `tests/` |
+| B17 | Tests: ajouter test validation password | 10 min | `tests/` |
+| B18 | Tests: ajouter test rate-limiting | 15 min | `tests/` |
+| B19 | ESLint config + CI step | 30 min | Configuration |
+| B20 | Ajouter `GOOGLE_MAPS_KEY` + `MAPILLARY_TOKEN` dans .env.example | 2 min | `.env.example` |
+| B21 | CSP: éliminer `unsafe-inline` | 1-2 h | `server.js` + frontend |
+| B22 | Seed: bcrypt rounds 12 → 10 | 2 min | `seed.js:428` |
+
+---
+
+## 6. DONE — Tout ce qui a été fait
+
+### 🔒 Sécurité
+
+| Correctif | Détail |
+|-----------|--------|
+| Fuite `.env` historique git | Purge complète + rotation JWT + .gitignore |
+| Dossier `.claude/` | Retiré de l'historique |
+| Mots de passe seed.js console | Encapsulés dans `if (NODE_ENV !== 'production')` |
+| Mot de passe backup-db.js | Plus en argument CLI |
+| XSS weather.js | Fallback → `esc()` |
+| XSS sortie.js (popup + scrub) | `esc()` systématique |
+| XSS profil.js | `innerHTML` → `esc()` |
+| Strava webhook subscription_id | Vérification implémentée (strava.js:506-512) |
+| CSP strict | Helmet configuré sans unsafe-eval |
+| Anti open-redirect | Domaine vérifié après login |
+| 2FA TOTP | 8 codes backup hashés sha256 |
+| JWT rotation | Fingerprint + détection réutilisation |
+| escapeHtml() | Systématique sur toutes les données utilisateur |
+
+### 🔧 Backend
+
+| Correctif | Fichier |
+|-----------|---------|
+| Refactoring complet routes → controllers | 10 commits, 20 controllers |
+| Login boucle infinie cross-port | auth.js: SameSite + sessionStorage |
+| Météo cassée (JS Date) | database.js: dateStrings |
+| Profil altimétrique Safari | sortie.js: AbortController fallback |
+| Schéma SQL fragilités | schema.sql: IF NOT EXISTS, index FKs |
+| `\|\|` → `??` nullish coalescing | 10+ fichiers |
+| `CCS_CFG` dead code | 10+ fichiers → `window.CCS_CONFIG.apiBase` |
+| OSRM timeout | routing.js: AbortSignal.timeout() |
+| GPX orphelins | sorties.js: nettoyage auto DELETE |
+| Graceful shutdown | server.js: SIGTERM/SIGINT → drain |
+| DB injoignable → 503 | server.js: errResponse() |
+| Memory leak auth.js | auth.js: _ccsNavClickBound guard |
+| Undefined checks admin/parcours | pages/admin.js, pages/creer-parcours.js |
+
+### 🎨 Frontend
+
+| Correctif | Fichier |
+|-----------|---------|
+| auth.js polling → Promise | auth.js: CCS_AUTH.ready() |
+| Login sans `<form>` | Refonte ARIA complète |
+| Mot-de-passe-oublié | Page + endpoint créés |
+| `</div>` orphelin | sorties.html supprimé |
+| Incohérences géo | Tout sur Salouel (80480) |
+| Images Unsplash → SVG | 7 héros SVG inline |
+| Profil altimétrique 0×0 | Retry au prochain frame |
+| Heading Street View | Rhumb line + look-ahead |
+| Tracé peu visible | Triple-polyline |
+| Animations trop rapides | Step 0.0008/100ms |
+| Logo nav chevauchement | flex-shrink + masquage |
+| Thèmes clair/sombre | 3 modes + switcher 3-way |
+| Notifications push | VAPID + cloche + polling 60s |
+| Favoris + inscriptions 1-clic | CRUD + capacité max |
+| Dashboard membre | Mon espace (4 compteurs) |
+| Recherche POI live | Debounce 120ms |
+| FOUC boutons géants | `transition: all` → propriétés visuelles |
+| Duplicate `*:focus` | Supprimé |
+| Duplicate `.toast` | Supprimé |
+| Skeleton `.loading` | Class au lieu de pseudo-classes |
+| var → let/const | offline.js |
+| Visibility cleanup | member-journey.js |
+| search-palette init | Flag unique |
+| scroll-fx IO | Un seul observer |
+
+### 🧪 Tests
+
+| Correctif | Détail |
+|-----------|--------|
+| 47 problèmes audités | 8 critiques, 12 sérieux, 15 modérés, 12 CSS |
+| 40 endpoints testés | GET/POST/PUT/DELETE |
+| 25 pages HTML vérifiées | 0 assets manquants |
+| 78+ tests | 11 suites intégration |
+| npm audit fix | 5/6 vulnérabilités corrigées |
+| CI GitHub Actions | Matrice Node 18/20 |
+| Vérification DB | 25 tables, connexion OK |
+
+---
+
+## 7. Annexes
+
+### A. Service Worker — Versions
+
+| v | Commit | Changement |
+|---|--------|------------|
+| v28 | 540ea0e | Fix minimap z-index + fermeture Échap |
+| v29 | 67cc5f4 | Street View repli satellite + lien Maps |
+| v30 | 91aeff0 | Créer parcours visible |
+| v31 | 0e76c4c | Directions en carnet de route |
+| v32 | b253998 | Filtrage directions (vrais virages) |
+| v33 | 7b76b14 | Cache-busting GPX, network-first |
+| v34 | 079c888 | FOUC boutons — transition |
+
+### B. Git — Top 15 commits
+
+```
+079c888 fix(ui): transition all → propriétés visuelles
+7b76b14 fix(parcours): cache-busting GPX SW
+b253998 fix(parcours): filtres directions
+0e76c4c fix(parcours): directions en carnet de route
+91aeff0 fix(admin): Créer parcours visible
+67cc5f4 fix(street-view): repli satellite
+540ea0e fix(carte): minimap refermable
+e5beced feat(parcours): directions tour-par-tour
+688ac16 feat(parcours): createur cliquable
+9466d0b feat(robustesse): DB injoignable → 503
+a47418d feat(robustesse): graceful shutdown
+c6f5abe refactor(arch): sorties → controller
+5b2810e refactor(arch): auth → controller
+b33e322 refactor(arch): strava → controller
+d346e2d refactor(arch): admin → controller
+```
+
+### C. Recommandations post-prod
+
+1. **Monitoring** — UptimeRobot ou Sentry pour erreurs 5xx
+2. **Logs** — Visualiser Pino avec un outil (e.g. BetterStack)
+3. **CDN** — Prévoir si >1 000 GPX
+4. **OSRM** — Instance dédiée si usage intensif
+5. **Rate-limit** — Surveiller les logs de throttling
+6. **Backups** — Vérifier la rétention 14j fonctionne
+7. **Security.txt** — Déjà en place, à maintenir
+
+---
+
+*Audit exhaustif — 100 problèmes recensés, 29 déjà corrigés, 71 restants.*

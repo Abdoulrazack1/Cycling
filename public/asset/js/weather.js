@@ -269,7 +269,7 @@
           </div>`;
       }
     } catch (err) {
-      container.innerHTML = `<div class="weather-error">⚠️ Météo indisponible — ${(window.esc || (s=>s))(err.message)}</div>`;
+      container.innerHTML = `<div class="weather-error">⚠️ Météo indisponible — ${(window.esc || window.CCS_UTILS?.escapeHtml || (s=>s))(err.message)}</div>`;
     }
   }
 

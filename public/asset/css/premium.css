@@ -95,8 +95,8 @@
   .ccs-toast-host { right: 12px; bottom: 12px; left: 12px; max-width: none; }
 }
 
-/* Désactive l'ancien .toast pour éviter le double affichage */
-.toast { display: none !important; }
+/* Désactive l'ancien .toast pour éviter le double affichage (uniquement quand premium.js est actif) */
+body[data-ccs-toast] .toast { display: none !important; }
 
 /* ─── 3. View transitions (fade page-to-page) ─────────────────── */
 @supports (view-transition-name: none) {

@@ -2,7 +2,7 @@
    Externalisé depuis offline.html (l'inline était bloqué par la CSP). */
 (function () {
   'use strict';
-  var status = document.getElementById('connection-status');
+  const status = document.getElementById('connection-status');
 
   function updateStatus() {
     if (!status) return;
@@ -16,7 +16,7 @@
     }
   }
 
-  var retry = document.getElementById('retry-btn');
+  const retry = document.getElementById('retry-btn');
   if (retry) retry.addEventListener('click', function () { location.reload(); });
 
   updateStatus();
