@@ -9,7 +9,7 @@
  * anciens caches.
  */
 
-const CACHE_VERSION = 'ccs-v32';
+const CACHE_VERSION = 'ccs-v33';
 const CACHE_STATIC  = `${CACHE_VERSION}-static`;
 const CACHE_RUNTIME = `${CACHE_VERSION}-runtime`;
 
@@ -97,6 +97,23 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() => caches.match(req).then(c => c || caches.match('/offline.html')))
+    );
+    return;
+  }
+
+  // GPX générés → NETWORK-FIRST : ils sont réécrits à chaque régénération d'un
+  // parcours, donc le cache-first servait un ancien tracé ("reste à Amiens").
+  if (url.pathname.startsWith('/asset/gpx/')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_RUNTIME).then((c) => c.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
     );
     return;
   }
