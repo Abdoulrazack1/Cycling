@@ -151,6 +151,7 @@ async function generate(req, res) {
       gpxFilename: result.gpxFilename,
       gpxUrl: '/asset/gpx/' + result.gpxFilename,
       pois: result.pois,
+      directions: result.directions || [],
       stats: result.stats,
       log: result.log,
       errors: result.errors,
