@@ -166,10 +166,14 @@
     const stats = res.stats || {};
     const bounds = [];
 
-    // 1. Tracé routé (depuis le GPX généré côté serveur)
+    // 1. Tracé routé (depuis le GPX généré côté serveur).
+    //    ⚠️ Cache-busting OBLIGATOIRE : le Service Worker met les GPX en cache
+    //    (cache-first) et resservait l'ancien tracé à chaque régénération
+    //    (« le tracé reste toujours à Amiens »). Une URL unique force le réseau.
     if (res.gpxUrl) {
       try {
-        const xml = await fetch(res.gpxUrl, { cache: 'no-store' }).then(r => r.text());
+        const fresh = res.gpxUrl + (res.gpxUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+        const xml = await fetch(fresh, { cache: 'no-store' }).then(r => r.text());
         const line = parseTrkpts(xml);
         if (line.length >= 2) {
           L.polyline(line, { color: '#1565c0', weight: 4, opacity: .9 }).addTo(resultLayer);
