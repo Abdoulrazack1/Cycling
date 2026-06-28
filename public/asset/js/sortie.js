@@ -900,17 +900,27 @@
     const wrap = document.querySelector('.minimap-wrap');
     const btn = document.getElementById('minimap-expand');
     if (!wrap || !btn) return;
-    const setState = (expanded) => {
-      wrap.classList.toggle('expanded', expanded);
-      btn.setAttribute('aria-label', expanded ? 'Réduire la carte' : 'Agrandir la carte');
-      btn.setAttribute('title', expanded ? 'Réduire (Échap)' : 'Agrandir');
-      if (state.mapMini) setTimeout(() => state.mapMini.invalidateSize(), 300);
+
+    // La minimap "ouvre la carte normale" plutôt que de s'agrandir en overlay :
+    // on bascule la vue principale en mode "Carte" (OSM) et on ramène la scène
+    // à l'écran. Plus aucun agrandissement plein écran.
+    const openFullMap = () => {
+      const osmBtn = document.getElementById('sv-btn-osm');
+      if (osmBtn) osmBtn.click();
+      const scene = document.querySelector('.explorer-scene');
+      if (scene) scene.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
-    btn.addEventListener('click', () => setState(!wrap.classList.contains('expanded')));
-    // Fermeture au clavier (le bug "impossible de refermer" en mode étendu).
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && wrap.classList.contains('expanded')) setState(false);
-    });
+
+    btn.setAttribute('aria-label', 'Voir la carte complète');
+    btn.setAttribute('title', 'Voir la carte complète');
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openFullMap(); });
+
+    // Cliquer la mini-carte elle-même ouvre aussi la carte (sauf en mode ajout POI).
+    const mm = document.getElementById('minimap-map');
+    if (mm) mm.style.cursor = 'pointer';
+    if (state.mapMini) {
+      state.mapMini.on('click', () => { if (!state.addingPoi) openFullMap(); });
+    }
   }
 
   /* ─── Frise de scrub ─────────────────────────────────────── */
