@@ -129,11 +129,14 @@ async function generate(input, opts = {}) {
   const pois = _extractPois(input.waypoints, trackPoints, id);
   log.push(`POIs extraits: ${pois.length}`);
 
-  // 6b) Directions tour-par-tour OSRM → POIs 'direction' (carnet de route, type Strava)
+  // 6b) Directions tour-par-tour OSRM → CARNET DE ROUTE (liste, comme Strava).
+  // ⚠️ PAS des POIs sur la carte : elles encombraient le tracé (50-80 flèches).
+  // La carte ne garde que les vrais POIs (départ, arrivée, ravito…) ; les
+  // directions sont une liste à part (re-dérivable du tracé).
+  let directions = [];
   if (osrmDirections.length) {
-    const dirPois = _buildDirectionPois(osrmDirections, trackPoints, id);
-    pois.push(...dirPois);
-    log.push(`Directions → ${dirPois.length} POIs 'direction'`);
+    directions = _buildDirections(osrmDirections, trackPoints);
+    log.push(`Directions (carnet de route): ${directions.length}`);
   }
 
   // 7) Construire et sauver le GPX
@@ -160,6 +163,7 @@ async function generate(input, opts = {}) {
     gpxPath,
     gpxFilename: path.basename(gpxPath),
     pois,
+    directions,
     stats,
     log,
     errors,
@@ -237,30 +241,28 @@ function _extractPois(originalWaypoints, trackPoints, idPrefix) {
 }
 
 /**
- * Transforme les directions tour-par-tour OSRM en POIs de type 'direction'
- * (carnet de route). Chaque manœuvre est snappée au point routé le plus
- * proche pour récupérer son km cumulé.
+ * Construit le CARNET DE ROUTE (liste de directions tour-par-tour) depuis les
+ * manœuvres OSRM. Chaque manœuvre est snappée au point routé le plus proche
+ * pour son km cumulé. Renvoie une liste triée par km — PAS des POIs de carte.
  */
-function _buildDirectionPois(directions, trackPoints, idPrefix) {
-  const prefix = idPrefix.split('-').slice(0, 2).join('-').substring(0, 10);
-  let c = 1;
-  return directions.map(d => {
+function _buildDirections(directions, trackPoints) {
+  const out = directions.map(d => {
     let bestI = 0, bestD = Infinity;
     for (let i = 0; i < trackPoints.length; i++) {
       const dd = (trackPoints[i].lat - d.lat) ** 2 + (trackPoints[i].lng - d.lng) ** 2;
       if (dd < bestD) { bestD = dd; bestI = i; }
     }
     return {
-      id: `${prefix}-dir-${c++}`,
-      type: 'direction',
-      label: d.instruction,
-      desc: d.road || '',
       km: Math.round((trackPoints[bestI].kmAccum || 0) * 10) / 10,
+      instruction: d.instruction,
+      road: d.road || '',
       lat: d.lat,
       lng: d.lng,
-      contact: null,
     };
   });
+  out.sort((a, b) => a.km - b.km);
+  // Dédoublonnage : enlève deux directions identiques quasi au même km.
+  return out.filter((d, i) => i === 0 || d.instruction !== out[i - 1].instruction || (d.km - out[i - 1].km) > 0.1);
 }
 
 module.exports = { generate, slugify };

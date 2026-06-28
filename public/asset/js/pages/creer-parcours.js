@@ -162,6 +162,7 @@
 
   async function renderResult(res) {
     resultLayer.clearLayers();
+    lineLayer.clearLayers(); // enlève le connecteur en pointillés (trompeur une fois routé)
     const stats = res.stats || {};
     const bounds = [];
 
@@ -192,7 +193,18 @@
 
     if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
 
-    // 3. Stats
+    // 3. Carnet de route (directions tour-par-tour, en LISTE — pas sur la carte)
+    const dirs = res.directions || [];
+    const roadbook = dirs.length
+      ? `<details class="cp-roadbook">` +
+          `<summary>🧭 Carnet de route — ${dirs.length} indications</summary>` +
+          `<ol class="cp-cue">` +
+            dirs.map(d => `<li><span class="cp-cue-km">${d.km} km</span><span>${esc(d.instruction)}</span></li>`).join('') +
+          `</ol>` +
+        `</details>`
+      : '';
+
+    // 4. Stats
     const out = document.getElementById('cp-result');
     out.className = 'cp-result';
     out.innerHTML =
@@ -205,6 +217,7 @@
         `<span>Points</span><b>${stats.points ?? '—'}</b>` +
         `<span>POIs</span><b>${res.pois?.length || 0}</b>` +
       `</div>` +
+      roadbook +
       (res.errors?.length ? `<div style="color:#e7b7b7">⚠ ${esc(res.errors.join(', '))}</div>` : '') +
       `<div style="margin-top:10px;"><a href="sortie.html?id=${esc(res.id)}" target="_blank" class="btn btn-ghost btn-sm">Voir la page sortie →</a></div>`;
     if (window.toast) window.toast('Parcours généré : ' + res.id, 'success');

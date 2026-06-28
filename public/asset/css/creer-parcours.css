@@ -155,3 +155,21 @@
 .cp-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 8px 0; }
 .cp-stat-grid b { color: var(--parch, #EDE6D3); }
 .cp-result a { color: var(--brass, #CAA35B); }
+
+/* Carnet de route (directions tour-par-tour, en liste — pas sur la carte) */
+.cp-roadbook { margin: 12px 0 4px; }
+.cp-roadbook summary {
+  cursor: pointer; user-select: none;
+  font-weight: 600; color: var(--brass, #CAA35B); font-size: 12px; padding: 4px 0;
+}
+.cp-cue {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  max-height: 240px; overflow-y: auto;
+  border-left: 2px solid var(--line, #2a3a32);
+}
+.cp-cue li {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 5px 0 5px 10px; font-size: 12px; line-height: 1.4;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.cp-cue-km { color: var(--brass, #CAA35B); font-weight: 600; min-width: 52px; flex: none; }
