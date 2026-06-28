@@ -129,14 +129,25 @@ async function generate(input, opts = {}) {
   const pois = _extractPois(input.waypoints, trackPoints, id);
   log.push(`POIs extraits: ${pois.length}`);
 
-  // 6b) Directions tour-par-tour OSRM → CARNET DE ROUTE (liste, comme Strava).
-  // ⚠️ PAS des POIs sur la carte : elles encombraient le tracé (50-80 flèches).
-  // La carte ne garde que les vrais POIs (départ, arrivée, ravito…) ; les
-  // directions sont une liste à part (re-dérivable du tracé).
+  // 6b) Directions tour-par-tour → repères "rallye" sur la carte + carnet de route.
+  // On ne garde que les vraies décisions (filtrées dans routing._maneuverToFr :
+  // tourner, rond-point, croisement, bout de route — PAS "tout droit" ni les
+  // changements de nom de rue) et on dédoublonne par distance pour ne pas
+  // saturer la carte. Chaque direction utile devient un POI 'direction'.
   let directions = [];
   if (osrmDirections.length) {
     directions = _buildDirections(osrmDirections, trackPoints);
-    log.push(`Directions (carnet de route): ${directions.length}`);
+    // Sur la CARTE on espace les repères (~500 m mini) pour rester lisible ;
+    // le carnet de route (directions) garde le détail complet de chaque virage.
+    const mapMarkers = _spaceForMap(directions, 500);
+    mapMarkers.forEach((d, i) => pois.push({
+      id: `${id}-dir-${i + 1}`.substring(0, 50),
+      type: 'direction',
+      label: d.instruction,
+      desc: d.road || '',
+      km: d.km, lat: d.lat, lng: d.lng, contact: null,
+    }));
+    log.push(`Directions: ${directions.length} (carnet), ${mapMarkers.length} (repères carte)`);
   }
 
   // 7) Construire et sauver le GPX
@@ -261,8 +272,35 @@ function _buildDirections(directions, trackPoints) {
     };
   });
   out.sort((a, b) => a.km - b.km);
-  // Dédoublonnage : enlève deux directions identiques quasi au même km.
-  return out.filter((d, i) => i === 0 || d.instruction !== out[i - 1].instruction || (d.km - out[i - 1].km) > 0.1);
+  // Dédoublonnage spatial : collapse les manœuvres d'un même carrefour pour ne
+  // pas empiler 3-4 flèches au même endroit.
+  const kept = [];
+  for (const d of out) {
+    const prev = kept[kept.length - 1];
+    if (prev) {
+      const dist = routing.haversine(prev, d);
+      if (dist < 30) continue;                                        // même carrefour
+      if (dist < 90 && prev.instruction === d.instruction) continue;  // doublon proche
+    }
+    kept.push(d);
+  }
+  return kept;
+}
+
+/**
+ * Sous-échantillonne les directions pour la CARTE : garde au minimum `minMeters`
+ * entre deux repères, mais conserve TOUJOURS les manœuvres majeures (ronds-points,
+ * virages serrés, bout de route, demi-tour). Le carnet de route, lui, reste complet.
+ */
+function _spaceForMap(directions, minMeters) {
+  const kept = [];
+  for (const d of directions) {
+    const major = /rond-point|franchement|bout de la route|demi-tour/i.test(d.instruction);
+    const prev = kept[kept.length - 1];
+    if (prev && !major && routing.haversine(prev, d) < minMeters) continue;
+    kept.push(d);
+  }
+  return kept;
 }
 
 module.exports = { generate, slugify };

@@ -101,19 +101,22 @@ const _MOD_FR = {
 function _maneuverToFr(m, road) {
   const mod = _MOD_FR[m.modifier] || '';
   const on = road ? ` sur ${road}` : '';
+  // "turning" = vraie décision (gauche/droite/franchement/demi-tour), pas "tout droit".
+  const turning = m.modifier && m.modifier !== 'straight';
   switch (m.type) {
-    case 'turn':            return `Tourner ${mod}`.trim() + on;
-    case 'new name':        return `Continuer${on}`;
-    case 'merge':           return `S'insérer ${mod}`.trim() + on;
+    case 'turn':            return turning ? `Tourner ${mod}`.trim() + on : null;
+    case 'fork':            return turning ? `Au croisement, ${mod}`.trim() + on : null;
+    case 'end of road':     return `Au bout de la route, ${mod || 'tout droit'}`.trim() + on;
+    case 'merge':           return turning ? `S'insérer ${mod}`.trim() + on : null;
     case 'on ramp':         return `Prendre la bretelle ${mod}`.trim();
     case 'off ramp':        return `Sortir ${mod}`.trim();
-    case 'fork':            return `Au croisement, ${mod || 'continuer'}`.trim() + on;
-    case 'end of road':     return `Au bout de la route, ${mod}`.trim() + on;
-    case 'continue':        return (m.modifier && m.modifier !== 'straight') ? `Continuer ${mod}`.trim() + on : null;
     case 'roundabout':
     case 'rotary':          return `Au rond-point, ${m.exit || '?'}ᵉ sortie`;
     case 'roundabout turn': return `Au rond-point, ${mod}`.trim();
-    default:                return null; // depart/arrive → gérés par les POIs depart/arrivee
+    case 'continue':        return turning ? `Continuer ${mod}`.trim() + on : null;
+    // Ignorés (pas des repères utiles) : 'new name' (la rue change de nom),
+    // 'depart'/'arrive' (gérés par les POIs), et tout ce qui est "tout droit".
+    default:                return null;
   }
 }
 function _extractDirections(routeObj) {
