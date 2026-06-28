@@ -178,17 +178,28 @@
       } catch (e) { /* tracé non critique */ }
     }
 
-    // 2. POIs colorés par type
+    // 2. POIs colorés par type. Les directions ("rallye") sont plus petites et
+    //    avec une flèche directionnelle, pour ne pas voler la vedette aux vrais
+    //    POIs (départ, ravito…).
     (res.pois || []).forEach(poi => {
       const st = POI_STYLE[poi.type] || POI_STYLE.direction;
+      const isDir = poi.type === 'direction';
+      let emoji = st.emoji;
+      if (isDir) {
+        const t = (poi.label || '').toLowerCase();
+        emoji = t.includes('gauche') ? '⬅️' : t.includes('droite') ? '➡️'
+              : t.includes('rond-point') ? '🔄' : t.includes('demi-tour') ? '↩️' : '⬆️';
+      }
+      const sz = isDir ? 20 : 24;
       const icon = L.divIcon({
         className: '',
-        html: `<div class="cp-poi-pin" style="background:${st.color}">${st.emoji}</div>`,
-        iconSize: [24, 24], iconAnchor: [12, 12],
+        html: `<div class="cp-poi-pin${isDir ? ' cp-dir-pin' : ''}" style="background:${st.color}">${emoji}</div>`,
+        iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2],
       });
       L.marker([poi.lat, poi.lng], { icon }).addTo(resultLayer)
-        .bindPopup(`<b>${esc(poi.label || st.label)}</b><br>${st.label} · km ${poi.km ?? '?'}`);
-      bounds.push([poi.lat, poi.lng]);
+        .bindPopup(`<b>${esc(poi.label || st.label)}</b>${poi.km != null ? `<br>km ${poi.km}` : ''}`);
+      // Les repères de direction (nombreux) ne participent pas au cadrage.
+      if (!isDir) bounds.push([poi.lat, poi.lng]);
     });
 
     if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
