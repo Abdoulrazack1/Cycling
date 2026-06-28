@@ -29,7 +29,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const seedPath = path.join(__dirname, '..', 'seed.js');
+const seedPath = path.join(__dirname, '..', 'database', 'seed.js');
 const src = fs.readFileSync(seedPath, 'utf8');
 
 // Extraire les blocs `const X = [...]` ou `const X = {...}` à la racine.

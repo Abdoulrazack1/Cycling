@@ -555,12 +555,12 @@ function buildGpx(course, points) {
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
   <metadata>
-    <n>${course.name}</n>
+    <name>${course.name}</name>
     <desc>${course.region} · ${course.distanceKm} km</desc>
     <time>${now}</time>
   </metadata>
   <trk>
-    <n>${course.name}</n>
+    <name>${course.name}</name>
     <trkseg>
 ${trkpts}
     </trkseg>

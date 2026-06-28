@@ -532,7 +532,7 @@ async function webhookEvent(req, res) {
           'Une activité a été synchronisée depuis Strava.', '/profil.html#strava-section');
       } catch {}
     } else if (aspect_type === 'delete') {
-      await query('DELETE FROM strava_activities WHERE user_id = ? AND strava_id = ?', [userId, object_id]);
+      await query('DELETE FROM strava_activities WHERE user_id = ? AND id = ?', [userId, object_id]);
     }
   } catch (err) {
     req.log?.error({ err: err.message }, '[strava webhook] erreur');

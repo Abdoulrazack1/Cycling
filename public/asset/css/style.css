@@ -58,6 +58,7 @@
   --f-disp:  'Playfair Display', 'Cormorant Garamond', Georgia, serif;
   --f-body:  'EB Garamond', Georgia, 'Times New Roman', serif;
   --f-sans:  'Archivo', -apple-system, 'Segoe UI', Helvetica, sans-serif;
+  --f-mono:  ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   /* Motion */
   --ease:      cubic-bezier(0.4, 0, 0.2, 1);

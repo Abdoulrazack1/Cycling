@@ -515,7 +515,7 @@ async function exportData(req, res) {
       ).catch(() => []),
       query(
         `SELECT id, annee, titre, evenement, categorie, rang, medaille FROM palmares
-         WHERE LOWER(coureur) LIKE LOWER(?)`,
+         WHERE LOWER(titre) LIKE LOWER(?)`,
         [`%${user.prenom} ${user.nom}%`]
       ).catch(() => []),
       query(

@@ -279,7 +279,7 @@ async function create(req, res) {
     res.status(201).json(sortie);
   } catch (err) {
     logger.error({ err, code: err.code, sqlMessage: err.sqlMessage }, '[POST /sorties]');
-    res.status(500).json({ error: 'Erreur lors de la création : ' + (err.sqlMessage || err.message), code: err.code });
+    errResponse(req, res, err, 500, 'Erreur lors de la création :');
   }
 }
 
@@ -661,7 +661,7 @@ async function importGpx(req, res) {
     } catch (err) {
       logger.error('[import-gpx] INSERT error:', err.code, err.sqlMessage || err.message);
       try { fs.unlinkSync(gpxPath); } catch {}
-      return res.status(500).json({ error: `Insertion en base échouée : ${err.sqlMessage || err.message}`, code: err.code });
+      errResponse(req, res, err, 500, 'Insertion en base échouée :');
     }
 
     // Cue sheet Strava (optionnel) → POIs directions

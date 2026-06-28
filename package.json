@@ -45,7 +45,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
     "mysql2": "^3.6.5",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.1",
     "otplib": "^13.4.0",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
@@ -62,9 +62,13 @@
   "build": {
     "appId": "fr.cc-salouel.desktop",
     "productName": "Club de Cyclisme de Salouel",
-    "extraMetadata": { "main": "electron-main.js" },
+    "extraMetadata": {
+      "main": "electron-main.js"
+    },
     "asar": false,
-    "directories": { "output": "dist-desktop" },
+    "directories": {
+      "output": "dist-desktop"
+    },
     "files": [
       "**/*",
       "!dist-desktop/**",

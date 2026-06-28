@@ -234,6 +234,8 @@ async function broadcast(req, res) {
   }
   try {
     const { subject, message, target = 'all' } = req.body;
+    const allowedTargets = ['all', 'admins', 'membres'];
+    if (!allowedTargets.includes(target)) return res.status(400).json({ error: 'target invalide' });
     let where = 'actif = TRUE AND email IS NOT NULL';
     if (target === 'admins')   where += " AND role IN ('admin','moderateur')";
     if (target === 'membres')  where += " AND role = 'membre'";
@@ -241,11 +243,13 @@ async function broadcast(req, res) {
     const recipients = await query(`SELECT id, prenom, email FROM users WHERE ${where}`);
     if (!recipients.length) return res.status(404).json({ error: 'Aucun destinataire trouvé' });
 
-    // Envoi en série pour ne pas saturer le SMTP (1 par 200ms ~= 5/s)
+    const escHtml = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const escapedMessage = message.split('\n\n').map(p => `<p>${escHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+
     let sent = 0, failed = 0;
     const errors = [];
     for (const r of recipients) {
-      const html = `<p>Bonjour <strong>${r.prenom || ''}</strong>,</p>${message.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('')}<p style="margin-top:24px;">Le bureau du Club</p>`;
+      const html = `<p>Bonjour <strong>${escHtml(r.prenom)}</strong>,</p>${escapedMessage}<p style="margin-top:24px;">Le bureau du Club</p>`;
       const result = await mailer.sendMail({ to: r.email, subject, html });
       if (result.ok) sent++; else { failed++; if (errors.length < 5) errors.push({ to: r.email, error: result.error }); }
       await new Promise(rs => setTimeout(rs, 200));

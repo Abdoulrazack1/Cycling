@@ -24,7 +24,7 @@ const fs   = require('fs');
 const path = require('path');
 
 const GPX_DIR  = path.join(__dirname, '..', 'public', 'asset', 'gpx');
-const SEED_PATH = path.join(__dirname, '..', 'seed.js');
+const SEED_PATH = path.join(__dirname, '..', 'database', 'seed.js');
 
 // Couleurs ANSI
 const C = {
