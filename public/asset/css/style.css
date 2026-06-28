@@ -520,7 +520,13 @@ ul { list-style: none; }
   letter-spacing: .22em;
   text-transform: uppercase;
   border-radius: var(--pill);
-  transition: all .4s var(--lux);
+  /* NE PAS utiliser `transition: all` : tout reflow (scrollbar qui apparaît/
+     disparaît, swap de police, navigation) animait alors la TAILLE du bouton
+     sur .4s → "tous les boutons grossissent ~1s au clic". On ne transitionne
+     que les propriétés visuelles, jamais la géométrie. */
+  transition: color .4s var(--lux), background-color .4s var(--lux),
+              border-color .4s var(--lux), box-shadow .4s var(--lux),
+              transform .4s var(--lux), opacity .4s var(--lux);
   cursor: pointer;
   white-space: nowrap;
   border: 1px solid transparent;
