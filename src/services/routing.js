@@ -70,6 +70,15 @@ async function routeFull(waypoints, opts = {}) {
 }
 
 async function _routeSingle(waypoints, profile) {
+  // cf. AUDIT #10 — défense en profondeur contre un SSRF/injection dans
+  // l'URL OSRM : n'accepter que des coordonnées numériques bornées avant
+  // de les interpoler dans l'URL (la route appelante est déjà requireAdmin).
+  for (const p of waypoints) {
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng) ||
+        p.lat < -90 || p.lat > 90 || p.lng < -180 || p.lng > 180) {
+      throw new Error('Coordonnée invalide pour le routage OSRM');
+    }
+  }
   const coords = waypoints.map(p => `${p.lng},${p.lat}`).join(';');
   // steps=true → manœuvres tour-par-tour (turn/continue/roundabout…).
   const url = `${OSRM_BASE}/route/v1/${profile}/${coords}?overview=full&geometries=geojson&steps=true`;

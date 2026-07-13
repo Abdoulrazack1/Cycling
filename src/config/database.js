@@ -84,12 +84,14 @@ async function withTransaction(fn) {
   try {
     const result = await fn(conn);
     await conn.commit();
-    conn.release();
     return result;
   } catch (err) {
-    await conn.rollback();
-    conn.release();
+    // cf. AUDIT #7 — si rollback() jette (ex. connexion déjà coupée),
+    // le release() du finally garantit qu'on ne fuit pas la connexion.
+    try { await conn.rollback(); } catch { /* connexion déjà morte */ }
     throw err;
+  } finally {
+    conn.release();
   }
 }
 

@@ -8,6 +8,7 @@ const path   = require('path');
 
 const { query } = require('../config/database');
 const { errResponse } = require('../lib/errors');
+const { encryptToken } = require('../lib/token-crypto');
 const logger = require('../lib/logger');
 const strava = require('../services/strava-client');
 const { parseGpx } = require('../services/gpx-parser');
@@ -163,7 +164,8 @@ async function callback(req, res) {
          athlete_profile = VALUES(athlete_profile)`,
       [
         stateData.userId, athlete.id,
-        tokenData.access_token, tokenData.refresh_token, tokenData.expires_at,
+        // cf. AUDIT #5 — chiffrement applicatif des tokens au repos
+        encryptToken(tokenData.access_token), encryptToken(tokenData.refresh_token), tokenData.expires_at,
         tokenData.scope || null,
         athlete.firstname || null, athlete.lastname || null,
         athlete.profile_medium || athlete.profile || null,

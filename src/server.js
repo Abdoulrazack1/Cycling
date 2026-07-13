@@ -218,13 +218,25 @@ app.use(cookieParser());
 // déclenche 50+ requêtes (sorties + GPX + POIs + segments + …) et se fait
 // jeter, y compris pour ses appels /auth/refresh — d'où des déconnexions
 // sauvages.
+// cf. AUDIT #4 — le skip ne doit PAS se baser sur la simple PRÉSENCE du
+// header Authorization (un attaquant non authentifié pourrait envoyer
+// `Authorization: Bearer x` pour sortir du rate-limit). On exige un JWT
+// *syntaxiquement* valide (3 segments base64url) — pas de vérif de
+// signature ici (inutile pour ce seul usage), juste écarter les bidons.
+function looksLikeBearerJwt(req) {
+  const h = req.headers.authorization;
+  if (!h) return false;
+  const m = /^Bearer\s+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(h.trim());
+  return !!m;
+}
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) =>
-    !!req.headers.authorization ||        // admins/membres authentifiés
+    looksLikeBearerJwt(req) ||            // admins/membres authentifiés (JWT plausible)
     req.path.startsWith('/asset/') ||     // fichiers statiques (défense en profondeur)
     req.path.startsWith('/uploads/'),     // GPX uploadés
   message: { error: 'Trop de requêtes, réessayez dans 15 minutes' }
@@ -249,7 +261,7 @@ const contactLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.method !== 'POST' || !!req.headers.authorization,
+  skip: (req) => req.method !== 'POST' || looksLikeBearerJwt(req),
   message: { error: 'Vous avez envoyé trop de messages récemment' }
 });
 

@@ -13,6 +13,8 @@ const { parseStravaCueSheet } = require('../utils/parse-strava-cue');
 const { audit } = require('../services/audit-log');
 const { GPX_DIR: ASSET_GPX_DIR, isLikelyGpx } = require('../middleware/upload');
 const { errResponse } = require('../lib/errors');
+const { sanitizeTitleHtml } = require('../lib/sanitize-title-html');
+const { sniffImage } = require('../lib/image-sniff');
 const logger = require('../lib/logger');
 const { notifyMany } = require('../controllers/notifications');
 
@@ -158,11 +160,13 @@ const createValidators = [
   body('id').notEmpty().matches(/^[a-z0-9-]+$/)
     .withMessage("ID invalide : minuscules, chiffres et tirets uniquement (ex: 'tour-avesnois-2026')"),
   body('title').notEmpty().trim().withMessage('Titre requis'),
+  body('title_html').optional({ nullable: true }).isLength({ max: 250 }),
   body('date').isDate().withMessage('Date au format YYYY-MM-DD requise'),
   body('distance_km').isNumeric().optional({ nullable: true }).withMessage('Distance doit être numérique'),
 ];
 const updateValidators = [
   body('title').optional().notEmpty().trim().isLength({ max: 200 }),
+  body('title_html').optional({ nullable: true }).isLength({ max: 250 }),
   body('date').optional().isDate().withMessage('Date au format YYYY-MM-DD'),
   body('distance_km').optional({ nullable: true }).isFloat({ min: 0, max: 9999 }),
   body('elevation_gain').optional({ nullable: true }).isInt({ min: 0, max: 99999 }),
@@ -238,7 +242,7 @@ async function create(req, res) {
           location_name, location_lat, location_lng, gpx_filename, number, featured, statut, created_by)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
-          s.id, s.slug || s.id, s.title, s.title_html || s.title,
+          s.id, s.slug || s.id, s.title, sanitizeTitleHtml(s.title_html) || s.title,
           s.subtitle || null, s.chapter || 'route', s.description || null,
           s.date, s.date_label || null, s.distance_km || null, s.duration_label || null,
           s.elevation_gain || null, s.elevation_loss || null,
@@ -304,7 +308,7 @@ async function update(req, res) {
           gpx_filename=?, number=?, featured=?, statut=?
         WHERE id=?`,
         [
-          s.slug || id, s.title, s.title_html || s.title,
+          s.slug || id, s.title, sanitizeTitleHtml(s.title_html) || s.title,
           s.subtitle || null, s.chapter || null, s.description || null,
           s.date, s.date_label || null, s.distance_km || null, s.duration_label || null,
           s.elevation_gain || null, s.elevation_loss || null, s.elevation_max || null, s.elevation_min || null,
@@ -430,7 +434,14 @@ async function photosUpload(req, res) {
 
     const inserted = [];
     for (const file of req.files) {
-      const ext = (path.extname(file.originalname) || '.jpg').toLowerCase().replace(/[^.a-z0-9]/g, '');
+      // cf. AUDIT #3 — ne pas se fier au MIME déclaré : sniffer le contenu
+      // réel (magic bytes) et dériver l'extension du type RÉEL, pas du nom
+      // fourni par le client (bloque un .svg/<script> déguisé en image/png).
+      const sniffed = sniffImage(file.buffer);
+      if (!sniffed) {
+        return res.status(400).json({ error: 'Fichier image invalide ou format non supporté (JPEG, PNG, WebP, GIF)' });
+      }
+      const ext = sniffed.ext;
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
       const filepath = path.join(dir, filename);
       fs.writeFileSync(filepath, file.buffer);

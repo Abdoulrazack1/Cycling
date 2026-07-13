@@ -594,6 +594,12 @@ async function forgotPassword(req, res) {
 }
 
 // ── POST /api/auth/admin-reset/:userId (admin) ──────────────────
+// PROCESS SENSIBLE (cf. AUDIT #9) : renvoie le lien de reset directement
+// dans la réponse JSON (l'admin doit le retransmettre au membre). Ce lien
+// donne un accès COMPLET au compte pendant 24 h — le transmettre uniquement
+// par un canal sûr et journalisé (email direct au membre de préférence),
+// jamais dans un canal public/partagé. Toute génération est tracée dans
+// l'audit_log (action `password_reset`, source `admin-reset`).
 async function adminReset(req, res) {
   try {
     const userId = parseInt(req.params.userId);

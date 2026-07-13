@@ -18,6 +18,7 @@
    ═════════════════════════════════════════════════════════════════ */
 
 const { query } = require('../config/database');
+const { encryptToken, decryptToken } = require('../lib/token-crypto');
 const logger    = require('../lib/logger');
 
 
@@ -109,14 +110,15 @@ async function getValidAccessToken(userId) {
   if (!rows.length) throw new Error('Utilisateur non connecté à Strava');
   const link = rows[0];
   const nowSec = Math.floor(Date.now() / 1000);
-  // Refresh si reste moins de 60s (marge de sécurité)
-  if (link.expires_at - nowSec > 60) return link.access_token;
+  // cf. AUDIT #5 — tokens chiffrés au repos : déchiffrer avant usage.
+  // decryptToken() est rétro-compatible avec les tokens en clair pré-correctif.
+  if (link.expires_at - nowSec > 60) return decryptToken(link.access_token);
 
   logger.info({ userId }, '[strava] refreshing access token');
-  const refreshed = await refreshAccessToken(link.refresh_token);
+  const refreshed = await refreshAccessToken(decryptToken(link.refresh_token));
   await query(
     `UPDATE user_strava_link SET access_token = ?, refresh_token = ?, expires_at = ? WHERE user_id = ?`,
-    [refreshed.access_token, refreshed.refresh_token, refreshed.expires_at, userId]
+    [encryptToken(refreshed.access_token), encryptToken(refreshed.refresh_token), refreshed.expires_at, userId]
   );
   return refreshed.access_token;
 }

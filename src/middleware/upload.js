@@ -8,6 +8,7 @@
 const multer = require('multer');
 const path   = require('path');
 const fs     = require('fs');
+const crypto = require('crypto');
 
 // Dossier unique pour TOUS les GPX (uploads admin + import-gpx + bundle).
 // Servi statiquement par Express via app.use(express.static(...)).
@@ -23,10 +24,14 @@ if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 const gpxStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, GPX_DIR),
   filename: (req, file, cb) => {
-    // Sanitize + timestamper le nom
+    // Sanitize le nom + suffixe unique (cf. AUDIT #8 — sans ça, deux GPX
+    // au nom proche s'écrasaient silencieusement sur disque). Le nom
+    // réellement stocké est renvoyé au client (gpx.js) puis persisté dans
+    // sorties.gpx_filename, donc un suffixe dynamique ne casse aucune réf.
     const base = path.basename(file.originalname, path.extname(file.originalname))
       .toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 60);
-    cb(null, `${base}.gpx`);
+    const uniq = `${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`;
+    cb(null, `${base}-${uniq}.gpx`);
   }
 });
 

@@ -7,15 +7,18 @@ const { body, validationResult } = require('express-validator');
 const { audit } = require('../services/audit-log');
 const mailer = require('../services/mailer');
 const { errResponse } = require('../lib/errors');
+const { sanitizeTitleHtml } = require('../lib/sanitize-title-html');
 const logger = require('../lib/logger');
 
 const createValidators = [
   body('title').notEmpty().trim(),
+  body('title_html').optional({ nullable: true }).isLength({ max: 250 }),
   body('date').isDate(),
   body('type').isIn(['cyclosportive','gravel','criterium','course','rando','championnat','autre'])
 ];
 const updateValidators = [
   body('title').optional().notEmpty().trim().isLength({ max: 200 }),
+  body('title_html').optional({ nullable: true }).isLength({ max: 250 }),
   body('date').optional().isDate().withMessage('Date au format YYYY-MM-DD'),
   body('type').optional().isIn(['cyclosportive','gravel','criterium','course','rando','championnat','autre']),
   body('distance_km').optional({ nullable: true }).isInt({ min: 0, max: 9999 }),
@@ -136,7 +139,7 @@ async function create(req, res) {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         e.slug || e.title.toLowerCase().replace(/\s+/g,'-').slice(0,100),
-        e.title, e.title_html||e.title, e.subtitle||null, e.type,
+        e.title, sanitizeTitleHtml(e.title_html)||e.title, e.subtitle||null, e.type,
         e.date, e.heure||null, e.lieu||null, e.region||null,
         e.distance_km||null, e.description||null,
         e.inscrits||0, e.max_inscrits||null, e.engagement_eur||null,
@@ -160,7 +163,7 @@ async function update(req, res) {
         region=?,distance_km=?,description=?,max_inscrits=?,engagement_eur=?,
         sortie_id=?,hero_img=?,statut=? WHERE id=?`,
       [
-        e.title, e.title_html||e.title, e.subtitle||null, e.type,
+        e.title, sanitizeTitleHtml(e.title_html)||e.title, e.subtitle||null, e.type,
         e.date, e.heure||null, e.lieu||null, e.region||null,
         e.distance_km||null, e.description||null,
         e.max_inscrits||null, e.engagement_eur||null,
