@@ -422,7 +422,7 @@ ul { list-style: none; }
   color: var(--t-cream);
   border: 1px solid var(--brass);
   border-radius: var(--pill);
-  transition: all .3s var(--ease);
+  transition: color .3s var(--ease), background-color .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease), transform .3s var(--ease), opacity .3s var(--ease);
   display: inline-flex; align-items: center; gap: 8px;
 }
 .nav-cta:hover {
@@ -2324,7 +2324,7 @@ ul { list-style: none; }
   border: 1px solid var(--line-2);
   border-radius: 50%;
   color: var(--t-cream-2);
-  transition: all .2s;
+  transition: color .2s, background-color .2s, border-color .2s, box-shadow .2s, transform .2s, opacity .2s;
 }
 .minimap-expand:hover {
   border-color: var(--brass);
@@ -2364,7 +2364,7 @@ ul { list-style: none; }
   background: rgba(237,230,211,.06);
   backdrop-filter: blur(10px);
   color: var(--t-cream);
-  transition: all .3s var(--lux);
+  transition: color .3s var(--lux), background-color .3s var(--lux), border-color .3s var(--lux), box-shadow .3s var(--lux), transform .3s var(--lux), opacity .3s var(--lux);
   flex-shrink: 0;
 }
 .scrub-btn:hover {
@@ -2713,7 +2713,7 @@ ul { list-style: none; }
   background: transparent;
   border: 1px solid var(--line-2);
   border-radius: var(--pill);
-  transition: all .3s var(--ease);
+  transition: color .3s var(--ease), background-color .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease), transform .3s var(--ease), opacity .3s var(--ease);
   display: inline-flex; align-items: center; gap: 8px;
 }
 .filter-chip-dot {
@@ -2737,7 +2737,7 @@ ul { list-style: none; }
   padding: 20px 0;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
-  transition: all .3s var(--lux);
+  transition: color .3s var(--lux), background-color .3s var(--lux), border-color .3s var(--lux), box-shadow .3s var(--lux), transform .3s var(--lux), opacity .3s var(--lux);
   align-items: center;
 }
 .poi-item:hover {
@@ -3234,7 +3234,7 @@ ul { list-style: none; }
   background: var(--ink-2);
   border: 1px solid var(--line);
   border-left: 3px solid var(--brass);
-  transition: all .3s var(--ease);
+  transition: color .3s var(--ease), background-color .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease), transform .3s var(--ease), opacity .3s var(--ease);
 }
 .info-card:hover {
   border-color: var(--line-2);
@@ -3534,7 +3534,7 @@ ul { list-style: none; }
   padding: 20px 0;
   border-bottom: 1px solid var(--line);
   align-items: center;
-  transition: all .3s var(--lux);
+  transition: color .3s var(--lux), background-color .3s var(--lux), border-color .3s var(--lux), box-shadow .3s var(--lux), transform .3s var(--lux), opacity .3s var(--lux);
 }
 .palm-item:hover {
   background: linear-gradient(90deg, var(--ink-2) 0%, transparent 80%);

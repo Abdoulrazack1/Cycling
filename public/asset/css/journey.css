@@ -18,7 +18,7 @@
   color: var(--cream);
   cursor: pointer;
   border-radius: 999px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .ccs-bell:hover {
   border-color: var(--brass);
@@ -173,7 +173,7 @@ a.ccs-notif-item { cursor: pointer; }
   color: var(--parch-2);
   cursor: pointer;
   border-radius: 999px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .fav-toggle:hover {
   border-color: var(--brass);
@@ -215,7 +215,7 @@ a.ccs-notif-item { cursor: pointer; }
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 2px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .sortie-inscrire:hover {
   background: var(--brass-hi);
@@ -306,7 +306,7 @@ a.ccs-notif-item { cursor: pointer; }
   background: var(--ink-3);
   border: 1px solid var(--line);
   border-radius: 2px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .ccs-onboard-item.done {
   opacity: .55;
@@ -350,7 +350,7 @@ a.ccs-notif-item { cursor: pointer; }
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 2px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .ccs-onboard-go:hover {
   background: var(--brass);
@@ -476,7 +476,7 @@ a.ccs-notif-item { cursor: pointer; }
   border-radius: 4px;
   cursor: pointer;
   color: var(--parch-2);
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
   text-align: center;
 }
 .ccs-gpx-drop-zone:hover,
@@ -642,7 +642,7 @@ a.ccs-notif-item { cursor: pointer; }
   color: var(--cream);
   text-decoration: none;
   border-radius: 2px;
-  transition: all .25s cubic-bezier(.22, .9, .35, 1);
+  transition: color .25s cubic-bezier(.22, .9, .35, 1), background-color .25s cubic-bezier(.22, .9, .35, 1), border-color .25s cubic-bezier(.22, .9, .35, 1), box-shadow .25s cubic-bezier(.22, .9, .35, 1), transform .25s cubic-bezier(.22, .9, .35, 1), opacity .25s cubic-bezier(.22, .9, .35, 1);
 }
 .me-card:hover {
   border-color: var(--brass);
@@ -704,7 +704,7 @@ a.ccs-notif-item { cursor: pointer; }
   text-decoration: none;
   color: var(--cream);
   border-radius: 2px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .me-inscription-row:hover {
   border-color: var(--brass);

@@ -182,7 +182,7 @@ img.is-loaded { opacity: 1 !important; }
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 2px;
-  transition: all .2s ease;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease, opacity .2s ease;
 }
 .btn-copy-link:hover {
   border-color: var(--brass, #B08E4A);
