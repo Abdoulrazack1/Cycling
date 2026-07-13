@@ -145,6 +145,7 @@
       name:   document.getElementById('cp-name').value.trim() || 'Parcours sans nom',
       region: document.getElementById('cp-region').value.trim() || null,
       laps:   parseInt(document.getElementById('cp-laps').value) || 1,
+      profile: document.getElementById('cp-profile')?.value || 'trekking',
       waypoints: waypoints.map(w => ({ lat: w.lat, lng: w.lng, type: w.type || null, label: w.label || '', desc: '' })),
       skipNetwork: document.getElementById('cp-offline').checked,
       persist: true,
@@ -220,11 +221,21 @@
         `</details>`
       : '';
 
-    // 4. Stats
+    // 4. Bandeau routeur : rassure sur la qualité du tracé (vélo vs dégradé).
+    const PROVIDER_INFO = {
+      brouter: { txt: 'Routé vélo (BRouter)', cls: 'ok' },
+      osrm:    { txt: 'Repli routier (OSRM) — tracé voiture, à vérifier', cls: 'warn' },
+      densify: { txt: 'Hors-ligne — tracé en lignes droites, non routé', cls: 'warn' },
+    };
+    const prov = PROVIDER_INFO[res.provider] || null;
+    const provBanner = prov ? `<div class="cp-provider ${prov.cls}">${esc(prov.txt)}</div>` : '';
+
+    // 5. Stats
     const out = document.getElementById('cp-result');
     out.className = 'cp-result';
     out.innerHTML =
       `<h4>✓ Parcours généré</h4>` +
+      provBanner +
       `<div class="cp-stat-grid">` +
         `<span>Distance</span><b>${stats.distanceKm ?? '—'} km</b>` +
         `<span>Dénivelé +</span><b>${stats.dPlus ?? '—'} m</b>` +

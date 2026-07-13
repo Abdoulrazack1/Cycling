@@ -128,6 +128,7 @@ async function generate(req, res) {
       distanceKm: body.distanceKm,
       waypoints:  body.waypoints,
       laps:       body.laps,
+      profile:    body.profile,
     }, {
       skipRouting:   skipNet,
       skipElevation: skipNet,
@@ -148,6 +149,7 @@ async function generate(req, res) {
     res.json({
       success: true,
       id: result.id,
+      provider: result.provider,
       gpxFilename: result.gpxFilename,
       gpxUrl: '/asset/gpx/' + result.gpxFilename,
       pois: result.pois,

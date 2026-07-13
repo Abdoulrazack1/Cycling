@@ -74,30 +74,39 @@ async function generate(input, opts = {}) {
     log.push(`laps × ${input.laps} → ${workingWaypoints.length} waypoints`);
   }
 
-  // 2) Router via OSRM (+ directions tour-par-tour)
-  let trackPoints, osrmDirections = [];
+  // 2) Router via BRouter (vélo) → fallback OSRM → fallback densification.
+  //    `directions` = indications tour-par-tour ; certains routeurs (BRouter)
+  //    fournissent aussi l'altitude par point.
+  let trackPoints, osrmDirections = [], trackHasElevation = false, provider = 'densify';
   if (opts.skipRouting) {
     trackPoints = routing.densify(workingWaypoints, 50);
-    log.push(`OSRM skip → densification manuelle (${trackPoints.length} pts)`);
+    log.push(`Routage désactivé → densification manuelle (${trackPoints.length} pts)`);
   } else {
     try {
       const justLatLng = workingWaypoints.map(w => ({ lat: w.lat, lng: w.lng }));
-      const routed = await routing.routeFull(justLatLng, { profile: 'cycling' });
+      const routed = await routing.routeFull(justLatLng, { brouterProfile: input.profile });
       trackPoints = routed.track;
       osrmDirections = routed.directions || [];
-      log.push(`OSRM cycling → ${trackPoints.length} pts, ${osrmDirections.length} directions`);
+      trackHasElevation = !!routed.hasElevation;
+      provider = routed.provider;
+      log.push(`${routed.provider} → ${trackPoints.length} pts, ${osrmDirections.length} directions${trackHasElevation ? ', altitude incluse' : ''}`);
     } catch (e) {
-      errors.push(`OSRM: ${e.message}`);
+      errors.push(`Routage: ${e.message}`);
       trackPoints = routing.densify(workingWaypoints, 50);
-      log.push(`OSRM fallback → densification (${trackPoints.length} pts)`);
+      log.push(`Routage KO → densification ligne droite (${trackPoints.length} pts)`);
     }
   }
 
-  // 3) Récupérer les altitudes
-  if (opts.skipElevation) {
-    // Interpoler l'altitude depuis les waypoints fournis
+  // 3) Altitudes : si le routeur les a déjà fournies (BRouter), on les garde ;
+  //    sinon Open-Meteo ; sinon interpolation depuis les waypoints.
+  if (trackHasElevation) {
+    for (let i = 0; i < trackPoints.length; i++) {
+      if (!Number.isFinite(trackPoints[i].ele)) trackPoints[i].ele = 0;
+    }
+    log.push(`Altitude fournie par le routeur (${trackPoints.length} pts)`);
+  } else if (opts.skipElevation) {
     _interpolateElevations(trackPoints, workingWaypoints);
-    log.push(`Élévations skip → interpolation manuelle`);
+    log.push(`Élévations désactivées → interpolation manuelle`);
   } else {
     try {
       const elevs = await elevation.fetchElevations(trackPoints);
@@ -171,6 +180,7 @@ async function generate(input, opts = {}) {
     id,
     name: input.name,
     region: input.region,
+    provider,
     gpxPath,
     gpxFilename: path.basename(gpxPath),
     pois,

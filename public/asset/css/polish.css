@@ -131,6 +131,10 @@ button:focus-visible,
    (scrollbar, swap de police, etc.) → cf. commentaire style.css:523 */
 .btn:active:not(:disabled) {
   transform: translateY(1px);
+  /* Retour d'appui INSTANTANÉ : sans ça, le translateY héritait de la
+     transition .4s var(--lux) du .btn → l'appui s'animait lentement et
+     donnait l'impression que le bouton "flottait/buggait" au clic. */
+  transition-duration: .05s;
 }
 .btn-brass:hover {
   box-shadow: 0 6px 20px rgba(176, 142, 74, 0.35);

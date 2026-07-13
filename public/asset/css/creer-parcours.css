@@ -94,7 +94,7 @@
   font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
   color: var(--parch-2, #b9b09a); margin-bottom: 5px;
 }
-.cp-field input, .cp-wp-type {
+.cp-field input, .cp-field select, .cp-wp-type {
   width: 100%; padding: 9px 12px;
   background: var(--ink-3, #0a1410);
   border: 1px solid var(--line, #2a3a32);
@@ -159,6 +159,13 @@
 }
 .cp-result h4 { margin: 0 0 8px; font-family: var(--f-disp, 'Playfair Display', serif); color: var(--brass, #CAA35B); }
 .cp-result.err { border-left-color: #c08080; color: #e7b7b7; }
+/* Bandeau routeur : indique la qualité du tracé (vélo vs dégradé) */
+.cp-provider {
+  font-size: 12px; padding: 6px 10px; border-radius: 3px;
+  margin: 4px 0 10px; display: inline-block;
+}
+.cp-provider.ok   { background: rgba(46,125,50,.18);  color: #9ed6a3; border: 1px solid rgba(46,125,50,.4); }
+.cp-provider.warn { background: rgba(216,120,50,.16); color: #e7c19a; border: 1px solid rgba(216,120,50,.4); }
 .cp-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 8px 0; }
 .cp-stat-grid b { color: var(--parch, #EDE6D3); }
 .cp-result a { color: var(--brass, #CAA35B); }
