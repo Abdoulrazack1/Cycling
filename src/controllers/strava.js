@@ -9,6 +9,7 @@ const path   = require('path');
 const { query } = require('../config/database');
 const { errResponse } = require('../lib/errors');
 const { encryptToken } = require('../lib/token-crypto');
+const { sanitizeTitleHtml } = require('../lib/sanitize-title-html');
 const logger = require('../lib/logger');
 const strava = require('../services/strava-client');
 const { parseGpx } = require('../services/gpx-parser');
@@ -371,7 +372,7 @@ async function importRoute(req, res) {
          hero_img, card_img, location_name, location_lat, location_lng, gpx_filename, statut, created_by)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        sortieId, slug, title, title,
+        sortieId, slug, title, sanitizeTitleHtml(title) || title,
         meta.description || `Importé depuis Strava (route ${routeId})`,
         chapter,
         meta.description || null,
@@ -456,7 +457,7 @@ async function importActivity(req, res) {
          hero_img, card_img, location_name, location_lat, location_lng, gpx_filename, statut, created_by)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        sortieId, slug, title, title,
+        sortieId, slug, title, sanitizeTitleHtml(title) || title,
         `Importé depuis activité Strava ${a.id}`,
         chapter,
         a.name || null,

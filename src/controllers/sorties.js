@@ -631,7 +631,7 @@ async function importGpx(req, res) {
       clm: 'asset/img/img-clm.webp',
     };
     const sortieData = {
-      id, slug, title, title_html: title,
+      id, slug, title, title_html: sanitizeTitleHtml(title) || title,
       subtitle: req.body.subtitle?.trim() || null, chapter,
       description: req.body.description?.trim() || null,
       date, date_label: null,
